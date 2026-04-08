@@ -1,0 +1,69 @@
+<div class="top10-content">
+  <div class="row row-charts-1-1">
+    <app-bar-chart title="Top 10 Airlines" [data]="topAirlines()" [loading]="loading()"
+                   xLabel="Airline" yLabel="PRM Count"></app-bar-chart>
+    <app-bar-chart title="Top 10 Flights" [data]="topFlights()" [loading]="loading()"
+                   xLabel="Flight" yLabel="PRM Count"></app-bar-chart>
+  </div>
+
+  <div class="row row-table">
+    <div class="table-card">
+      <div class="table-title">Top 10 Agents</div>
+      <table mat-table [dataSource]="topAgents()" class="agents-table">
+        <ng-container matColumnDef="rank">
+          <th mat-header-cell *matHeaderCellDef>Rank</th>
+          <td mat-cell *matCellDef="let row" class="rank-cell">{{ rankMedal(row.rank) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="agentNo">
+          <th mat-header-cell *matHeaderCellDef>Agent #</th>
+          <td mat-cell *matCellDef="let row">{{ row.agentNo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Name</th>
+          <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="count">
+          <th mat-header-cell *matHeaderCellDef>PRM Count</th>
+          <td mat-cell *matCellDef="let row"><strong>{{ row.count | number }}</strong></td>
+        </ng-container>
+
+        <ng-container matColumnDef="avgDuration">
+          <th mat-header-cell *matHeaderCellDef>Avg Duration</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="duration-pill" [style.background]="durationColor(row.avgDuration)">
+              {{ row.avgDuration | number:'1.0-0' }} min
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="topService">
+          <th mat-header-cell *matHeaderCellDef>Top Service</th>
+          <td mat-cell *matCellDef="let row">{{ row.topService }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="topAirline">
+          <th mat-header-cell *matHeaderCellDef>Top Airline</th>
+          <td mat-cell *matCellDef="let row">{{ row.topAirline }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="daysActive">
+          <th mat-header-cell *matHeaderCellDef>Days Active</th>
+          <td mat-cell *matCellDef="let row">{{ row.daysActive }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns" class="agent-row"></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="row row-charts-1-1">
+    <app-horizontal-bar-chart title="Top 10 Routes" [data]="topRoutes()" [loading]="loading()"
+                              xLabel="Count" yLabel="Route"></app-horizontal-bar-chart>
+    <app-bar-chart title="No-Show Rate by Airline" [data]="noShows()" [loading]="loading()"
+                   xLabel="Airline" yLabel="No-Show %"></app-bar-chart>
+  </div>
+</div>

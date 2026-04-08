@@ -1,0 +1,31 @@
+.top10-content {
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  gap: 1rem;
+  padding: 0 0.5rem;
+}
+.row { display: grid; gap: 1rem; }
+.row-charts-1-1 { grid-template-columns: 1fr 1fr; min-height: 260px; }
+.table-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  overflow-x: auto;
+}
+.table-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; color: #333; }
+.agents-table { width: 100%; }
+.rank-cell { font-size: 1.2rem; font-weight: 700; }
+.duration-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.agent-row:hover { background: rgba(30, 136, 229, 0.04); cursor: pointer; }
+
+@media (max-width: 1024px) {
+  .row-charts-1-1 { grid-template-columns: 1fr; }
+}
