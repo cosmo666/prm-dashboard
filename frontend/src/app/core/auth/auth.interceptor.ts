@@ -36,11 +36,9 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
       if (error.status === 401 && !shouldSkipRefresh(req.url)) {
         return authService.refresh().pipe(
           switchMap(() => {
-            // Retry with new token
-            const retryHeaders = req.headers
-              .set('Authorization', `Bearer ${authService.token}`)
-              .set('X-Tenant-Slug', tenantStore.slug());
-            return next(req.clone({ headers: retryHeaders }));
+            // Retry with new token — use cloned.headers to preserve all headers from first pass
+            const retryHeaders = cloned.headers.set('Authorization', `Bearer ${authService.token}`);
+            return next(cloned.clone({ headers: retryHeaders }));
           }),
           catchError(() => {
             authService.logout();

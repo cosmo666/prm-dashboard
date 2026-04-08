@@ -71,6 +71,18 @@ export const FilterStore = signalStore(
     clearSecondary(): void {
       patchState(store, { airline: '', service: '', handledBy: '', flight: '', agentNo: '' });
     },
+    loadFromQueryParams(params: Record<string, string>): void {
+      patchState(store, {
+        airport: params['airport'] || '',
+        dateFrom: params['date_from'] || '',
+        dateTo: params['date_to'] || '',
+        airline: params['airline'] || '',
+        service: params['service'] || '',
+        handledBy: params['handled_by'] || '',
+        flight: params['flight'] || '',
+        agentNo: params['agent_no'] || '',
+      });
+    },
     reset(): void {
       patchState(store, initialState);
     },
