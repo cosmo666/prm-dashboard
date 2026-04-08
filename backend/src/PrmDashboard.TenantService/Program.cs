@@ -18,12 +18,17 @@ builder.Services.AddSwaggerGen();
 var connStr = builder.Configuration.GetConnectionString("MasterDb")
     ?? throw new InvalidOperationException("ConnectionStrings:MasterDb is required");
 
-var jwtSecret = builder.Configuration["Jwt:Secret"]
-    ?? throw new InvalidOperationException("Jwt:Secret is required");
-var jwtIssuer = builder.Configuration["Jwt:Issuer"]
-    ?? throw new InvalidOperationException("Jwt:Issuer is required");
-var jwtAudience = builder.Configuration["Jwt:Audience"]
-    ?? throw new InvalidOperationException("Jwt:Audience is required");
+var jwtSecret = builder.Configuration["Jwt:Secret"];
+if (string.IsNullOrEmpty(jwtSecret))
+    throw new InvalidOperationException("Jwt:Secret is required");
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+if (string.IsNullOrEmpty(jwtIssuer))
+    throw new InvalidOperationException("Jwt:Issuer is required");
+
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+if (string.IsNullOrEmpty(jwtAudience))
+    throw new InvalidOperationException("Jwt:Audience is required");
 
 builder.Services.AddDbContext<MasterDbContext>(opt =>
     opt.UseMySql(connStr, new MySqlServerVersion(new Version(8, 0, 36))));

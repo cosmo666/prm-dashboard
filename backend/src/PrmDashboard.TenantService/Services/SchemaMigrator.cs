@@ -62,6 +62,9 @@ public class SchemaMigrator
 
                 _logger.LogInformation("Applying migration {Version} to {DataSource}", version, conn.DataSource);
 
+                // NOTE: MySQL auto-commits DDL statements (CREATE TABLE, ALTER TABLE, etc.)
+                // regardless of the surrounding transaction. The transaction here protects only
+                // the tracker INSERT. Migration SQL MUST be idempotent (use IF NOT EXISTS).
                 await using var tx = await conn.BeginTransactionAsync(ct);
                 try
                 {
@@ -107,11 +110,13 @@ public class SchemaMigrator
 
         var migrations = new List<(string Version, string Sql)>();
 
+        var prefix = $"{assembly.GetName().Name}.Schema.Migrations.";
+
         foreach (var resourceName in resourceNames)
         {
-            // Resource name: ...Schema.Migrations.001_create_prm_services.sql
-            // Extract "001" from the filename portion
-            var fileName = resourceName.Split('.').Reverse().Skip(1).First(); // skip ".sql", get filename
+            // Resource name: PrmDashboard.TenantService.Schema.Migrations.001_create_prm_services.sql
+            // Strip known prefix and ".sql" suffix to get the bare filename
+            var fileName = resourceName[prefix.Length..^4]; // e.g. "001_create_prm_services"
             var version = fileName.Split('_')[0]; // "001"
 
             using var stream = assembly.GetManifestResourceStream(resourceName)
