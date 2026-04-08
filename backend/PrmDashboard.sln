@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrmDashboard.AuthService", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrmDashboard.TenantService", "src\PrmDashboard.TenantService\PrmDashboard.TenantService.csproj", "{DD7B5828-63F9-49CD-92E1-8C85857F195E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrmDashboard.PrmService", "src\PrmDashboard.PrmService\PrmDashboard.PrmService.csproj", "{C3713C1E-8F23-49A2-AA6B-03EF6221782B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,18 @@ Global
 		{DD7B5828-63F9-49CD-92E1-8C85857F195E}.Release|x64.Build.0 = Release|Any CPU
 		{DD7B5828-63F9-49CD-92E1-8C85857F195E}.Release|x86.ActiveCfg = Release|Any CPU
 		{DD7B5828-63F9-49CD-92E1-8C85857F195E}.Release|x86.Build.0 = Release|Any CPU
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B}.Debug|x64.Build.0 = Debug|Any CPU
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B}.Debug|x86.Build.0 = Debug|Any CPU
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B}.Release|x64.ActiveCfg = Release|Any CPU
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B}.Release|x64.Build.0 = Release|Any CPU
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B}.Release|x86.ActiveCfg = Release|Any CPU
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -65,5 +79,6 @@ Global
 		{DB695CC9-26FE-468D-A7A7-461A66846D90} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{931D0832-19D7-437A-ABD3-100E28F7FEBF} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{DD7B5828-63F9-49CD-92E1-8C85857F195E} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{C3713C1E-8F23-49A2-AA6B-03EF6221782B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
