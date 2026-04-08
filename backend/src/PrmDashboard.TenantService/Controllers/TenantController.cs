@@ -37,6 +37,7 @@ public class TenantController : ControllerBase
     /// Returns tenant ID and connection string. NOT routed by the gateway —
     /// only reachable within the Docker network. In production, add service-to-service auth.
     /// </summary>
+    [Authorize]
     [HttpGet("resolve/{slug}")]
     public async Task<IActionResult> Resolve(string slug, CancellationToken ct)
     {

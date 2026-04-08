@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using PrmDashboard.Shared.Middleware;
 using PrmDashboard.TenantService.Data;
 using PrmDashboard.TenantService.Services;
 
@@ -58,14 +59,20 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<SchemaMigrator>();
 builder.Services.AddScoped<TenantResolutionService>();
 
-// CORS — allow any origin with credentials for the gateway/frontend during dev
+// CORS — allowlist from config
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.SetIsOriginAllowed(_ => true)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials());
+    {
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+    });
 });
 
 var app = builder.Build();
@@ -79,6 +86,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<TenantSlugClaimCheckMiddleware>();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "tenant" }));
 app.MapControllers();

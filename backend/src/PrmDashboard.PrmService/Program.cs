@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using PrmDashboard.PrmService.Data;
 using PrmDashboard.PrmService.Middleware;
 using PrmDashboard.PrmService.Services;
+using PrmDashboard.Shared.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,14 +67,20 @@ builder.Services.AddScoped<BreakdownService>();
 builder.Services.AddScoped<PerformanceService>();
 builder.Services.AddScoped<RecordService>();
 
-// CORS — allow any origin with credentials for the gateway/frontend during dev
+// CORS — allowlist from config
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.SetIsOriginAllowed(_ => true)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials());
+    {
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+    });
 });
 
 var app = builder.Build();
@@ -88,6 +95,7 @@ app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<TenantSlugClaimCheckMiddleware>();
 app.UseMiddleware<AirportAccessMiddleware>();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "prm" }));

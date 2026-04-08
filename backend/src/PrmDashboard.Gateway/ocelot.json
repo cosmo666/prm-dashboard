@@ -13,7 +13,7 @@
       "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ]
     },
     {
-      "DownstreamPathTemplate": "/api/tenants/{everything}",
+      "DownstreamPathTemplate": "/api/tenants/config",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -21,8 +21,24 @@
           "Port": 8080
         }
       ],
-      "UpstreamPathTemplate": "/api/tenants/{everything}",
+      "UpstreamPathTemplate": "/api/tenants/config",
       "UpstreamHttpMethod": [ "GET", "OPTIONS" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/tenants/airports",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "tenant",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/api/tenants/airports",
+      "UpstreamHttpMethod": [ "GET", "OPTIONS" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
     },
     {
       "DownstreamPathTemplate": "/api/prm/{everything}",
@@ -34,7 +50,11 @@
         }
       ],
       "UpstreamPathTemplate": "/api/prm/{everything}",
-      "UpstreamHttpMethod": [ "GET", "OPTIONS" ]
+      "UpstreamHttpMethod": [ "GET", "OPTIONS" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
     }
   ],
   "GlobalConfiguration": {

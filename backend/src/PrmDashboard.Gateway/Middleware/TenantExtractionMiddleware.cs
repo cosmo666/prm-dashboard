@@ -3,17 +3,24 @@ namespace PrmDashboard.Gateway.Middleware;
 /// <summary>
 /// Extracts tenant slug from the Host header subdomain and sets X-Tenant-Slug
 /// on the request for downstream services.
-/// Falls back to existing header, query param, or default for localhost dev.
+/// In Development, falls back to the existing X-Tenant-Slug header or ?tenant_slug= query param.
+/// In Production, no fallback — if no subdomain is present, downstream services will
+/// reject the request via TenantSlugClaimCheckMiddleware / AirportAccessMiddleware.
 /// </summary>
 public class TenantExtractionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<TenantExtractionMiddleware> _logger;
+    private readonly IWebHostEnvironment _env;
 
-    public TenantExtractionMiddleware(RequestDelegate next, ILogger<TenantExtractionMiddleware> logger)
+    public TenantExtractionMiddleware(
+        RequestDelegate next,
+        ILogger<TenantExtractionMiddleware> logger,
+        IWebHostEnvironment env)
     {
         _next = next;
         _logger = logger;
+        _env = env;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -29,30 +36,32 @@ public class TenantExtractionMiddleware
             _logger.LogDebug("Extracted tenant slug {Slug} from subdomain of {Host}", slug, host);
         }
 
-        // Localhost fallback chain: existing header → query param → default
-        if (string.IsNullOrEmpty(slug))
+        // Development-only fallback: existing header or query param
+        if (string.IsNullOrEmpty(slug) && _env.IsDevelopment())
         {
             if (context.Request.Headers.TryGetValue("X-Tenant-Slug", out var headerSlug)
                 && !string.IsNullOrEmpty(headerSlug))
             {
                 slug = headerSlug!;
-                _logger.LogDebug("Using tenant slug {Slug} from X-Tenant-Slug header", slug);
+                _logger.LogDebug("Dev fallback: using tenant slug {Slug} from X-Tenant-Slug header", slug);
             }
             else if (context.Request.Query.TryGetValue("tenant_slug", out var querySlug)
                      && !string.IsNullOrEmpty(querySlug))
             {
                 slug = querySlug!;
-                _logger.LogDebug("Using tenant slug {Slug} from query parameter", slug);
-            }
-            else
-            {
-                slug = "aeroground";
-                _logger.LogDebug("No tenant slug found, defaulting to {Slug}", slug);
+                _logger.LogDebug("Dev fallback: using tenant slug {Slug} from query parameter", slug);
             }
         }
 
-        context.Request.Headers["X-Tenant-Slug"] = slug;
-        _logger.LogInformation("Tenant {Slug} resolved for {Method} {Path}", slug, context.Request.Method, context.Request.Path);
+        if (!string.IsNullOrEmpty(slug))
+        {
+            context.Request.Headers["X-Tenant-Slug"] = slug;
+            _logger.LogInformation("Tenant {Slug} resolved for {Method} {Path}", slug, context.Request.Method, context.Request.Path);
+        }
+        else
+        {
+            _logger.LogDebug("No tenant slug resolved for {Method} {Path}", context.Request.Method, context.Request.Path);
+        }
 
         await _next(context);
     }

@@ -28,6 +28,13 @@ services:
       - AUTH_SERVICE_URL=http://auth:8080
       - TENANT_SERVICE_URL=http://tenant:8080
       - PRM_SERVICE_URL=http://prm:8080
+      - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-change-in-production}
+      - Jwt__Issuer=${JWT_ISSUER:-prm-dashboard}
+      - Jwt__Audience=${JWT_AUDIENCE:-prm-dashboard-client}
+      - Cors__AllowedOrigins__0=http://localhost:4200
+      - Cors__AllowedOrigins__1=http://aeroground.localhost:4200
+      - Cors__AllowedOrigins__2=http://skyserve.localhost:4200
+      - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
     depends_on:
       auth:
         condition: service_started
@@ -49,6 +56,10 @@ services:
       - Jwt__Audience=${JWT_AUDIENCE:-prm-dashboard-client}
       - Jwt__AccessTokenMinutes=${JWT_ACCESS_TOKEN_MINUTES:-15}
       - Jwt__RefreshTokenDays=${JWT_REFRESH_TOKEN_DAYS:-7}
+      - Cors__AllowedOrigins__0=http://localhost:4200
+      - Cors__AllowedOrigins__1=http://aeroground.localhost:4200
+      - Cors__AllowedOrigins__2=http://skyserve.localhost:4200
+      - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
     depends_on:
       mysql:
         condition: service_healthy
@@ -64,6 +75,10 @@ services:
       - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-change-in-production}
       - Jwt__Issuer=${JWT_ISSUER:-prm-dashboard}
       - Jwt__Audience=${JWT_AUDIENCE:-prm-dashboard-client}
+      - Cors__AllowedOrigins__0=http://localhost:4200
+      - Cors__AllowedOrigins__1=http://aeroground.localhost:4200
+      - Cors__AllowedOrigins__2=http://skyserve.localhost:4200
+      - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
     depends_on:
       mysql:
         condition: service_healthy
@@ -80,6 +95,10 @@ services:
       - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-change-in-production}
       - Jwt__Issuer=${JWT_ISSUER:-prm-dashboard}
       - Jwt__Audience=${JWT_AUDIENCE:-prm-dashboard-client}
+      - Cors__AllowedOrigins__0=http://localhost:4200
+      - Cors__AllowedOrigins__1=http://aeroground.localhost:4200
+      - Cors__AllowedOrigins__2=http://skyserve.localhost:4200
+      - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
     depends_on:
       mysql:
         condition: service_healthy
