@@ -1,0 +1,24 @@
+<div class="overview-content">
+  <!-- Row 1: 5 KPI cards -->
+  <div class="row row-kpis">
+    <app-kpi-card label="Total PRM Services" [value]="(totalPrm() | number) ?? ''" icon="accessible" gradient="blue" [delta]="totalDelta()"></app-kpi-card>
+    <app-kpi-card label="Active Agents" [value]="activeAgents()" icon="groups" gradient="teal"
+                  [subtext]="'Self: ' + selfAgents() + ' / Outsourced: ' + outsourcedAgents()"></app-kpi-card>
+    <app-kpi-card label="Avg Services / Agent / Day" [value]="(avgPerAgent() | number:'1.1-1') ?? ''" icon="trending_up" gradient="orange"></app-kpi-card>
+    <app-kpi-card label="Avg Duration (min)" [value]="(avgDuration() | number:'1.0-0') ?? ''" icon="timer" gradient="purple" [delta]="durationDelta()"></app-kpi-card>
+    <app-kpi-card label="Fulfillment Rate" [value]="((fulfillmentRate() | number:'1.1-1') ?? '') + '%'" icon="check_circle" gradient="green"></app-kpi-card>
+  </div>
+
+  <!-- Row 2: Daily Trend (2/3) + Handling Distribution (1/3) -->
+  <div class="row row-charts-2-1">
+    <app-bar-chart title="Daily PRM Trend" [data]="dailyTrend()" [loading]="loading()" xLabel="Day of Month" yLabel="PRM Count" class="col-2"></app-bar-chart>
+    <app-donut-chart title="Handling Distribution" [data]="handling()" [loading]="loading()" class="col-1"></app-donut-chart>
+  </div>
+
+  <!-- Row 3: Service Types (1/3) + Duration Distribution (1/3) + Locations (1/3) -->
+  <div class="row row-charts-1-1-1">
+    <app-donut-chart title="Service Types" [data]="serviceTypes()" [loading]="loading()"></app-donut-chart>
+    <app-bar-chart title="Duration Distribution" [data]="durationBuckets()" [loading]="loading()" xLabel="Duration Range (min)" yLabel="Count"></app-bar-chart>
+    <app-horizontal-bar-chart title="PRM by Location" [data]="locations()" [loading]="loading()" yLabel="Location"></app-horizontal-bar-chart>
+  </div>
+</div>
