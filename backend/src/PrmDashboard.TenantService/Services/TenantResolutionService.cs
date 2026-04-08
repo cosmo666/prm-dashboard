@@ -83,6 +83,7 @@ public class TenantResolutionService
             return null;
         }
 
+        // TODO(prerak): implement AES-256 decryption per spec — POC uses plaintext passwords - 2026-04-08
         var connStr = tenant.GetConnectionString();
 
         // Run schema migrations BEFORE caching — ensures cache reflects only migrated tenants

@@ -10,6 +10,8 @@ namespace PrmDashboard.TenantService.Services;
 /// </summary>
 public class SchemaMigrator
 {
+    // Process-global lock — serializes ALL tenant migrations. Acceptable for POC (3 tenants).
+    // For production with many tenants, replace with ConcurrentDictionary<string, SemaphoreSlim> keyed on DB name.
     private static readonly SemaphoreSlim Guard = new(1, 1);
     private readonly ILogger<SchemaMigrator> _logger;
 
