@@ -34,4 +34,4 @@ app.UseTenantExtraction();
 
 await app.UseOcelot();
 
-// UseOcelot is terminal middleware — app.Run() is not needed
+app.Run();
