@@ -60,6 +60,11 @@ builder.Services.AddHttpClient<TenantDbContextFactory>(client =>
 // PRM query services
 builder.Services.AddScoped<KpiService>();
 builder.Services.AddScoped<FilterService>();
+builder.Services.AddScoped<TrendService>();
+builder.Services.AddScoped<RankingService>();
+builder.Services.AddScoped<BreakdownService>();
+builder.Services.AddScoped<PerformanceService>();
+builder.Services.AddScoped<RecordService>();
 
 // CORS — allow any origin with credentials for the gateway/frontend during dev
 builder.Services.AddCors(options =>
