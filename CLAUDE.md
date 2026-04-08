@@ -225,9 +225,9 @@ When adding a new tenant, the flow is:
 | **3. Tenant Service** | T5 resolution + SchemaMigrator + 3 endpoints | ✅ **Complete** | Runtime tenant onboarding via embedded versioned migrations, 5-min connection cache, semaphore-guarded migration |
 | **4. PRM Service** | T6 setup + tenant DB factory, T7 KPI/filter endpoints, T8 trends/rankings/breakdowns/performance/records | ✅ **Complete** | 23 endpoints (19 analytics + filter + 3 KPI), airport RBAC middleware, dedup queries, PrmControllerBase, global exception handler |
 | **5. API Gateway** | T9 Ocelot routing + subdomain middleware | ✅ **Complete** | Ocelot 23.4.2, tenant extraction middleware (subdomain/header/query fallback), 3 routes, /health endpoint |
-| **6. Seed data** | T10 SQL seeds + Python PRM data generator | ⏳ Pending | 3 tenants, 12 employees, ~15k PRM records (Dec 2025–Mar 2026) |
-| **7. Frontend core** | T11 Angular scaffolding, T12 auth + stores + interceptor | ⏳ Pending | NgRx Signal Store, ApiClient, AuthInterceptor with auto-refresh on 401 |
-| **8. Frontend pages** | T13 login, T14 home + topbar, T15 dashboard shell + chart wrappers, T16-19 4 dashboard tabs | ⏳ Pending | Login (split layout), home tile, 4 tabs with ~17 ECharts |
+| **6. Seed data** | T10 SQL seeds + Python PRM data generator | ✅ **Complete** | 3 tenants, 12 employees, ~17k PRM records (Dec 2025–Mar 2026), deterministic generator |
+| **7. Frontend core** | T11 Angular scaffolding, T12 auth + stores + interceptor | ✅ **Complete** | Angular 17, NgRx Signal Store, ApiClient, AuthInterceptor with 401 auto-refresh, tenant resolver |
+| **8. Frontend pages** | T13 login, T14 home + topbar, T15 dashboard shell + chart wrappers, T16-19 4 dashboard tabs | ✅ **Complete** | Login (split layout), home tile, 4 tabs with 6 chart wrappers, filter bar, KPI cards |
 | **9. Integration & polish** | T20 E2E checklist, T21 docs/adding-a-tenant.md | ⏳ Pending | Multi-tenant isolation tests, RBAC verification, loading/empty states |
 
 **Phase 1 deliverables (in `main` branch):**
