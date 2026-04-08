@@ -19,13 +19,13 @@ public class FiltersController : PrmControllerBase
     }
 
     [HttpGet("options")]
-    public async Task<IActionResult> GetOptions([FromQuery] string airport)
+    public async Task<IActionResult> GetOptions([FromQuery] string airport, CancellationToken ct)
     {
         if (string.IsNullOrEmpty(airport))
             return BadRequest("The 'airport' query parameter is required.");
 
         var slug = GetTenantSlug();
-        var result = await _filterService.GetOptionsAsync(slug, airport);
+        var result = await _filterService.GetOptionsAsync(slug, airport, ct);
         return Ok(result);
     }
 }

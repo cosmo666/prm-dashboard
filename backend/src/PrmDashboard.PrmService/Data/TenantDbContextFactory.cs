@@ -29,7 +29,7 @@ public class TenantDbContextFactory
         _logger = logger;
     }
 
-    public async Task<TenantDbContext> CreateDbContextAsync(string tenantSlug)
+    public async Task<TenantDbContext> CreateDbContextAsync(string tenantSlug, CancellationToken ct = default)
     {
         var cacheKey = $"tenant-conn:{tenantSlug}";
 
@@ -37,10 +37,14 @@ public class TenantDbContextFactory
         {
             _logger.LogInformation("Resolving tenant {Slug} via TenantService", tenantSlug);
 
-            var response = await _httpClient.GetAsync($"/api/tenants/resolve/{tenantSlug}");
+            var response = await _httpClient.GetAsync($"/api/tenants/resolve/{tenantSlug}", ct);
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                throw new TenantNotFoundException(tenantSlug);
+            }
             response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadAsStringAsync();
+            var json = await response.Content.ReadAsStringAsync(ct);
             cached = JsonSerializer.Deserialize<TenantResolveResult>(json, JsonOptions)
                 ?? throw new InvalidOperationException($"Failed to deserialize tenant resolution for '{tenantSlug}'");
 
@@ -48,12 +52,20 @@ public class TenantDbContextFactory
             _logger.LogInformation("Cached tenant {Slug} (TenantId={TenantId}) for 5 minutes", tenantSlug, cached.TenantId);
         }
 
+        var connStr = $"Server={cached!.DbHost};Port={cached.DbPort};Database={cached.DbName};User={cached.DbUser};Password={cached.DbPassword};";
+
         var options = new DbContextOptionsBuilder<TenantDbContext>()
-            .UseMySql(cached!.DbConnectionString, new MySqlServerVersion(new Version(8, 0, 36)))
+            .UseMySql(connStr, new MySqlServerVersion(new Version(8, 0, 36)))
             .Options;
 
         return new TenantDbContext(options);
     }
 
-    private record TenantResolveResult(int TenantId, string DbConnectionString);
+    private record TenantResolveResult(
+        int TenantId,
+        string DbHost,
+        int DbPort,
+        string DbName,
+        string DbUser,
+        string DbPassword);
 }

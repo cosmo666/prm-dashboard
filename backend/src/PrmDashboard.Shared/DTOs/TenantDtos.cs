@@ -10,5 +10,9 @@ public record TenantConfigResponse(
 
 public record TenantResolveResponse(
     int TenantId,
-    string DbConnectionString
+    string DbHost,
+    int DbPort,
+    string DbName,
+    string DbUser,
+    string DbPassword
 );

@@ -20,26 +20,26 @@ public class KpisController : PrmControllerBase
     }
 
     [HttpGet("summary")]
-    public async Task<IActionResult> GetSummary([FromQuery] PrmFilterParams filters)
+    public async Task<IActionResult> GetSummary([FromQuery] PrmFilterParams filters, CancellationToken ct)
     {
         var slug = GetTenantSlug();
-        var result = await _kpiService.GetSummaryAsync(slug, filters);
+        var result = await _kpiService.GetSummaryAsync(slug, filters, ct);
         return Ok(result);
     }
 
     [HttpGet("handling-distribution")]
-    public async Task<IActionResult> GetHandlingDistribution([FromQuery] PrmFilterParams filters)
+    public async Task<IActionResult> GetHandlingDistribution([FromQuery] PrmFilterParams filters, CancellationToken ct)
     {
         var slug = GetTenantSlug();
-        var result = await _kpiService.GetHandlingDistributionAsync(slug, filters);
+        var result = await _kpiService.GetHandlingDistributionAsync(slug, filters, ct);
         return Ok(result);
     }
 
     [HttpGet("requested-vs-provided")]
-    public async Task<IActionResult> GetRequestedVsProvided([FromQuery] PrmFilterParams filters)
+    public async Task<IActionResult> GetRequestedVsProvided([FromQuery] PrmFilterParams filters, CancellationToken ct)
     {
         var slug = GetTenantSlug();
-        var result = await _kpiService.GetRequestedVsProvidedAsync(slug, filters);
+        var result = await _kpiService.GetRequestedVsProvidedAsync(slug, filters, ct);
         return Ok(result);
     }
 }

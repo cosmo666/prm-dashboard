@@ -18,16 +18,16 @@ public class TrendService : BaseQueryService
     /// Daily service count trend — COUNT DISTINCT id per day.
     /// </summary>
     public async Task<DailyTrendResponse> GetDailyAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
         var daily = await query
             .GroupBy(r => r.ServiceDate)
             .Select(g => new { Date = g.Key, Count = g.Select(r => r.Id).Distinct().Count() })
             .OrderBy(x => x.Date)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var dates = daily.Select(d => d.Date.ToString("yyyy-MM-dd")).ToList();
         var values = daily.Select(d => d.Count).ToList();
@@ -43,9 +43,9 @@ public class TrendService : BaseQueryService
     /// Monthly service count trend — COUNT DISTINCT id per year-month.
     /// </summary>
     public async Task<MonthlyTrendResponse> GetMonthlyAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
         var monthly = await query
@@ -57,7 +57,7 @@ public class TrendService : BaseQueryService
                 Count = g.Select(r => r.Id).Distinct().Count()
             })
             .OrderBy(x => x.Year).ThenBy(x => x.Month)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var months = monthly.Select(m => $"{m.Year}-{m.Month:D2}").ToList();
         var values = monthly.Select(m => m.Count).ToList();
@@ -73,16 +73,17 @@ public class TrendService : BaseQueryService
     /// Hour derived from StartTime / 100.
     /// </summary>
     public async Task<HourlyHeatmapResponse> GetHourlyAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        // Dedup by id (take first row), then group by day-of-week and hour
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         var days = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
         var hours = Enumerable.Range(0, 24).ToList();
@@ -110,16 +111,17 @@ public class TrendService : BaseQueryService
     /// Daily trend of provided (distinct id) vs requested (sum of Requested, deduped by id).
     /// </summary>
     public async Task<RequestedVsProvidedTrendResponse> GetRequestedVsProvidedAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        // Dedup: first row per id to get the Requested value
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         var daily = deduped
             .GroupBy(r => r.ServiceDate)

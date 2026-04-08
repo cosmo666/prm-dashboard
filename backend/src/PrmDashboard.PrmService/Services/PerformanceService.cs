@@ -18,10 +18,13 @@ public class PerformanceService : BaseQueryService
     /// <summary>
     /// Duration distribution — bucket durations into ranges, return p50/p90/avg.
     /// </summary>
+    // TODO(perf): materializes filtered rows into memory then aggregates in C#.
+    // Acceptable for POC scale (~15k rows per tenant). For production, rewrite as
+    // raw SQL with ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) for dedup.
     public async Task<DurationDistributionResponse> GetDurationDistributionAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var durations = await ComputeDurationsAsync(tenantSlug, filters);
+        var durations = await ComputeDurationsAsync(tenantSlug, filters, ct);
 
         if (durations.Count == 0)
         {
@@ -61,10 +64,13 @@ public class PerformanceService : BaseQueryService
     /// <summary>
     /// Duration stats — min/max/avg/median/p90/p95.
     /// </summary>
+    // TODO(perf): materializes filtered rows into memory then aggregates in C#.
+    // Acceptable for POC scale (~15k rows per tenant). For production, rewrite as
+    // raw SQL with ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) for dedup.
     public async Task<DurationStatsResponse> GetDurationStatsAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var durations = await ComputeDurationsAsync(tenantSlug, filters);
+        var durations = await ComputeDurationsAsync(tenantSlug, filters, ct);
 
         if (durations.Count == 0)
             return new DurationStatsResponse(0, 0, 0, 0, 0, 0);
@@ -85,16 +91,17 @@ public class PerformanceService : BaseQueryService
     /// No-show analysis — group by airline, count total + no-shows, calc rate.
     /// </summary>
     public async Task<NoShowResponse> GetNoShowsAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        // Dedup by id for counting
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         var items = deduped
             .GroupBy(r => r.Airline)
@@ -117,13 +124,16 @@ public class PerformanceService : BaseQueryService
     /// <summary>
     /// Pause analysis — count paused services, avg pause duration, breakdown by service type.
     /// </summary>
+    // TODO(perf): materializes filtered rows into memory then aggregates in C#.
+    // Acceptable for POC scale (~15k rows per tenant). For production, rewrite as
+    // raw SQL with ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) for dedup.
     public async Task<PauseAnalysisResponse> GetPauseAnalysisAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        var rows = await query.OrderBy(r => r.Id).ThenBy(r => r.RowId).ToListAsync();
+        var rows = await query.OrderBy(r => r.Id).ThenBy(r => r.RowId).ToListAsync(ct);
 
         // Count distinct services that have at least one paused row
         var pausedServiceIds = rows
@@ -185,11 +195,11 @@ public class PerformanceService : BaseQueryService
     /// Computes duration per distinct service id (sum of active minutes per id).
     /// </summary>
     private async Task<List<double>> ComputeDurationsAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
-        var rows = await query.ToListAsync();
+        var rows = await query.ToListAsync(ct);
 
         return rows
             .GroupBy(r => r.Id)

@@ -20,9 +20,10 @@ public class FilterService : BaseQueryService
     /// </summary>
     public async Task<FilterOptionsResponse> GetOptionsAsync(
         string tenantSlug,
-        string airport)
+        string airport,
+        CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
 
         var query = db.PrmServices.AsNoTracking()
             .Where(r => r.LocName == airport);
@@ -31,28 +32,28 @@ public class FilterService : BaseQueryService
             .Select(r => r.Airline)
             .Distinct()
             .OrderBy(a => a)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var services = await query
             .Select(r => r.Service)
             .Distinct()
             .OrderBy(s => s)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var handledBy = await query
             .Select(r => r.PrmAgentType)
             .Distinct()
             .OrderBy(h => h)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var flights = await query
             .Select(r => r.Flight)
             .Distinct()
             .OrderBy(f => f)
-            .ToListAsync();
+            .ToListAsync(ct);
 
-        var minDate = await query.MinAsync(r => (DateOnly?)r.ServiceDate);
-        var maxDate = await query.MaxAsync(r => (DateOnly?)r.ServiceDate);
+        var minDate = await query.MinAsync(r => (DateOnly?)r.ServiceDate, ct);
+        var maxDate = await query.MaxAsync(r => (DateOnly?)r.ServiceDate, ct);
 
         _logger.LogInformation(
             "Filter options for {Slug}/{Airport}: {Airlines} airlines, {Services} services",

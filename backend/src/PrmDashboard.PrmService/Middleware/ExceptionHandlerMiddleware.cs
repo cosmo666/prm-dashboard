@@ -1,3 +1,5 @@
+using PrmDashboard.PrmService.Data;
+
 namespace PrmDashboard.PrmService.Middleware;
 
 public class ExceptionHandlerMiddleware
@@ -16,6 +18,11 @@ public class ExceptionHandlerMiddleware
         try
         {
             await _next(context);
+        }
+        catch (TenantNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Tenant not found: {Slug}", ex.TenantSlug);
+            await WriteProblem(context, 404, "Tenant Not Found", ex.Message);
         }
         catch (HttpRequestException ex)
         {

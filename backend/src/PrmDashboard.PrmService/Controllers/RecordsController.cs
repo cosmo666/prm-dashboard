@@ -22,21 +22,22 @@ public class RecordsController : PrmControllerBase
         [FromQuery] PrmFilterParams filters,
         [FromQuery] int page = 1,
         [FromQuery] int size = 20,
-        [FromQuery] string sort = "service_date:desc")
+        [FromQuery] string sort = "service_date:desc",
+        CancellationToken ct = default)
     {
         var slug = GetTenantSlug();
-        var result = await _recordService.GetRecordsAsync(slug, filters, page, size, sort);
+        var result = await _recordService.GetRecordsAsync(slug, filters, page, size, sort, ct);
         return Ok(result);
     }
 
     [HttpGet("records/{id:int}/segments")]
-    public async Task<IActionResult> GetSegments(int id, [FromQuery] string airport)
+    public async Task<IActionResult> GetSegments(int id, [FromQuery] string airport, CancellationToken ct)
     {
         if (string.IsNullOrEmpty(airport))
             return BadRequest("The 'airport' query parameter is required.");
 
         var slug = GetTenantSlug();
-        var result = await _recordService.GetSegmentsAsync(slug, id, airport);
+        var result = await _recordService.GetSegmentsAsync(slug, id, airport, ct);
         return Ok(result);
     }
 }

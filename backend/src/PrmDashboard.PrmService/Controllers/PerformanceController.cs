@@ -18,34 +18,34 @@ public class PerformanceController : PrmControllerBase
     }
 
     [HttpGet("duration-distribution")]
-    public async Task<IActionResult> GetDurationDistribution([FromQuery] PrmFilterParams filters)
+    public async Task<IActionResult> GetDurationDistribution([FromQuery] PrmFilterParams filters, CancellationToken ct)
     {
         var slug = GetTenantSlug();
-        var result = await _performanceService.GetDurationDistributionAsync(slug, filters);
+        var result = await _performanceService.GetDurationDistributionAsync(slug, filters, ct);
         return Ok(result);
     }
 
     [HttpGet("duration-stats")]
-    public async Task<IActionResult> GetDurationStats([FromQuery] PrmFilterParams filters)
+    public async Task<IActionResult> GetDurationStats([FromQuery] PrmFilterParams filters, CancellationToken ct)
     {
         var slug = GetTenantSlug();
-        var result = await _performanceService.GetDurationStatsAsync(slug, filters);
+        var result = await _performanceService.GetDurationStatsAsync(slug, filters, ct);
         return Ok(result);
     }
 
     [HttpGet("no-shows")]
-    public async Task<IActionResult> GetNoShows([FromQuery] PrmFilterParams filters)
+    public async Task<IActionResult> GetNoShows([FromQuery] PrmFilterParams filters, CancellationToken ct)
     {
         var slug = GetTenantSlug();
-        var result = await _performanceService.GetNoShowsAsync(slug, filters);
+        var result = await _performanceService.GetNoShowsAsync(slug, filters, ct);
         return Ok(result);
     }
 
     [HttpGet("pause-analysis")]
-    public async Task<IActionResult> GetPauseAnalysis([FromQuery] PrmFilterParams filters)
+    public async Task<IActionResult> GetPauseAnalysis([FromQuery] PrmFilterParams filters, CancellationToken ct)
     {
         var slug = GetTenantSlug();
-        var result = await _performanceService.GetPauseAnalysisAsync(slug, filters);
+        var result = await _performanceService.GetPauseAnalysisAsync(slug, filters, ct);
         return Ok(result);
     }
 }

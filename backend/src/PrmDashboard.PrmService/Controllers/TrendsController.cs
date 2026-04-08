@@ -18,34 +18,34 @@ public class TrendsController : PrmControllerBase
     }
 
     [HttpGet("daily")]
-    public async Task<IActionResult> GetDaily([FromQuery] PrmFilterParams filters)
+    public async Task<IActionResult> GetDaily([FromQuery] PrmFilterParams filters, CancellationToken ct)
     {
         var slug = GetTenantSlug();
-        var result = await _trendService.GetDailyAsync(slug, filters);
+        var result = await _trendService.GetDailyAsync(slug, filters, ct);
         return Ok(result);
     }
 
     [HttpGet("monthly")]
-    public async Task<IActionResult> GetMonthly([FromQuery] PrmFilterParams filters)
+    public async Task<IActionResult> GetMonthly([FromQuery] PrmFilterParams filters, CancellationToken ct)
     {
         var slug = GetTenantSlug();
-        var result = await _trendService.GetMonthlyAsync(slug, filters);
+        var result = await _trendService.GetMonthlyAsync(slug, filters, ct);
         return Ok(result);
     }
 
     [HttpGet("hourly")]
-    public async Task<IActionResult> GetHourly([FromQuery] PrmFilterParams filters)
+    public async Task<IActionResult> GetHourly([FromQuery] PrmFilterParams filters, CancellationToken ct)
     {
         var slug = GetTenantSlug();
-        var result = await _trendService.GetHourlyAsync(slug, filters);
+        var result = await _trendService.GetHourlyAsync(slug, filters, ct);
         return Ok(result);
     }
 
     [HttpGet("requested-vs-provided")]
-    public async Task<IActionResult> GetRequestedVsProvided([FromQuery] PrmFilterParams filters)
+    public async Task<IActionResult> GetRequestedVsProvided([FromQuery] PrmFilterParams filters, CancellationToken ct)
     {
         var slug = GetTenantSlug();
-        var result = await _trendService.GetRequestedVsProvidedAsync(slug, filters);
+        var result = await _trendService.GetRequestedVsProvidedAsync(slug, filters, ct);
         return Ok(result);
     }
 }

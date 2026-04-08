@@ -30,6 +30,13 @@ public class AirportAccessMiddleware
             return;
         }
 
+        // Unauthenticated: defer to [Authorize] which returns 401
+        if (context.User.Identity?.IsAuthenticated != true)
+        {
+            await _next(context);
+            return;
+        }
+
         var airportParam = context.Request.Query["airport"].FirstOrDefault();
         if (string.IsNullOrEmpty(airportParam))
         {

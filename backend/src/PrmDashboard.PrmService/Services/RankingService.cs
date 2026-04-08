@@ -19,15 +19,17 @@ public class RankingService : BaseQueryService
     /// Top airlines by distinct service count.
     /// </summary>
     public async Task<RankingsResponse> GetTopAirlinesAsync(
-        string tenantSlug, PrmFilterParams filters, int limit = 10)
+        string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         int total = deduped.Count;
         var items = deduped
@@ -50,15 +52,17 @@ public class RankingService : BaseQueryService
     /// Top flights by distinct service count.
     /// </summary>
     public async Task<RankingsResponse> GetTopFlightsAsync(
-        string tenantSlug, PrmFilterParams filters, int limit = 10)
+        string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         int total = deduped.Count;
         var items = deduped
@@ -80,13 +84,16 @@ public class RankingService : BaseQueryService
     /// <summary>
     /// Agent rankings: PRM count, avg duration, top service/airline, days active.
     /// </summary>
+    // TODO(perf): materializes filtered rows into memory then aggregates in C#.
+    // Acceptable for POC scale (~15k rows per tenant). For production, rewrite as
+    // raw SQL with ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) for dedup.
     public async Task<AgentRankingsResponse> GetTopAgentsAsync(
-        string tenantSlug, PrmFilterParams filters, int limit = 10)
+        string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        var rows = await query.ToListAsync();
+        var rows = await query.ToListAsync(ct);
 
         // Group all rows by AgentNo (skip nulls)
         var agentGroups = rows
@@ -143,15 +150,17 @@ public class RankingService : BaseQueryService
     /// All service types by distinct count (no limit).
     /// </summary>
     public async Task<RankingsResponse> GetTopServicesAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         int total = deduped.Count;
         var items = deduped

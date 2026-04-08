@@ -21,9 +21,10 @@ public class RecordService : BaseQueryService
     /// </summary>
     public async Task<PaginatedResponse<PrmRecordDto>> GetRecordsAsync(
         string tenantSlug, PrmFilterParams filters,
-        int page = 1, int pageSize = 20, string sort = "service_date:desc")
+        int page = 1, int pageSize = 20, string sort = "service_date:desc",
+        CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
 
         // Dedup: find the MIN(row_id) per distinct id from filtered set.
         // EF Core 8 cannot translate .GroupBy(id).Select(g => g.OrderBy(...).First()) directly,
@@ -46,7 +47,7 @@ public class RecordService : BaseQueryService
             _ => deduped.OrderByDescending(r => r.ServiceDate).ThenByDescending(r => r.StartTime)
         };
 
-        int totalCount = await deduped.CountAsync();
+        int totalCount = await deduped.CountAsync(ct);
         int totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling((double)totalCount / pageSize);
 
         var items = await deduped
@@ -58,7 +59,7 @@ public class RecordService : BaseQueryService
                 r.Service, r.SeatNumber, r.PosLocation, r.NoShowFlag,
                 r.LocName, r.Arrival, r.Airline, r.Departure, r.Requested,
                 r.ServiceDate))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         _logger.LogInformation("Records for {Slug}/{Airport}: page {Page}/{TotalPages}, {Count} items",
             tenantSlug, filters.Airport, page, totalPages, items.Count);
@@ -71,14 +72,14 @@ public class RecordService : BaseQueryService
     /// Returns computed active minutes per segment.
     /// </summary>
     public async Task<List<PrmSegmentDto>> GetSegmentsAsync(
-        string tenantSlug, int prmId, string airport)
+        string tenantSlug, int prmId, string airport, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
 
         var rows = await db.PrmServices.AsNoTracking()
             .Where(r => r.Id == prmId && r.LocName == airport)
             .OrderBy(r => r.RowId)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var segments = rows.Select(r => new PrmSegmentDto(
             r.RowId,

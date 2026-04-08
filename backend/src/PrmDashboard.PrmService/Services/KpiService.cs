@@ -19,14 +19,18 @@ public class KpiService : BaseQueryService
     /// Total PRM count, agent counts, avg per agent per day, avg duration,
     /// fulfillment %, and previous-period comparisons.
     /// </summary>
+    // TODO(perf): materializes filtered rows into memory then aggregates in C#.
+    // Acceptable for POC scale (~15k rows per tenant). For production, rewrite as
+    // raw SQL with ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) for dedup.
     public async Task<KpiSummaryResponse> GetSummaryAsync(
         string tenantSlug,
-        PrmFilterParams filters)
+        PrmFilterParams filters,
+        CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        var rows = await query.ToListAsync();
+        var rows = await query.ToListAsync(ct);
         var currentMetrics = ComputeSummaryMetrics(rows, filters);
 
         // Previous period comparison (only when date range is specified)
@@ -51,7 +55,7 @@ public class KpiService : BaseQueryService
                 AgentNo = filters.AgentNo
             };
 
-            var prevRows = await ApplyFilters(db, prevFilters).ToListAsync();
+            var prevRows = await ApplyFilters(db, prevFilters).ToListAsync(ct);
             var prevMetrics = ComputeSummaryMetrics(prevRows, prevFilters);
             prevTotalPrm = prevMetrics.TotalPrm;
             prevAvgPerAgentPerDay = prevMetrics.AvgPerAgentPerDay;
@@ -79,18 +83,23 @@ public class KpiService : BaseQueryService
     /// <summary>
     /// Groups services by PrmAgentType (SELF / OUTSOURCED) after dedup by id.
     /// </summary>
+    // TODO(perf): materializes filtered rows into memory then aggregates in C#.
+    // Acceptable for POC scale (~15k rows per tenant). For production, rewrite as
+    // raw SQL with ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) for dedup.
     public async Task<HandlingDistributionResponse> GetHandlingDistributionAsync(
         string tenantSlug,
-        PrmFilterParams filters)
+        PrmFilterParams filters,
+        CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        // Dedup: take first row per id, then group by agent type
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         var groups = deduped
             .GroupBy(r => r.PrmAgentType)
@@ -112,18 +121,22 @@ public class KpiService : BaseQueryService
     /// </summary>
     public async Task<RequestedVsProvidedKpiResponse> GetRequestedVsProvidedAsync(
         string tenantSlug,
-        PrmFilterParams filters)
+        PrmFilterParams filters,
+        CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        // Dedup: first row per id for requested count
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         int totalProvided = deduped.Count;
+        // `Requested` is per-service-row: whether this specific PRM service was pre-requested (1) or walk-up (0).
+        // Sum after dedup = total pre-requested services in the filtered set.
         int totalRequested = deduped.Sum(r => r.Requested);
         int providedAgainstRequested = Math.Min(totalProvided, totalRequested);
 

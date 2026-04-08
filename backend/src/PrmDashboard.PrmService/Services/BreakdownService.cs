@@ -17,20 +17,25 @@ public class BreakdownService : BaseQueryService
     /// <summary>
     /// Matrix: months x service types, COUNT DISTINCT id per cell.
     /// </summary>
+    // TODO(perf): materializes filtered rows into memory then aggregates in C#.
+    // Acceptable for POC scale (~15k rows per tenant). For production, rewrite as
+    // raw SQL with ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) for dedup.
     public async Task<ServiceTypeMatrixResponse> GetByServiceTypeAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         var serviceTypes = deduped.Select(r => r.Service).Distinct().OrderBy(s => s).ToList();
 
-        var rows = deduped
+        var matrixRows = deduped
             .GroupBy(r => new { r.ServiceDate.Year, r.ServiceDate.Month })
             .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
             .Select(g =>
@@ -47,24 +52,29 @@ public class BreakdownService : BaseQueryService
             .ToList();
 
         _logger.LogInformation("Service type matrix for {Slug}/{Airport}: {Types} types x {Months} months",
-            tenantSlug, filters.Airport, serviceTypes.Count, rows.Count);
+            tenantSlug, filters.Airport, serviceTypes.Count, matrixRows.Count);
 
-        return new ServiceTypeMatrixResponse(serviceTypes, rows);
+        return new ServiceTypeMatrixResponse(serviceTypes, matrixRows);
     }
 
     /// <summary>
     /// Sankey: AgentType -> Service -> top flights. Dedup by id (first row).
     /// </summary>
+    // TODO(perf): materializes filtered rows into memory then aggregates in C#.
+    // Acceptable for POC scale (~15k rows per tenant). For production, rewrite as
+    // raw SQL with ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) for dedup.
     public async Task<SankeyResponse> GetByAgentTypeAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         var nodes = new Dictionary<string, int>();
         var links = new Dictionary<(string, string), int>();
@@ -111,15 +121,17 @@ public class BreakdownService : BaseQueryService
     /// Breakdown by airline — group by Airline, COUNT DISTINCT id, percentage.
     /// </summary>
     public async Task<BreakdownResponse> GetByAirlineAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         int total = deduped.Count;
         var items = deduped
@@ -141,15 +153,17 @@ public class BreakdownService : BaseQueryService
     /// Breakdown by POS location — skip nulls/empty, COUNT DISTINCT id.
     /// </summary>
     public async Task<BreakdownResponse> GetByLocationAsync(
-        string tenantSlug, PrmFilterParams filters)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         var withLocation = deduped.Where(r => !string.IsNullOrEmpty(r.PosLocation)).ToList();
         int total = withLocation.Count;
@@ -173,15 +187,17 @@ public class BreakdownService : BaseQueryService
     /// Route breakdown — group by Departure+Arrival (skip nulls), top N.
     /// </summary>
     public async Task<RouteBreakdownResponse> GetByRouteAsync(
-        string tenantSlug, PrmFilterParams filters, int limit = 10)
+        string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug);
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
         var query = ApplyFilters(db, filters);
 
-        var deduped = await query
+        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
             .GroupBy(r => r.Id)
             .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToListAsync();
+            .ToList();
 
         var withRoute = deduped
             .Where(r => !string.IsNullOrEmpty(r.Departure) && !string.IsNullOrEmpty(r.Arrival))
