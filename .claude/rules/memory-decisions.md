@@ -2,100 +2,71 @@
 
 <!-- Claude: Add dated entries when architectural or technical decisions are made. Format: YYYY-MM-DD. -->
 
-## Architecture
-- 2026-03-18: Project scaffolding created — .claude config, rules, agents, skills set up before stack decision
-- 2026-03-18: Memory layer uses split files in .claude/rules/ — profile, preferences, decisions, sessions, private
+## PRM Dashboard POC (this project)
 
-## Stack Choices
-- 2026-03-23: Backend — Python 3.11+ / FastAPI + SQLAlchemy 2.0 + Alembic + Pydantic 2.0
-- 2026-03-23: Frontend — React 19 + TypeScript + Vite 8 + Tailwind CSS 4 + React Router 7 + TanStack React Query
-- 2026-03-23: Database — SQLite for dev (SQLAlchemy ORM, swappable to PostgreSQL for prod)
-- 2026-03-23: Observability — OpenTelemetry + Prometheus + structlog from day one
-- 2026-03-23: Linting — Ruff (backend), ESLint (frontend)
+### 2026-04-08 — Project kickoff and stack
+- Backend: .NET 8 + ASP.NET Core Web API + EF Core 8 (Pomelo MySQL provider) + MySqlConnector for raw SQL + BCrypt.Net-Next + JWT + Ocelot API Gateway
+- Frontend: Angular 17 (standalone components, no NgModules) + Angular Material 3 + Apache ECharts via ngx-echarts + NgRx Signal Store + TypeScript strict mode
+- Database: MySQL 8.0 (per-tenant isolation — each tenant has its own database, optionally on a different MySQL instance)
+- Container orchestration: Docker Compose for local dev
 
-## Conventions
-- 2026-03-23: Domain modules under backend/modules/ — each with models/, schemas/, services/
-- 2026-03-23: pendulum for all timezone-aware datetime handling
-- 2026-03-23: Central model registry (app/models_registry.py) for Alembic migration discovery
+### 2026-04-08 — Multi-tenancy architecture
+- **Tenant isolation strategy:** master DB (`prm_master`) holds tenants + employees + employee_airports + refresh_tokens; each tenant has its own isolated database containing only `prm_services` and `schema_migrations`
+- **Tenant DB hosts can differ** — `tenants.db_host` is per-row, so one tenant can run on a separate MySQL instance from another
+- **Tenant resolution** — subdomain (e.g., `aeroground.prm-app.com`) → slug → Gateway adds `X-Tenant-Slug` header → TenantService looks up by slug → decrypts password → returns connection string
+- **Runtime tenant onboarding** — attach a new DB, insert a row in `prm_master.tenants`, the first request triggers `SchemaMigrator.RunAsync()` which creates all tables from embedded SQL migration files. No code changes, no restarts, no manual DDL
+- **Credential storage** — tenant DB passwords stored AES-256 encrypted at rest in the master DB, decrypted in-memory by TenantService
+- **Connection caching** — TenantService caches decrypted tenant connections in-memory for 5 minutes keyed on slug
 
-## Hour-Level Roster (2026-03-24)
-- HourSlot model as atomic unit (1 employee x 1 hour x 1 task/rest) — not DutyBlock, because each hour can be different skill
-- Two-pass assigner: Pass 1 assigns primary skill demand, Pass 2 gap-fills with cross-skill demand
-- Fatigue scoring: simplified Three-Process Model (not full SAFTE) — Sleep Debt (40%), Circadian (35%), Wake Duration (25%)
-- roster_mode="hourly" and fatigue_scoring_enabled=true are system-enforced defaults — always on, not user-configurable. Hidden from frontend, blocked from API (SKIP_FIELDS)
-- split_shift_preference on EmployeePreference: "cannot" excludes from hourly, "prefer_not" gets -15 priority penalty
-- All hour-slot datetimes use pendulum (timezone-aware UTC) — not naive datetime.combine
-- Fairness score is now composite: hours_variance (40%) + split_variance (30%) + fatigue_variance (30%)
+### 2026-04-08 — Schema evolution strategy
+- **Versioned migrations over manual ALTER.** Migration files live in `backend/src/PrmDashboard.TenantService/Schema/Migrations/` as embedded resources (e.g., `001_create_prm_services.sql`, `002_add_cost_center.sql`)
+- **`schema_migrations` tracker table** lives in each tenant DB. Auto-created by `SchemaMigrator` on first run
+- **Applied migrations are immutable.** NEVER edit a committed migration file — always add a new one. Editing is a data-integrity violation because tenant DBs already have the old version applied
+- **Migrations run in lexicographic order** by filename. Zero-padded 3-digit prefix (`001`, `002`, ...) enforces the order
+- **Transactional per migration** — if the DDL fails, the transaction rolls back and the tracker row is not inserted, so the next request retries
+- **Ordering guarantee** — a semaphore guards `SchemaMigrator.RunAsync()` to prevent two concurrent first-hit requests for the same tenant from racing
 
-## Hourly Roster Bug Fixes (2026-03-24)
-- Hourly candidates must pass full rule engine (engine.can_assign) — can_assign_hour() is only a fast pre-filter
-- Phase 4a and 4b are mutually exclusive per employee per date — has_shift_on() and has_slot_at() cross-check
-- Daily hours checks use shift_entry_hours_on() (shift entries only) + task_hours_on_date() (slot hours) to avoid double-counting hourly_shift mirror entries
-- _slot_start_dt() handles midnight-crossing: hours 0-5 with late-night siblings (>=22) → next calendar day; hour 24 → next day 00:00
-- _ensure_hourly_entry stores start_time/end_time (naive, matching shift_assigner format) so last_shift_end_before() works for rest gap
-- Anomaly checker accepts day_assignments parameter; checks shift+hourly time overlap (not just same-date), combined hours/consecutive days, night hour counting (3+ night-hour slots = 1 night shift equivalent)
-- OT in hourly mode creates per-hour DayAssignment slots (assign_overtime_hourly) instead of fixed 2h ShiftAssignment blocks
-- Auto-allocator pool skips duplicate employee entries (keeps first, ignores second)
-- _slot_start_dt early-morning fix: narrowed push window to hours 0-5 (not 0-11), sibling check >= 22 (not >= 12) to avoid false positive on genuine early-morning demand coexisting with afternoon flights
+### 2026-04-08 — Authentication
+- **Access token** — JWT signed HS256 with secret from config, 15-minute lifetime, stored in-memory only (never localStorage) to resist XSS
+- **Refresh token** — random 500-char token stored hashed in `refresh_tokens` table, delivered to client as httpOnly + Secure + SameSite=Strict cookie, 7-day lifetime. Resists XSS and CSRF
+- **JWT claims:** `sub` (employee id), `tenant_id`, `tenant_slug`, `name`, `airports` (list of IATA codes)
+- **Password hashing:** BCrypt.Net-Next with default work factor 11
+- **Auto-refresh on 401:** Angular `AuthInterceptor` detects 401, calls `/auth/refresh` with the cookie, retries the original request with the new token. Transparent to feature code
+- **Logout** — revokes the refresh token server-side (sets `revoked = TRUE`) and clears the access token client-side
 
-## Standby Assignment — Phase 6 (2026-03-24)
-- Standby is surplus-driven, not percentage-based: surplus = available - demand. Emerges from math, no config needed
-- Two-stage selection: Stage 1 assigns tasks to employees with most need, Stage 2 assigns standby to remaining surplus
-- Standby priority: 11-factor scorer — effectiveness (skill breadth, proficiency, seniority), safety (fatigue zones, rest recency, trailing hours), fairness (standby day balance, consecutive streak limit, task-ratio floor 70%, weekend/holiday balance)
-- Two-metric coverage: task_coverage (tasks/demand) + deployed_coverage (task+standby/available). OT triggers only on real_shortages (demand > available)
-- Standby hours count toward duty window (on-site) but NOT toward task hour cap (not active work)
-- Standby slot_type="standby" in DayAssignment/SlotAssignment — same model as task/rest/overtime
-- Auto-allocator includes standby windows in availability pool, promotes standby→task on flight task activation with audit trail
-- New violation codes: E037 (standby fatigue blocked), E038 (consecutive standby exceeded), W015 (task ratio low), W016 (deployed coverage low), W017 (zero buffer warning), I007 (weekend standby imbalance)
-- Roster model: deployed_coverage_pct + total_standby_hours columns added
-- Scenario compare: slot-level hourly diff with added/removed/changed actions, mini-timeline bar rendering
+### 2026-04-08 — RBAC
+- **Airport-level access control, not role-based.** Each employee has an explicit list of airports in `employee_airports` (copied into the JWT `airports` claim at login)
+- **Server-side enforcement** — PRM Service middleware validates `?airport=X` against the JWT claim on every request, 403 on mismatch
+- **Client-side filtering** — `AirportSelectorComponent` only shows airports from `AuthStore.employee()!.airports`, disabled dropdown if the user has only one airport
+- **No role column in employees table** — the POC doesn't distinguish between managers/admins/agents. All authenticated users see the dashboards for their allowed airports
 
-## API Hardening (2026-03-25)
-- Slot override endpoint (PUT): must check roster exists before passing to validator, eagerly load hour_slots for reliable parent entry recalculation
-- Slot create endpoint (POST): must validate skill_id exists in DB, use slot_start_dt for midnight-crossing datetimes (not manual pendulum.datetime), recalculate parent entry summary after adding slot
-- Slot delete endpoint (DELETE): must recalculate parent entry summary after deletion (total_duty_hours, total_rest_hours, num_task_slots, num_rest_slots, is_split_shift)
-- Both endpoints: skill_id > 0 check is insufficient — must verify the skill record exists via db.get(Skill, id)
-- Roster status guard: all slot mutations (PUT/POST/DELETE) block on non-draft rosters unless force=true
-- Slot type validation: constrained to enum {task, rest, overtime, standby} — rejects arbitrary strings
-- Audit entity_id: flush new_slot before creating AuditLog so entity_id is populated (was 0)
+### 2026-04-08 — Dedup and duration calculations
+- **Pause/resume pattern** — when a PRM service is paused and resumed, the source system writes multiple rows with the same `prm_services.id`. Aggregations must use `COUNT(DISTINCT id)` to count services, not `COUNT(*)`
+- **Duration = sum of active segments per id.** Handled in SQL with `GROUP BY id` and case-when for paused vs completed rows. `TimeHelpers.CalculateActiveMinutes()` handles the single-row case; multi-row summation is SQL-side
+- **Time encoding** — `start_time`, `paused_at`, `end_time` are INT columns storing HHMM (e.g., `237` = 02:37, `1430` = 14:30). NOT minutes-since-midnight. Conversion: `(hhmm / 100) * 60 + (hhmm % 100)`
+- **Midnight crossing** — POC assumes services do not cross midnight. If real data later includes midnight-crossing services, add explicit handling in the SQL aggregation layer
 
-## Standby Assigner Hardening (2026-03-25)
-- Engine validation must be per-hour inside _assign_standby_day, not per-day at scoring loop — employee blocked at hour 23 (night restriction) should still get standby at hour 7
-- split_shift_preference="cannot" should NOT exclude from standby — standby is a contiguous window, not a split shift
-- _count_holiday_standby must filter by month (reference_date parameter) — was counting all months
-- Fatigue scoring uses representative_hour parameter (thinnest coverage hour), not hardcoded 10
-- surplus_by_date must compare headcount vs peak concurrent demand (max across hours), not headcount vs total person-hours
-- total_regular_hours must NOT subtract standby hours — total_task_hours already excludes standby by definition
-- standby_off_pct guard: check (regular + standby) > 0, not just regular > 0
-- min_standby_per_day requires Phase 4 pre-reservation pass to work (current surplus model can't enforce it post-assignment)
+### 2026-04-08 — Docker Compose setup
+- **MySQL init scripts** via `/docker-entrypoint-initdb.d` volume mount. `01-master-schema.sql` and `02-tenant-schema.sql` run once at first container boot. Later seeds (03-05) added in Phase 6
+- **Authenticated healthcheck** — `mysqladmin ping -u root -p$MYSQL_ROOT_PASSWORD` with `start_period: 30s` and 10 retries. Anonymous ping can falsely report healthy before init scripts complete on MySQL 8
+- **depends_on: service_healthy** — auth/tenant/prm services wait for MySQL to be healthy. Gateway uses `service_started` for the backend services (no healthchecks yet — TODO in later phase)
+- **.NET services on port 8080 internally, exposed via host ports** per `.env` (gateway 5000, auth 5001, tenant 5002, prm 5003)
+- **Legacy `.sln` solution format** instead of .NET 10's new `.slnx` — Dockerfile `COPY` patterns expect the classic extension
 
-## Legacy Gap Closure (2026-03-25)
-- SystemConfig table replaces legacy drpControlFileDao control file pattern — typed key-value store (string/number/boolean/json), categorized, with audit trail
-- Multi-flight airline grouping: auto-allocator sorts tasks by (priority, airline_id, time) and scores +8 affinity bonus for same-airline continuity
-- Shift rounding buffers: shift_in_round_down_minutes / shift_out_round_up_minutes on ShiftRules (legacy: SHIFT_IN_ROUND_DOWN / SHIFT_OUT_ROUND_UP)
-- IDEALTIME_BETWEENSERVICE mapped to SystemConfig key ideal_time_between_service_minutes (default 30)
-- New by-airline allocation endpoint: GET /api/v1/allocations/by-airline/{date} — groups assignments by airline, shows multi-flight chains per employee
+### 2026-04-08 — Frontend state management
+- **NgRx Signal Store for shared state** (auth, tenant, filter). Component signals for local state
+- **Filter state synced to URL query params** — reloads and shared URLs preserve the user's selections
+- **No `localStorage` for tokens** — access token in memory only, refresh in httpOnly cookie
+- **All API calls via `ApiClient` wrapper** — feature code never injects `HttpClient` directly
+- **All charts wrap `BaseChartComponent`** — guarantees consistent loading skeleton, empty state, and card layout
 
-## Roster Optimization (2026-03-26)
-- OR-Tools CP-SAT constraint programming solver as optional alternative to greedy pipeline
-- Three new files: roster_optimizer.py (model builder + solver + solution extractor), optimizer_constraints.py (18 hard constraint functions), optimizer_objectives.py (8 soft objective functions)
-- Optimizer replaces greedy Phases 3-8 (rest days, shift/hour assignment, standby, overtime) with a single mathematical solve
-- Decision variables: x[e,d,h,s] (task), ot[e,d,h,s] (overtime), sb[e,d,h] (standby), r[e,d] (rest day), plus auxiliary works/night_work/has_ot/first_hour/last_hour
-- Variable pruning: only create where skill match + demand exists + not on leave + fatigue < red zone — keeps model sparse (~30-50K vars for 40 employees, 31 days)
-- Hard constraints map 1:1 to existing rule engine validators (qualification, double-booking, daily/weekly/monthly hours, rest gap, duty window, night limits, OT caps, compliance, women night group, split shifts, skill switches, demand upper bound)
-- Soft objective weights configurable via SystemConfig (coverage=1000, OT penalty=50, fairness=200, preference=30, fatigue=10, contiguity=15, weekend=100, standby=5)
-- Greedy fallback: ImportError (ortools not installed), solver timeout, INFEASIBLE status, or any exception → falls through to existing greedy pipeline
-- Output format: same DayAssignment/SlotAssignment structures → Phases 5 (coverage), 9 (anomaly), 10 (save) run unchanged
-- API: optimizer + optimizer_time_limit params on POST /rosters/generate. SystemConfig key roster_optimizer_mode for default
-- Frontend: optimizer mode dropdown (Greedy/CP-SAT), time limit input, solver stats display, generation method badge on roster cards
-- ortools is an optional dependency ([project.optional-dependencies] optimizer = ["ortools>=9.10"])
-- Roster model gains generation_method column ("greedy" or "cpsat") via Alembic migration 31d1e216c938
+### 2026-04-08 — Review process
+- Adopted subagent-driven development with two-stage review (spec compliance → code quality) for plan execution. Review checkpoints after each phase, user approval required before proceeding
 
-## Previous Month Carryover (2026-04-06)
-- Phase 1b in roster_generator loads prior month's latest roster (published preferred, draft fallback) into RosterState before solving
-- Populates: last_shift_end (rest gap on day 1), last_rest_day (priority scorer proximity bonus), prev_month_hours, prev_month_ot_hours
-- Loads tail entries (last 7 days) into entries list — enables consecutive_working_days_before(), hours_worked_in_week(), night streak to work across month boundary
-- Loads tail hour_slots for hourly roster cross-boundary awareness
-- consecutive_working_days_before() fixed to include "hourly_shift" entry_type (was only counting "shift")
-- Graceful no-op when no prior roster exists — all carryover fields stay at defaults (None/0.0/empty)
-- Integration tests now track roster IDs and delete them in fixture teardown — prevents DB bloat from repeated test runs
+---
+
+## Legacy entries (pre-project, kept for historical context)
+
+### 2026-03-18
+- Project scaffolding created — .claude config, rules, agents, skills set up before stack decision
+- Memory layer uses split files in .claude/rules/ — profile, preferences, decisions, sessions, private

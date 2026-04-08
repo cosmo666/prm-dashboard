@@ -1,25 +1,137 @@
-# .NET
-bin/
-obj/
+# ============================================================
+# .NET / C#
+# ============================================================
+[Bb]in/
+[Oo]bj/
 *.user
 *.suo
+*.userprefs
 .vs/
+*.pdb
+*.exe
+*.dll
+*.nupkg
+*.snupkg
+*.cache
+project.lock.json
+project.fragment.lock.json
+artifacts/
+BenchmarkDotNet.Artifacts/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+*.vspx
+*.sap
+*.publish.xml
+*.azurePubxml
+*.pubxml
+*.publishproj
+StyleCopReport.xml
+TestResult.xml
+_TeamCity*
+*.coverage
+*.coveragexml
 
-# Angular
+# ============================================================
+# Angular / Node
+# ============================================================
 frontend/node_modules/
 frontend/dist/
 frontend/.angular/
+frontend/coverage/
+frontend/junit.xml
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
 
-# Environment
+# ============================================================
+# Environment & secrets
+# ============================================================
 .env
-*.db
+.env.local
+.env.*.local
+.env.example
+*.pem
+*.key
+secrets.json
+appsettings.Local.json
 
-# IDE
+# ============================================================
+# IDE / editor
+# ============================================================
 .idea/
 .vscode/
+.fleet/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
 
-# Docker
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ============================================================
+# Docker / MySQL local state
+# ============================================================
 docker-data/
+mysql-data/
+*.db
+*.sqlite
+*.sqlite3
 
+# ============================================================
+# Logs & temp
+# ============================================================
+logs/
+*.log
+tmp/
+temp/
+.tmp/
+
+# ============================================================
 # Superpowers (local agent state)
+# ============================================================
 .superpowers/
+
+# ============================================================
+# Test / coverage output
+# ============================================================
+TestResults/
+coverage/
+*.cobertura.xml
+junit.xml
+lcov.info
+
+# ============================================================
+# Generated / build output
+# ============================================================
+*.tsbuildinfo
+.next/
+.nuxt/
+.turbo/

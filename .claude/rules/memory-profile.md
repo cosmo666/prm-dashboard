@@ -12,6 +12,7 @@
 - [to be filled as learned]
 
 ## Working Context
-- Primary project: RMS (Rota Management System)
-- Other projects: Pawgo (AI-powered pet grooming CRM)
-- Environment: Windows 11, Git Bash, VS Code, Docker Desktop
+- Primary project: PRM Dashboard — multi-tenant analytics POC for airport Passenger with Reduced Mobility ground handling
+- Tech preference: .NET 8 backend, Angular 17 frontend, MySQL 8 with per-tenant DB isolation
+- Environment: Windows 11, Git Bash (default shell for Claude tools), VS Code, Docker Desktop
+- GitHub: https://github.com/cosmo666/prm-dashboard

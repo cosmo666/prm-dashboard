@@ -19,7 +19,7 @@
 ## What to Test
 - Happy path + edge cases for every public function
 - Error paths: invalid inputs, missing data, permission denied
-- RMS-specific edge cases: DST transitions, midnight-crossing shifts, holiday overlaps, part-time hour limits
+- PRM-specific edge cases: pause/resume dedup (multiple rows per `id`), HHMM time encoding boundaries (e.g., 0830 vs 830), midnight-crossing services, multi-tenant isolation (data from tenant A never visible to tenant B), airport RBAC (403 on unauthorized airport), schema migration ordering, JWT refresh races
 - Integration tests for API endpoints with real DB (not mocks)
 
 ## What NOT to Test

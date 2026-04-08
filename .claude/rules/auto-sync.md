@@ -4,13 +4,15 @@
 After ANY of these changes, update all affected files before finishing the task:
 
 ### Stack or dependency changes
-- New dependency added to `pyproject.toml` or `package.json` → update Tech Stack in CLAUDE.md
-- Framework or library swapped → update CLAUDE.md Tech Stack + relevant rule file (python-backend.md / react-frontend.md)
+- New `<PackageReference>` added to a `.csproj` → update Tech Stack in CLAUDE.md and the dependencies section in `dotnet-backend.md`
+- New entry in `frontend/package.json` → update Tech Stack in CLAUDE.md and `angular-frontend.md`
+- Framework or library swapped → update CLAUDE.md Tech Stack + relevant rule file (`dotnet-backend.md` / `angular-frontend.md`)
 
 ### Directory structure changes
-- New module added under `backend/modules/` → update Key Directories in CLAUDE.md
-- New page/component in `frontend/src/` → update Key Directories in CLAUDE.md
+- New project added under `backend/src/` → update Key Directories in CLAUDE.md and `architecture.md`
+- New feature added under `frontend/src/app/features/` → update Key Directories in CLAUDE.md
 - New top-level directory → update Key Directories in CLAUDE.md
+- New SQL migration file added under `backend/src/PrmDashboard.TenantService/Schema/Migrations/` → no CLAUDE.md change, but verify it's listed as `<EmbeddedResource>` in the `.csproj`
 
 ### Architecture decisions
 - Any design decision made → add to Architecture Decisions in CLAUDE.md + memory-decisions.md
@@ -28,12 +30,14 @@ After ANY of these changes, update all affected files before finishing the task:
 ## Files That Must Stay in Sync
 | Source of Truth | Mirrors |
 |----------------|---------|
-| `pyproject.toml` + `package.json` | CLAUDE.md Tech Stack, python-backend.md, react-frontend.md |
-| Actual directory tree | CLAUDE.md Key Directories |
+| `backend/src/**/*.csproj` + `frontend/package.json` | CLAUDE.md Tech Stack, `dotnet-backend.md`, `angular-frontend.md` |
+| Actual directory tree | CLAUDE.md Key Directories, `architecture.md` File map |
 | `.claude/agents/*.md` | CLAUDE.md Claude Code Infrastructure → Agents |
 | `.claude/skills/*/SKILL.md` | CLAUDE.md Claude Code Infrastructure → Skills |
 | `.claude/hooks/*` | CLAUDE.md Claude Code Infrastructure → Hooks |
 | `.claude/rules/*.md` | CLAUDE.md Claude Code Infrastructure → Rules |
+| `docs/superpowers/specs/*.md` | Spec stays canonical; plan and CLAUDE.md may reference it |
+| `docs/superpowers/plans/*.md` | Plan stays canonical for execution; update tasks if scope shifts |
 
 ## How to Sync
 1. Make the primary change (code, config, agent, etc.)

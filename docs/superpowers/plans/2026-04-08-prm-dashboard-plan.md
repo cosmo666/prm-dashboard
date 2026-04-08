@@ -1321,15 +1321,28 @@ git commit -m "feat(auth): JWT authentication, login, refresh, logout, profile e
 
 ### Task 5: Tenant Service — Complete
 
+> **Multi-tenant onboarding contract:** Task 5 must make it possible to onboard a new tenant at runtime by (1) attaching a new MySQL database — possibly on a different MySQL instance — and (2) inserting one row in `prm_master.tenants`. No code changes, no restarts, no manual schema work. This is enforced by a migration runner (`SchemaMigrator`) that auto-applies versioned SQL migrations against any tenant database on first use.
+
 **Files:**
 - Create: `backend/src/PrmDashboard.TenantService/PrmDashboard.TenantService.csproj`
 - Create: `backend/src/PrmDashboard.TenantService/Program.cs`
 - Create: `backend/src/PrmDashboard.TenantService/Data/MasterDbContext.cs`
 - Create: `backend/src/PrmDashboard.TenantService/Services/TenantResolutionService.cs`
+- Create: `backend/src/PrmDashboard.TenantService/Services/SchemaMigrator.cs`
+- Create: `backend/src/PrmDashboard.TenantService/Schema/Migrations/001_create_prm_services.sql` (embedded resource)
 - Create: `backend/src/PrmDashboard.TenantService/Controllers/TenantController.cs`
 - Create: `backend/src/PrmDashboard.TenantService/appsettings.json`
 - Create: `backend/src/PrmDashboard.TenantService/appsettings.Development.json`
 - Create: `backend/src/PrmDashboard.TenantService/Dockerfile`
+
+**Multi-tenant design notes:**
+- `Tenant.GetConnectionString()` already supports arbitrary `db_host`/`db_port`/`db_name`/`db_user`/`db_password` — each tenant DB can live on a completely separate MySQL instance with different credentials. Nothing in the code assumes "same MySQL container".
+- `SchemaMigrator` runs idempotent versioned migrations. Every time `EnsureTenantReady()` is called for a tenant (on cache miss), it connects to that tenant's DB, creates the `schema_migrations` tracker table if missing, diffs against the embedded migration files, and runs any unapplied ones inside a transaction.
+- To add a new schema change in the future: drop a new file like `002_add_cost_center.sql` into `Schema/Migrations/`, commit, deploy. All existing and future tenants get it on next request. Never edit a committed migration file — always add a new one.
+- Migration file naming: zero-padded 3-digit version + snake_case description, e.g., `001_create_prm_services.sql`, `002_add_cost_center.sql`. The runner sorts by filename and processes in order.
+
+**Sub-task structure:**
+Steps 1-7 build the original Tenant Service (project, DbContext, resolution service, controller, config, Dockerfile). **New Steps 8-10 add the migration runner** before the commit step.
 
 - [ ] **Step 1: Create Tenant Service project**
 
@@ -1577,12 +1590,256 @@ COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "PrmDashboard.TenantService.dll"]
 ```
 
-- [ ] **Step 7: Build and commit**
+- [ ] **Step 7: Extract initial migration file**
+
+Create `backend/src/PrmDashboard.TenantService/Schema/Migrations/001_create_prm_services.sql`. This is the canonical DDL for tenant databases — the same schema as `database/init/02-tenant-schema.sql` but stripped of the `DELIMITER` / stored-procedure wrapper since we apply it to one DB at a time.
+
+```sql
+-- Tenant schema v001 — creates the prm_services table and its indexes
+-- Idempotent: CREATE TABLE IF NOT EXISTS is safe against existing tenants
+
+CREATE TABLE IF NOT EXISTS prm_services (
+    row_id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT NOT NULL,  -- source-system PRM service ID; can repeat across rows when paused/resumed (spec §3.3)
+    flight VARCHAR(20) NOT NULL,
+    flight_number INT NOT NULL,
+    agent_name VARCHAR(100) NULL,
+    agent_no VARCHAR(20) NULL,
+    passenger_name VARCHAR(200) NOT NULL,
+    prm_agent_type VARCHAR(20) NOT NULL DEFAULT 'SELF',
+    start_time INT NOT NULL,
+    paused_at INT NULL,
+    end_time INT NOT NULL,
+    service VARCHAR(20) NOT NULL,
+    seat_number VARCHAR(10) NULL,
+    scanned_by VARCHAR(50) NULL,
+    scanned_by_user VARCHAR(100) NULL,
+    remarks TEXT NULL,
+    pos_location VARCHAR(50) NULL,
+    no_show_flag VARCHAR(5) NULL,
+    loc_name VARCHAR(10) NOT NULL,
+    arrival VARCHAR(10) NULL,
+    airline VARCHAR(10) NOT NULL,
+    emp_type VARCHAR(20) NULL DEFAULT 'Employee',
+    departure VARCHAR(10) NULL,
+    requested INT NOT NULL DEFAULT 0,
+    service_date DATE NOT NULL,
+    INDEX idx_loc_date (loc_name, service_date),
+    INDEX idx_date_range (service_date, loc_name, airline),
+    INDEX idx_id (id),
+    INDEX idx_airline (airline),
+    INDEX idx_service (service),
+    INDEX idx_agent (agent_no),
+    INDEX idx_prm_type (prm_agent_type)
+);
+```
+
+Mark the file as embedded in the `.csproj`:
+
+```xml
+<ItemGroup>
+  <EmbeddedResource Include="Schema\Migrations\*.sql" />
+</ItemGroup>
+```
+
+- [ ] **Step 8: Create SchemaMigrator**
+
+`backend/src/PrmDashboard.TenantService/Services/SchemaMigrator.cs`:
+
+```csharp
+using System.Reflection;
+using MySqlConnector;
+
+namespace PrmDashboard.TenantService.Services;
+
+/// <summary>
+/// Applies versioned SQL migrations to a tenant database.
+/// Reads migration files from embedded resources (Schema/Migrations/*.sql),
+/// tracks applied versions in a per-tenant `schema_migrations` table, and
+/// runs any missing migrations in order inside a transaction.
+///
+/// Idempotent: safe to call on every cache miss. A tenant DB that already has
+/// all migrations applied is a no-op (~5ms for the tracker table read).
+///
+/// Thread-safety: guarded by a semaphore keyed on connection string so two
+/// concurrent first-hit requests for the same tenant don't race.
+/// </summary>
+public class SchemaMigrator
+{
+    private readonly ILogger<SchemaMigrator> _logger;
+    private static readonly SemaphoreSlim _migrationLock = new(1, 1);
+    private const string TrackerTableDdl = @"
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+            version VARCHAR(10) PRIMARY KEY,
+            applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )";
+
+    public SchemaMigrator(ILogger<SchemaMigrator> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task RunAsync(string connectionString, CancellationToken ct = default)
+    {
+        await _migrationLock.WaitAsync(ct);
+        try
+        {
+            await using var conn = new MySqlConnection(connectionString);
+            await conn.OpenAsync(ct);
+
+            // 1. Ensure tracker table exists
+            await using (var cmd = new MySqlCommand(TrackerTableDdl, conn))
+                await cmd.ExecuteNonQueryAsync(ct);
+
+            // 2. Read applied versions
+            var applied = new HashSet<string>();
+            await using (var cmd = new MySqlCommand("SELECT version FROM schema_migrations", conn))
+            await using (var reader = await cmd.ExecuteReaderAsync(ct))
+            {
+                while (await reader.ReadAsync(ct))
+                    applied.Add(reader.GetString(0));
+            }
+
+            // 3. Discover migrations from embedded resources
+            var migrations = LoadEmbeddedMigrations();
+
+            // 4. Apply missing ones in order
+            foreach (var (version, ddl) in migrations)
+            {
+                if (applied.Contains(version)) continue;
+
+                _logger.LogInformation("Applying migration {Version} to tenant DB (host={Host})",
+                    version, conn.DataSource);
+
+                await using var tx = await conn.BeginTransactionAsync(ct);
+                try
+                {
+                    await using (var cmd = new MySqlCommand(ddl, conn, tx))
+                        await cmd.ExecuteNonQueryAsync(ct);
+
+                    await using (var insert = new MySqlCommand(
+                        "INSERT INTO schema_migrations (version) VALUES (@v)", conn, tx))
+                    {
+                        insert.Parameters.AddWithValue("@v", version);
+                        await insert.ExecuteNonQueryAsync(ct);
+                    }
+
+                    await tx.CommitAsync(ct);
+                    _logger.LogInformation("Migration {Version} applied successfully", version);
+                }
+                catch (Exception ex)
+                {
+                    await tx.RollbackAsync(ct);
+                    _logger.LogError(ex, "Migration {Version} failed", version);
+                    throw;
+                }
+            }
+        }
+        finally
+        {
+            _migrationLock.Release();
+        }
+    }
+
+    private static IReadOnlyList<(string Version, string Ddl)> LoadEmbeddedMigrations()
+    {
+        var asm = Assembly.GetExecutingAssembly();
+        var prefix = $"{asm.GetName().Name}.Schema.Migrations.";
+        var names = asm.GetManifestResourceNames()
+            .Where(n => n.StartsWith(prefix) && n.EndsWith(".sql"))
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToList();
+
+        var result = new List<(string, string)>();
+        foreach (var name in names)
+        {
+            // Filename: 001_create_prm_services.sql → version "001"
+            var fileName = name.Substring(prefix.Length);
+            var version = fileName.Split('_')[0];
+
+            using var stream = asm.GetManifestResourceStream(name)!;
+            using var reader = new StreamReader(stream);
+            var ddl = reader.ReadToEnd();
+            result.Add((version, ddl));
+        }
+        return result;
+    }
+}
+```
+
+Add the `MySqlConnector` package (Pomelo's underlying driver — lighter than pulling EF Core for raw SQL):
+
+```bash
+cd backend/src/PrmDashboard.TenantService
+dotnet add package MySqlConnector --version 2.3.7
+```
+
+- [ ] **Step 9: Wire SchemaMigrator into TenantResolutionService**
+
+Modify `TenantResolutionService.cs` to call `SchemaMigrator.RunAsync()` on every cache miss, **before** returning the connection string.
+
+Add constructor dependency:
+```csharp
+public TenantResolutionService(
+    MasterDbContext db,
+    IMemoryCache cache,
+    SchemaMigrator migrator,       // ← new
+    ILogger<TenantResolutionService> logger)
+{
+    _db = db;
+    _cache = cache;
+    _migrator = migrator;
+    _logger = logger;
+}
+```
+
+Modify the `ResolveAsync` method (or whatever the equivalent is in the Task 5 step-5 scaffold) so that after decrypting the connection string and before caching/returning it:
+
+```csharp
+public async Task<Tenant?> ResolveAsync(string slug, CancellationToken ct = default)
+{
+    if (_cache.TryGetValue<Tenant>($"tenant:{slug}", out var cached))
+        return cached;
+
+    var tenant = await _db.Tenants
+        .Include(t => t.Employees)
+        .FirstOrDefaultAsync(t => t.Slug == slug && t.IsActive, ct);
+
+    if (tenant is null) return null;
+
+    // Decrypt password if needed (PLAINTEXT: bootstrap convention from Task 4)
+    tenant.DbPassword = DecryptOrBootstrap(tenant.DbPassword);
+
+    // Ensure the tenant database has the latest schema before anyone tries to query it.
+    // Idempotent — no-op for already-migrated tenants (~5ms), runs missing migrations for new ones.
+    var connStr = tenant.GetConnectionString();
+    await _migrator.RunAsync(connStr, ct);
+
+    _cache.Set($"tenant:{slug}", tenant, TimeSpan.FromMinutes(5));
+    return tenant;
+}
+```
+
+Register SchemaMigrator in `Program.cs`:
+```csharp
+builder.Services.AddSingleton<SchemaMigrator>();
+```
+
+- [ ] **Step 10: Build and commit**
 
 ```bash
 cd backend && dotnet build
 git add backend/
-git commit -m "feat(tenant): tenant resolution, config, and airport access endpoints"
+git -c user.email="claude@anthropic.com" -c user.name="Claude Code" commit -m "feat(tenant): tenant resolution with runtime schema migrator
+
+- Resolve tenant by slug, decrypt DB credentials from master DB
+- SchemaMigrator runs versioned embedded migrations on cache miss
+- Supports runtime tenant onboarding: attach a new DB + INSERT a tenant
+  row and the schema bootstraps automatically on first request
+- Each tenant DB can live on a different MySQL instance
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
+git push origin main
 ```
 
 ---
