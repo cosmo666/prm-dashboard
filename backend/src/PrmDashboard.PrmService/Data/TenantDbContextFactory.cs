@@ -1,4 +1,6 @@
+using System.Net.Http.Headers;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -7,11 +9,14 @@ namespace PrmDashboard.PrmService.Data;
 /// <summary>
 /// Resolves tenant DB connections by calling TenantService's resolve endpoint.
 /// Caches connection strings for 5 minutes to avoid repeated HTTP calls.
+/// Forwards the caller's Bearer token so service-to-service requests satisfy
+/// TenantController.Resolve's [Authorize] requirement.
 /// </summary>
 public class TenantDbContextFactory
 {
     private readonly HttpClient _httpClient;
     private readonly IMemoryCache _cache;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<TenantDbContextFactory> _logger;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -22,10 +27,12 @@ public class TenantDbContextFactory
     public TenantDbContextFactory(
         HttpClient httpClient,
         IMemoryCache cache,
+        IHttpContextAccessor httpContextAccessor,
         ILogger<TenantDbContextFactory> logger)
     {
         _httpClient = httpClient;
         _cache = cache;
+        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
@@ -37,7 +44,23 @@ public class TenantDbContextFactory
         {
             _logger.LogInformation("Resolving tenant {Slug} via TenantService", tenantSlug);
 
-            var response = await _httpClient.GetAsync($"/api/tenants/resolve/{tenantSlug}", ct);
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"/api/tenants/resolve/{tenantSlug}");
+
+            // Forward the caller's Bearer token so TenantController.Resolve's [Authorize] is satisfied.
+            var authHeader = _httpContextAccessor.HttpContext?.Request.Headers.Authorization.ToString();
+            if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                request.Headers.Authorization = AuthenticationHeaderValue.Parse(authHeader);
+            }
+
+            // Also forward correlation ID if present, so logs stitch across services.
+            var correlationId = _httpContextAccessor.HttpContext?.Items["CorrelationId"] as string;
+            if (!string.IsNullOrEmpty(correlationId))
+            {
+                request.Headers.Add("X-Correlation-Id", correlationId);
+            }
+
+            var response = await _httpClient.SendAsync(request, ct);
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 throw new TenantNotFoundException(tenantSlug);

@@ -4,9 +4,13 @@ using Microsoft.IdentityModel.Tokens;
 using PrmDashboard.PrmService.Data;
 using PrmDashboard.PrmService.Middleware;
 using PrmDashboard.PrmService.Services;
+using PrmDashboard.Shared.Logging;
 using PrmDashboard.Shared.Middleware;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddPrmSerilog(serviceName: "prm");
 
 // Bind to port 8080 inside the container
 builder.WebHost.ConfigureKestrel(o => o.ListenAnyIP(8080));
@@ -49,6 +53,9 @@ builder.Services.AddAuthorization();
 // Memory cache for tenant connection caching
 builder.Services.AddMemoryCache();
 
+// HttpContextAccessor — TenantDbContextFactory needs it to forward Bearer tokens
+builder.Services.AddHttpContextAccessor();
+
 // TenantDbContextFactory — resolves tenant DBs via TenantService HTTP calls
 var tenantServiceUrl = builder.Configuration["TenantServiceUrl"]
     ?? throw new InvalidOperationException("TenantServiceUrl is required");
@@ -90,6 +97,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseSerilogRequestLogging(opts =>
+{
+    opts.MessageTemplate =
+        "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0}ms [corr={CorrelationId}]";
+});
 
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseCors();

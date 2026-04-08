@@ -4,8 +4,13 @@ using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using PrmDashboard.Gateway.Middleware;
+using PrmDashboard.Shared.Logging;
+using PrmDashboard.Shared.Middleware;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddPrmSerilog(serviceName: "gateway");
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -60,6 +65,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseSerilogRequestLogging(opts =>
+{
+    opts.MessageTemplate =
+        "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0}ms [corr={CorrelationId}]";
+});
+
 app.UseCors();
 
 // Health endpoint as a middleware branch — short-circuits BEFORE Ocelot so the
@@ -72,6 +84,19 @@ app.MapWhen(ctx => ctx.Request.Path == "/health", branch =>
         ctx.Response.ContentType = "application/json";
         await ctx.Response.WriteAsync("{\"status\":\"healthy\",\"service\":\"gateway\"}");
     });
+});
+
+// Swagger UI aggregator — renders the UI from the gateway and loads each service's
+// OpenAPI document via the Ocelot-proxied JSON routes below. The SwaggerUI middleware
+// only matches its own static asset paths (index.html, swagger-ui.css/js, etc.) so
+// requests like /swagger/auth/swagger.json fall through to Ocelot for proxying.
+app.UseSwaggerUI(options =>
+{
+    options.RoutePrefix = "swagger";
+    options.SwaggerEndpoint("/swagger/auth/swagger.json", "Auth Service v1");
+    options.SwaggerEndpoint("/swagger/tenant/swagger.json", "Tenant Service v1");
+    options.SwaggerEndpoint("/swagger/prm/swagger.json", "PRM Service v1");
+    options.DocumentTitle = "PRM Dashboard — API Explorer";
 });
 
 app.UseAuthentication();

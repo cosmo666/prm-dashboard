@@ -9,6 +9,11 @@
   <ItemGroup>
     <PackageReference Include="Ocelot" Version="23.4.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PrmDashboard.Shared\PrmDashboard.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,8 +9,15 @@ RUN apt-get update \
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
+
+# Copy csproj files first for layer caching. Gateway now references Shared
+# (for Serilog bootstrap + CorrelationIdMiddleware), so Shared must be present.
+COPY src/PrmDashboard.Shared/PrmDashboard.Shared.csproj src/PrmDashboard.Shared/
 COPY src/PrmDashboard.Gateway/PrmDashboard.Gateway.csproj src/PrmDashboard.Gateway/
 RUN dotnet restore src/PrmDashboard.Gateway/PrmDashboard.Gateway.csproj
+
+# Copy source
+COPY src/PrmDashboard.Shared/ src/PrmDashboard.Shared/
 COPY src/PrmDashboard.Gateway/ src/PrmDashboard.Gateway/
 RUN dotnet publish src/PrmDashboard.Gateway/PrmDashboard.Gateway.csproj -c Release -o /app/publish
 

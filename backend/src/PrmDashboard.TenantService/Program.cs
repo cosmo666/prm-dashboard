@@ -2,11 +2,15 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using PrmDashboard.Shared.Logging;
 using PrmDashboard.Shared.Middleware;
 using PrmDashboard.TenantService.Data;
 using PrmDashboard.TenantService.Services;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddPrmSerilog(serviceName: "tenant");
 
 // Bind to port 8080 inside the container
 builder.WebHost.ConfigureKestrel(o => o.ListenAnyIP(8080));
@@ -82,6 +86,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseSerilogRequestLogging(opts =>
+{
+    opts.MessageTemplate =
+        "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0}ms [corr={CorrelationId}]";
+});
 
 app.UseCors();
 app.UseAuthentication();
