@@ -2,6 +2,28 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from '../../../core/api/api.client';
 import { FilterStore } from '../../../core/store/filter.store';
+import {
+  KpiSummaryResponse,
+  HandlingDistributionResponse,
+  RequestedVsProvidedKpiResponse,
+  DailyTrendResponse,
+  MonthlyTrendResponse,
+  HourlyHeatmapResponse,
+  RequestedVsProvidedTrendResponse,
+  RankingsResponse,
+  AgentRankingsResponse,
+  ServiceTypeMatrixResponse,
+  SankeyResponse,
+  BreakdownResponse,
+  RouteBreakdownResponse,
+  DurationStatsResponse,
+  DurationDistributionResponse,
+  NoShowResponse,
+  PauseAnalysisResponse,
+  PaginatedResponse,
+  PrmRecordDto,
+  FilterOptionsResponse,
+} from './prm-dtos';
 
 @Injectable({ providedIn: 'root' })
 export class PrmDataService {
@@ -18,42 +40,80 @@ export class PrmDataService {
   }
 
   // KPIs
-  kpisSummary()              { return this.api.get<any>('/prm/kpis/summary', this.params()); }
-  handlingDistribution()     { return this.api.get<any>('/prm/kpis/handling-distribution', this.params()); }
-  requestedVsProvided()      { return this.api.get<any>('/prm/kpis/requested-vs-provided', this.params()); }
+  kpisSummary(): Observable<KpiSummaryResponse> {
+    return this.api.get<KpiSummaryResponse>('/prm/kpis/summary', this.params());
+  }
+  handlingDistribution(): Observable<HandlingDistributionResponse> {
+    return this.api.get<HandlingDistributionResponse>('/prm/kpis/handling-distribution', this.params());
+  }
+  requestedVsProvided(): Observable<RequestedVsProvidedKpiResponse> {
+    return this.api.get<RequestedVsProvidedKpiResponse>('/prm/kpis/requested-vs-provided', this.params());
+  }
 
   // Trends
-  trendsDaily(metric: 'count' | 'duration' | 'agents' = 'count') {
-    return this.api.get<any>('/prm/trends/daily', this.params({ metric }));
+  trendsDaily(metric: 'count' | 'duration' | 'agents' = 'count'): Observable<DailyTrendResponse> {
+    return this.api.get<DailyTrendResponse>('/prm/trends/daily', this.params({ metric }));
   }
-  trendsMonthly()            { return this.api.get<any>('/prm/trends/monthly', this.params()); }
-  trendsHourly()             { return this.api.get<any>('/prm/trends/hourly', this.params()); }
-  trendsRequestedProvided()  { return this.api.get<any>('/prm/trends/requested-vs-provided', this.params()); }
+  trendsMonthly(): Observable<MonthlyTrendResponse> {
+    return this.api.get<MonthlyTrendResponse>('/prm/trends/monthly', this.params());
+  }
+  trendsHourly(): Observable<HourlyHeatmapResponse> {
+    return this.api.get<HourlyHeatmapResponse>('/prm/trends/hourly', this.params());
+  }
+  trendsRequestedProvided(): Observable<RequestedVsProvidedTrendResponse> {
+    return this.api.get<RequestedVsProvidedTrendResponse>('/prm/trends/requested-vs-provided', this.params());
+  }
 
   // Rankings
-  topAirlines(limit = 10)    { return this.api.get<any>('/prm/rankings/airlines', this.params({ limit })); }
-  topFlights(limit = 10)     { return this.api.get<any>('/prm/rankings/flights', this.params({ limit })); }
-  topAgents(limit = 10)      { return this.api.get<any>('/prm/rankings/agents', this.params({ limit })); }
-  topServices()              { return this.api.get<any>('/prm/rankings/services', this.params()); }
+  topAirlines(limit = 10): Observable<RankingsResponse> {
+    return this.api.get<RankingsResponse>('/prm/rankings/airlines', this.params({ limit }));
+  }
+  topFlights(limit = 10): Observable<RankingsResponse> {
+    return this.api.get<RankingsResponse>('/prm/rankings/flights', this.params({ limit }));
+  }
+  topAgents(limit = 10): Observable<AgentRankingsResponse> {
+    return this.api.get<AgentRankingsResponse>('/prm/rankings/agents', this.params({ limit }));
+  }
+  topServices(): Observable<RankingsResponse> {
+    return this.api.get<RankingsResponse>('/prm/rankings/services', this.params());
+  }
 
   // Breakdowns
-  byServiceType()            { return this.api.get<any>('/prm/breakdowns/by-service-type', this.params()); }
-  byAgentType()              { return this.api.get<any>('/prm/breakdowns/by-agent-type', this.params()); }
-  byAirline()                { return this.api.get<any>('/prm/breakdowns/by-airline', this.params()); }
-  byLocation()               { return this.api.get<any>('/prm/breakdowns/by-location', this.params()); }
-  byRoute()                  { return this.api.get<any>('/prm/breakdowns/by-route', this.params()); }
+  byServiceType(): Observable<ServiceTypeMatrixResponse> {
+    return this.api.get<ServiceTypeMatrixResponse>('/prm/breakdowns/by-service-type', this.params());
+  }
+  byAgentType(): Observable<SankeyResponse> {
+    return this.api.get<SankeyResponse>('/prm/breakdowns/by-agent-type', this.params());
+  }
+  byAirline(): Observable<BreakdownResponse> {
+    return this.api.get<BreakdownResponse>('/prm/breakdowns/by-airline', this.params());
+  }
+  byLocation(): Observable<BreakdownResponse> {
+    return this.api.get<BreakdownResponse>('/prm/breakdowns/by-location', this.params());
+  }
+  byRoute(): Observable<RouteBreakdownResponse> {
+    return this.api.get<RouteBreakdownResponse>('/prm/breakdowns/by-route', this.params());
+  }
 
   // Performance
-  durationStats()            { return this.api.get<any>('/prm/performance/duration-stats', this.params()); }
-  durationDistribution()     { return this.api.get<any>('/prm/performance/duration-distribution', this.params()); }
-  noShows()                  { return this.api.get<any>('/prm/performance/no-shows', this.params()); }
-  pauseAnalysis()            { return this.api.get<any>('/prm/performance/pause-analysis', this.params()); }
+  durationStats(): Observable<DurationStatsResponse> {
+    return this.api.get<DurationStatsResponse>('/prm/performance/duration-stats', this.params());
+  }
+  durationDistribution(): Observable<DurationDistributionResponse> {
+    return this.api.get<DurationDistributionResponse>('/prm/performance/duration-distribution', this.params());
+  }
+  noShows(): Observable<NoShowResponse> {
+    return this.api.get<NoShowResponse>('/prm/performance/no-shows', this.params());
+  }
+  pauseAnalysis(): Observable<PauseAnalysisResponse> {
+    return this.api.get<PauseAnalysisResponse>('/prm/performance/pause-analysis', this.params());
+  }
 
   // Filters & records
-  filterOptions(): Observable<any> {
-    return this.api.get<any>('/prm/filters/options', { airport: this.filters.airport() });
+  filterOptions(): Observable<FilterOptionsResponse> {
+    return this.api.get<FilterOptionsResponse>('/prm/filters/options', { airport: this.filters.airport() });
   }
-  records(page: number, size: number) {
-    return this.api.get<any>('/prm/records', this.params({ page, size }));
+  records(page: number, size: number): Observable<PaginatedResponse<PrmRecordDto>> {
+    return this.api.get<PaginatedResponse<PrmRecordDto>>('/prm/records', this.params({ page, size }));
   }
 }

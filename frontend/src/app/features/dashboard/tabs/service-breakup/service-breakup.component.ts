@@ -1,6 +1,7 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { forkJoin } from 'rxjs';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, forkJoin, switchMap } from 'rxjs';
 import { BarChartComponent, BarDatum } from '../../../../shared/charts/bar-chart/bar-chart.component';
 import { LineChartComponent, LineSeries } from '../../../../shared/charts/line-chart/line-chart.component';
 import { PrmDataService } from '../../services/prm-data.service';
@@ -41,18 +42,21 @@ export class ServiceBreakupComponent {
   });
 
   constructor() {
-    effect(() => { this.filters.queryParams(); this.fetchAll(); }, { allowSignalWrites: true });
-  }
-
-  fetchAll() {
-    if (!this.filters.airport() || !this.filters.dateFrom()) return;
-    this.loading.set(true);
-    forkJoin({
-      byService: this.data.byServiceType(),
-      topServices: this.data.topServices(),
-      durStats: this.data.durationStats(),
-      hourly: this.data.trendsHourly(),
-    }).subscribe({
+    toObservable(this.filters.queryParams).pipe(
+      switchMap(() => {
+        if (!this.filters.airport() || !this.filters.dateFrom()) {
+          return EMPTY;
+        }
+        this.loading.set(true);
+        return forkJoin({
+          byService: this.data.byServiceType(),
+          topServices: this.data.topServices(),
+          durStats: this.data.durationStats(),
+          hourly: this.data.trendsHourly(),
+        });
+      }),
+      takeUntilDestroyed(),
+    ).subscribe({
       next: (r: any) => {
         // ServiceTypeMatrixResponse: serviceTypes[], rows[{monthYear, serviceCounts, total}]
         const svcTypes: string[] = r.byService.serviceTypes ?? [];

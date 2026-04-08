@@ -1,6 +1,7 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { forkJoin } from 'rxjs';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, forkJoin, switchMap } from 'rxjs';
 import { KpiCardComponent } from '../../components/kpi-card/kpi-card.component';
 import { BarChartComponent, BarDatum } from '../../../../shared/charts/bar-chart/bar-chart.component';
 import { DonutChartComponent, DonutDatum } from '../../../../shared/charts/donut-chart/donut-chart.component';
@@ -40,23 +41,23 @@ export class OverviewComponent {
   locations = signal<BarDatum[]>([]);
 
   constructor() {
-    effect(() => {
-      this.filters.queryParams(); // track filter changes
-      this.fetchAll();
-    }, { allowSignalWrites: true });
-  }
-
-  fetchAll() {
-    if (!this.filters.airport() || !this.filters.dateFrom()) return;
-    this.loading.set(true);
-    forkJoin({
-      kpis: this.data.kpisSummary(),
-      handling: this.data.handlingDistribution(),
-      trend: this.data.trendsDaily('count'),
-      services: this.data.topServices(),
-      duration: this.data.durationDistribution(),
-      locations: this.data.byLocation(),
-    }).subscribe({
+    toObservable(this.filters.queryParams).pipe(
+      switchMap(() => {
+        if (!this.filters.airport() || !this.filters.dateFrom()) {
+          return EMPTY;
+        }
+        this.loading.set(true);
+        return forkJoin({
+          kpis: this.data.kpisSummary(),
+          handling: this.data.handlingDistribution(),
+          trend: this.data.trendsDaily('count'),
+          services: this.data.topServices(),
+          duration: this.data.durationDistribution(),
+          locations: this.data.byLocation(),
+        });
+      }),
+      takeUntilDestroyed(),
+    ).subscribe({
       next: (r: any) => {
         // KPIs — compute delta as % change vs previous period
         this.totalPrm.set(r.kpis.totalPrm ?? 0);

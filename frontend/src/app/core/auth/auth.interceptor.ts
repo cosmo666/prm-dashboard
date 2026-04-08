@@ -1,6 +1,6 @@
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, switchMap, throwError, shareReplay, finalize } from 'rxjs';
 import { AuthService } from './auth.service';
 import { TenantStore } from '../store/tenant.store';
 
@@ -10,6 +10,10 @@ const SKIP_REFRESH_URLS = ['/auth/login', '/auth/refresh'];
 function shouldSkipRefresh(url: string): boolean {
   return SKIP_REFRESH_URLS.some((skip) => url.includes(skip));
 }
+
+// Module-level: shared refresh observable so parallel 401s don't storm the refresh endpoint.
+// Backend atomically rotates refresh tokens — only the first call wins; the rest must piggy-back.
+let refresh$: Observable<unknown> | null = null;
 
 export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
   const authService = inject(AuthService);
@@ -34,9 +38,15 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   return next(cloned).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401 && !shouldSkipRefresh(req.url)) {
-        return authService.refresh().pipe(
+        // Share the refresh across all concurrent 401s
+        if (!refresh$) {
+          refresh$ = authService.refresh().pipe(
+            shareReplay(1),
+            finalize(() => { refresh$ = null; }),
+          );
+        }
+        return refresh$.pipe(
           switchMap(() => {
-            // Retry with new token — use cloned.headers to preserve all headers from first pass
             const retryHeaders = cloned.headers.set('Authorization', `Bearer ${authService.token}`);
             return next(cloned.clone({ headers: retryHeaders }));
           }),

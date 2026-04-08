@@ -1,6 +1,7 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { forkJoin } from 'rxjs';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, forkJoin, switchMap } from 'rxjs';
 import { KpiCardComponent } from '../../components/kpi-card/kpi-card.component';
 import { LineChartComponent, LineSeries } from '../../../../shared/charts/line-chart/line-chart.component';
 import { BarChartComponent, BarDatum } from '../../../../shared/charts/bar-chart/bar-chart.component';
@@ -47,19 +48,22 @@ export class FulfillmentComponent {
   cumulativeSeries = signal<LineSeries[]>([]);
 
   constructor() {
-    effect(() => { this.filters.queryParams(); this.fetchAll(); }, { allowSignalWrites: true });
-  }
-
-  fetchAll() {
-    if (!this.filters.airport() || !this.filters.dateFrom()) return;
-    this.loading.set(true);
-    forkJoin({
-      rvp: this.data.requestedVsProvided(),
-      trend: this.data.trendsRequestedProvided(),
-      agentType: this.data.byAgentType(),
-      hourly: this.data.trendsHourly(),
-      daily: this.data.trendsDaily('count'),
-    }).subscribe({
+    toObservable(this.filters.queryParams).pipe(
+      switchMap(() => {
+        if (!this.filters.airport() || !this.filters.dateFrom()) {
+          return EMPTY;
+        }
+        this.loading.set(true);
+        return forkJoin({
+          rvp: this.data.requestedVsProvided(),
+          trend: this.data.trendsRequestedProvided(),
+          agentType: this.data.byAgentType(),
+          hourly: this.data.trendsHourly(),
+          daily: this.data.trendsDaily('count'),
+        });
+      }),
+      takeUntilDestroyed(),
+    ).subscribe({
       next: (r: any) => {
         // KPIs from RequestedVsProvidedKpiResponse
         this.totalRequested.set(r.rvp.totalRequested ?? 0);

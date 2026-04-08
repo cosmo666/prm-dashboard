@@ -1,6 +1,7 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { forkJoin } from 'rxjs';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, forkJoin, switchMap } from 'rxjs';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { BarChartComponent, BarDatum } from '../../../../shared/charts/bar-chart/bar-chart.component';
@@ -46,19 +47,22 @@ export class Top10Component {
   displayedColumns = ['rank', 'agentNo', 'name', 'count', 'avgDuration', 'topService', 'topAirline', 'daysActive'];
 
   constructor() {
-    effect(() => { this.filters.queryParams(); this.fetchAll(); }, { allowSignalWrites: true });
-  }
-
-  fetchAll() {
-    if (!this.filters.airport() || !this.filters.dateFrom()) return;
-    this.loading.set(true);
-    forkJoin({
-      airlines: this.data.topAirlines(10),
-      flights: this.data.topFlights(10),
-      agents: this.data.topAgents(10),
-      routes: this.data.byRoute(),
-      noShows: this.data.noShows(),
-    }).subscribe({
+    toObservable(this.filters.queryParams).pipe(
+      switchMap(() => {
+        if (!this.filters.airport() || !this.filters.dateFrom()) {
+          return EMPTY;
+        }
+        this.loading.set(true);
+        return forkJoin({
+          airlines: this.data.topAirlines(10),
+          flights: this.data.topFlights(10),
+          agents: this.data.topAgents(10),
+          routes: this.data.byRoute(),
+          noShows: this.data.noShows(),
+        });
+      }),
+      takeUntilDestroyed(),
+    ).subscribe({
       next: (r: any) => {
         // RankingsResponse.items → BarDatum (label, count)
         this.topAirlines.set((r.airlines.items ?? []).map((a: any) => ({
