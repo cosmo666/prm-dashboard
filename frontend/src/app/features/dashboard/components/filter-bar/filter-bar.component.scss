@@ -1,0 +1,13 @@
+.filter-bar {
+  padding: 1rem 1.5rem;
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
+}
+.filter-controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-field { min-width: 180px; }
+.active-chips { margin-top: 0.75rem; }

@@ -1,0 +1,43 @@
+<div class="filter-bar">
+  <div class="filter-controls">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+      <mat-label>Airline</mat-label>
+      <mat-select [ngModel]="filters.airline()" (ngModelChange)="setAirline($event)">
+        <mat-option [value]="''">All airlines</mat-option>
+        <mat-option *ngFor="let a of airlines()" [value]="a">{{ a }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+      <mat-label>Service Type</mat-label>
+      <mat-select [ngModel]="filters.service()" (ngModelChange)="setService($event)">
+        <mat-option [value]="''">All services</mat-option>
+        <mat-option *ngFor="let s of services()" [value]="s">{{ s }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+      <mat-label>Handled By</mat-label>
+      <mat-select [ngModel]="filters.handledBy()" (ngModelChange)="setHandledBy($event)">
+        <mat-option [value]="''">Both</mat-option>
+        <mat-option value="SELF">Self</mat-option>
+        <mat-option value="OUTSOURCED">Outsourced</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <app-date-range-picker></app-date-range-picker>
+  </div>
+
+  <mat-chip-set class="active-chips" *ngIf="filters.hasAnyFilter()">
+    <mat-chip *ngIf="filters.airline()" (removed)="setAirline(null)">
+      Airline: {{ filters.airline() }} <mat-icon matChipRemove>cancel</mat-icon>
+    </mat-chip>
+    <mat-chip *ngIf="filters.service()" (removed)="setService(null)">
+      Service: {{ filters.service() }} <mat-icon matChipRemove>cancel</mat-icon>
+    </mat-chip>
+    <mat-chip *ngIf="filters.handledBy()" (removed)="setHandledBy(null)">
+      {{ filters.handledBy() }} <mat-icon matChipRemove>cancel</mat-icon>
+    </mat-chip>
+    <button mat-button color="warn" (click)="clearAll()">Clear All</button>
+  </mat-chip-set>
+</div>

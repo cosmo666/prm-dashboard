@@ -1,0 +1,17 @@
+<app-top-bar [showBack]="true"></app-top-bar>
+<app-filter-bar></app-filter-bar>
+
+<mat-tab-group [selectedIndex]="activeTab()" (selectedIndexChange)="onTabChange($event)" class="dashboard-tabs" animationDuration="200ms">
+  <mat-tab label="Overview">
+    <app-overview *ngIf="activeTab() === 0"></app-overview>
+  </mat-tab>
+  <mat-tab label="Top 10">
+    <app-top10 *ngIf="activeTab() === 1"></app-top10>
+  </mat-tab>
+  <mat-tab label="Service Breakup">
+    <app-service-breakup *ngIf="activeTab() === 2"></app-service-breakup>
+  </mat-tab>
+  <mat-tab label="Fulfillment">
+    <app-fulfillment *ngIf="activeTab() === 3"></app-fulfillment>
+  </mat-tab>
+</mat-tab-group>

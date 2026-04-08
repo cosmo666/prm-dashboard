@@ -3,7 +3,8 @@ import { signalStore, withState, withMethods, withComputed, patchState } from '@
 
 export type DatePreset =
   | 'today' | 'yesterday' | 'last7' | 'last30'
-  | 'mtd' | 'last_month' | 'qtd' | 'ytd'
+  | 'mtd' | 'last_month' | 'last_3_months' | 'last_6_months'
+  | 'qtd' | 'ytd' | 'calendar_year' | 'last_year'
   | 'q1' | 'q2' | 'q3' | 'q4'
   | 'custom';
 
