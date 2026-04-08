@@ -4,6 +4,8 @@
 
 ## Recent Sessions
 
+- 2026-04-08: **All 9 phases complete — POC feature-complete.** Phases 5-9: Ocelot API Gateway (subdomain→X-Tenant-Slug, 3 routes), seed data (3 tenants, 12 employees, ~17k PRM records via Python generator), Angular 17 SPA (login, home, dashboard with 4 tabs: Overview/Top10/ServiceBreakup/Fulfillment), 6 ECharts wrappers, NgRx Signal Store filters, E2E checklist. 21 tasks total, subagent-driven with spec+quality reviews per phase.
+
 - 2026-04-08: **Phases 2-4 complete.** Phase 2 (Auth Service): login/refresh/logout/me with BCrypt hashing, HS256 JWT, atomic refresh rotation, BCRYPT_PENDING bootstrap. Phase 3 (Tenant Service): tenant resolution, SchemaMigrator with embedded versioned migrations, 5-min connection cache, semaphore-guarded migration runner. Phase 4 (PRM Service): 23 endpoints across 7 controllers (KPIs, filters, trends, rankings, breakdowns, performance, records), airport RBAC middleware, TenantDbContextFactory for per-tenant DB access, PrmControllerBase, global exception handler. Review fixes: pinned MySqlServerVersion, fail-fast JWT config, atomic refresh CAS, negative duration guard, base controller extraction.
 
 - 2026-04-08: **PRM Dashboard POC kickoff.** Wrote design spec (11 sections) and 21-task implementation plan (6,204 lines) covering .NET 8 microservices + Angular 17 + MySQL multi-tenant POC. Created GitHub repo `cosmo666/prm-dashboard`. Started subagent-driven execution.

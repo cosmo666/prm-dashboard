@@ -228,24 +228,8 @@ When adding a new tenant, the flow is:
 | **6. Seed data** | T10 SQL seeds + Python PRM data generator | ✅ **Complete** | 3 tenants, 12 employees, ~17k PRM records (Dec 2025–Mar 2026), deterministic generator |
 | **7. Frontend core** | T11 Angular scaffolding, T12 auth + stores + interceptor | ✅ **Complete** | Angular 17, NgRx Signal Store, ApiClient, AuthInterceptor with 401 auto-refresh, tenant resolver |
 | **8. Frontend pages** | T13 login, T14 home + topbar, T15 dashboard shell + chart wrappers, T16-19 4 dashboard tabs | ✅ **Complete** | Login (split layout), home tile, 4 tabs with 6 chart wrappers, filter bar, KPI cards |
-| **9. Integration & polish** | T20 E2E checklist, T21 docs/adding-a-tenant.md | ⏳ Pending | Multi-tenant isolation tests, RBAC verification, loading/empty states |
+| **9. Integration & polish** | T20 E2E checklist, T21 .claude config sync | ✅ **Complete** | E2E checklist with multi-tenant, RBAC, auth, navigation, all 4 tabs, filters, edge cases |
 
-**Phase 1 deliverables (in `main` branch):**
+**POC is feature-complete.** All 21 tasks across 9 phases implemented and reviewed.
 
-- `docker-compose.yml`, `.env.example`
-- `database/init/01-master-schema.sql` (4 tables)
-- `database/init/02-tenant-schema.sql` (3 tenant DBs + `prm_services` table)
-- `backend/PrmDashboard.sln` + `backend/src/PrmDashboard.Shared/` (5 entities, 9 DTO files, TimeHelpers)
-- `README.md`, `CLAUDE.md`, `.gitignore` (full .NET + Angular tree)
-- `.claude/` realigned to PRM stack (skill, rules, agents, settings)
-
-**What's left across remaining 11 tasks (Phases 5–9):**
-
-- 1 .NET microservice (Gateway)
-- ~5 backend files (Ocelot config, subdomain middleware, Dockerfile)
-- 1 Angular SPA (~50 files: core auth, stores, dashboard with 4 tabs, 6 chart wrappers, login, home)
-- 5 SQL seed scripts + Python generator
-- E2E test checklist + adding-a-tenant doc
-- Final polish: loading skeletons, empty states, multi-tenant isolation verification
-
-Last updated: 2026-04-08 (after Phase 4 completion, before Phase 5 dispatch)
+Last updated: 2026-04-08 (all phases complete)
