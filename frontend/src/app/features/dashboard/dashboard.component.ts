@@ -1,4 +1,4 @@
-import { Component, OnInit, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, effect, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -9,7 +9,10 @@ import { Top10Component } from './tabs/top10/top10.component';
 import { ServiceBreakupComponent } from './tabs/service-breakup/service-breakup.component';
 import { FulfillmentComponent } from './tabs/fulfillment/fulfillment.component';
 import { FilterStore } from '../../core/store/filter.store';
+import { NavigationStore } from '../../core/store/navigation.store';
 import { resolvePreset } from './utils/date-presets';
+
+const TAB_NAMES = ['Overview', 'Top 10', 'Service Breakup', 'Fulfillment'];
 
 @Component({
   selector: 'app-dashboard',
@@ -19,16 +22,29 @@ import { resolvePreset } from './utils/date-presets';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   filters = inject(FilterStore);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private nav = inject(NavigationStore);
 
   activeTab = signal(0);
   private initialized = false;
 
+  // Human-readable summary of active secondary filters, e.g.
+  // "Filtered by airline · IX" or "3 filters applied · IX / WCHR / SELF"
+  filterSummary = computed(() => {
+    const active: string[] = [];
+    if (this.filters.airline()) active.push(this.filters.airline());
+    if (this.filters.service()) active.push(this.filters.service());
+    if (this.filters.handledBy()) active.push(this.filters.handledBy());
+    if (active.length === 0) return '';
+    if (active.length === 1) return `Filtered by ${active[0]}`;
+    return `${active.length} filters applied · ${active.join(' / ')}`;
+  });
+
   constructor() {
-    // Write filter changes back to the URL (after initial load has completed)
+    // URL <-> FilterStore sync (after initial load)
     effect(() => {
       const params = this.filters.queryParams();
       if (!this.initialized) return;
@@ -37,7 +53,13 @@ export class DashboardComponent implements OnInit {
         queryParams: params,
         replaceUrl: true,
       });
-    });
+    }, { allowSignalWrites: true });
+
+    // Publish the active tab name to the navigation store
+    effect(() => {
+      const idx = this.activeTab();
+      this.nav.setActiveTab(TAB_NAMES[idx] ?? null);
+    }, { allowSignalWrites: true });
   }
 
   ngOnInit(): void {
@@ -61,7 +83,11 @@ export class DashboardComponent implements OnInit {
     this.initialized = true;
   }
 
-  onTabChange(index: number) {
+  ngOnDestroy(): void {
+    this.nav.clear();
+  }
+
+  onTabChange(index: number): void {
     this.activeTab.set(index);
   }
 }

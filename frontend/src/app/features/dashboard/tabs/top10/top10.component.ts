@@ -2,8 +2,6 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, forkJoin, switchMap } from 'rxjs';
-import { MatTableModule } from '@angular/material/table';
-import { MatIconModule } from '@angular/material/icon';
 import { BarChartComponent, BarDatum } from '../../../../shared/charts/bar-chart/bar-chart.component';
 import { HorizontalBarChartComponent } from '../../../../shared/charts/horizontal-bar-chart/horizontal-bar-chart.component';
 import { PrmDataService } from '../../services/prm-data.service';
@@ -20,16 +18,24 @@ export interface AgentRow {
   daysActive: number;
 }
 
+// Muted, operational carrier colors — not vivid
 const CARRIER_COLORS: Record<string, string> = {
-  AI: '#ef5350', '6E': '#42a5f5', UK: '#ab47bc',
-  EK: '#ffa726', QR: '#26a69a', SQ: '#66bb6a',
-  LH: '#5c6bc0', BA: '#78909c', CX: '#ff7043', TG: '#d4e157',
+  AI: '#be185d',
+  '6E': '#0369a1',
+  UK: '#7c3aed',
+  EK: '#ca8a04',
+  QR: '#0d9488',
+  SQ: '#059669',
+  LH: '#1e3a8a',
+  BA: '#475569',
+  CX: '#c2410c',
+  TG: '#65a30d',
 };
 
 @Component({
   selector: 'app-top10',
   standalone: true,
-  imports: [CommonModule, MatTableModule, MatIconModule, BarChartComponent, HorizontalBarChartComponent],
+  imports: [CommonModule, BarChartComponent, HorizontalBarChartComponent],
   templateUrl: './top10.component.html',
   styleUrl: './top10.component.scss',
 })
@@ -44,7 +50,8 @@ export class Top10Component {
   topRoutes = signal<BarDatum[]>([]);
   noShows = signal<BarDatum[]>([]);
 
-  displayedColumns = ['rank', 'agentNo', 'name', 'count', 'avgDuration', 'topService', 'topAirline', 'daysActive'];
+  // Empty placeholder rows for skeleton state
+  skeletonAgents = Array.from({ length: 8 }, (_, i) => i);
 
   constructor() {
     toObservable(this.filters.queryParams).pipe(
@@ -64,34 +71,33 @@ export class Top10Component {
       takeUntilDestroyed(),
     ).subscribe({
       next: (r: any) => {
-        // RankingsResponse.items → BarDatum (label, count)
         this.topAirlines.set((r.airlines.items ?? []).map((a: any) => ({
-          label: a.label, value: a.count, color: CARRIER_COLORS[a.label] ?? '#78909c',
+          label: a.label,
+          value: a.count,
+          color: CARRIER_COLORS[a.label] ?? '#475569',
         })));
         this.topFlights.set((r.flights.items ?? []).map((f: any) => {
           const airline = f.label?.substring(0, 2) ?? '';
-          return { label: f.label, value: f.count, color: CARRIER_COLORS[airline] ?? '#78909c' };
+          return { label: f.label, value: f.count, color: CARRIER_COLORS[airline] ?? '#475569' };
         }));
-        // AgentRankingsResponse.items
         this.topAgents.set((r.agents.items ?? []).slice(0, 10).map((a: any, i: number) => ({
           rank: a.rank ?? i + 1,
           agentNo: a.agentNo ?? '',
           name: a.agentName ?? '',
           count: a.prmCount ?? 0,
           avgDuration: a.avgDurationMinutes ?? 0,
-          topService: a.topService ?? '-',
-          topAirline: a.topAirline ?? '-',
+          topService: a.topService ?? '—',
+          topAirline: a.topAirline ?? '—',
           daysActive: a.daysActive ?? 0,
         })));
-        // RouteBreakdownResponse.items
         this.topRoutes.set((r.routes.items ?? []).slice(0, 10).map((route: any) => ({
-          label: `${route.departure} -> ${route.arrival}`, value: route.count,
+          label: `${route.departure} → ${route.arrival}`,
+          value: route.count,
         })));
-        // NoShowResponse.items
         this.noShows.set((r.noShows.items ?? []).map((ns: any) => ({
           label: ns.airline,
           value: ns.rate,
-          color: ns.rate > 5 ? '#ef5350' : ns.rate >= 3 ? '#fb8c00' : '#66bb6a',
+          color: ns.rate > 5 ? '#b91c1c' : ns.rate >= 3 ? '#b45309' : '#047857',
         })));
         this.loading.set(false);
       },
@@ -99,16 +105,30 @@ export class Top10Component {
     });
   }
 
-  rankMedal(rank: number): string {
-    if (rank === 1) return '\u{1F947}';
-    if (rank === 2) return '\u{1F948}';
-    if (rank === 3) return '\u{1F949}';
-    return String(rank);
+  rankClass(rank: number): string {
+    if (rank === 1) return 'rank--gold';
+    if (rank === 2) return 'rank--silver';
+    if (rank === 3) return 'rank--bronze';
+    return '';
   }
 
-  durationColor(minutes: number): string {
-    if (minutes < 20) return '#66bb6a';
-    if (minutes < 40) return '#fb8c00';
-    return '#ef5350';
+  durationClass(minutes: number): string {
+    if (minutes < 20) return 'duration--fast';
+    if (minutes < 40) return 'duration--mid';
+    return 'duration--slow';
+  }
+
+  // Format rank as "01", "02"... "10"
+  formatRank(rank: number): string {
+    return rank.toString().padStart(2, '0');
+  }
+
+  // Editorial cadence label based on active-day count within the period
+  daysLabel(days: number): string {
+    if (days >= 20) return 'daily';
+    if (days >= 10) return 'frequent';
+    if (days >= 5) return 'regular';
+    if (days >= 1) return 'occasional';
+    return 'inactive';
   }
 }

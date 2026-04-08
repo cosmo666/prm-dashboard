@@ -1,1 +1,521 @@
-/* You can add global styles to this file, and also import other style files */
+// ============================================================
+// PRM Dashboard — "Operations Desk" design system
+// Editorial serif meets airport operational precision
+// ============================================================
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+// Angular Material theme — minimal prebuilt to keep mat-select, mat-menu, mat-table working
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
+// ------------------------------------------------------------
+// Design tokens (CSS variables mirror Tailwind config for raw CSS)
+// ------------------------------------------------------------
+:root {
+  // Tenant accent — overridden by ThemeService from tenant.primaryColor
+  --tenant-accent: #1d4ed8;
+  --tenant-accent-soft: rgba(29, 78, 216, 0.12);
+
+  // LIGHT theme (default) — warm stone with cobalt accent
+  --bg: #fafaf7;
+  --surface: #ffffff;
+  --surface-2: #f5f5f4;
+  --border: #e7e5e4;
+  --border-strong: #d6d3d1;
+  --ink: #0c0c0c;
+  --ink-muted: #44403c;
+  --muted: #78716c;
+  --accent: #1d4ed8;
+  --accent-hover: #1e40af;
+  --accent-bg: #eff6ff;
+  --accent-fg: #1e3a8a;
+  --success: #047857;
+  --warning: #b45309;
+  --danger: #b91c1c;
+
+  --shadow-card: 0 1px 2px rgba(12, 12, 12, 0.04);
+  --shadow-elevated: 0 8px 24px rgba(12, 12, 12, 0.08);
+
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+// DARK theme — deep ink with warm highlights; triggered by [data-theme="dark"] on <html>
+[data-theme="dark"] {
+  --bg: #0a0a0a;
+  --surface: #141413;
+  --surface-2: #1c1c1b;
+  --border: #262624;
+  --border-strong: #38383540;
+  --ink: #fafaf7;
+  --ink-muted: #d6d3d1;
+  --muted: #a8a29e;
+  --accent: #60a5fa;
+  --accent-hover: #93c5fd;
+  --accent-bg: #1e293b;
+  --accent-fg: #93c5fd;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
+
+// ------------------------------------------------------------
+// Reset + base
+// ------------------------------------------------------------
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: background-color 320ms ease, color 320ms ease;
+}
+
+// Disable transitions on theme switch to prevent flash
+.no-theme-transition,
+.no-theme-transition * {
+  transition: none !important;
+}
+
+body {
+  min-height: 100vh;
+  font-variant-numeric: tabular-nums; // tabular nums everywhere by default
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+p, figure, blockquote {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+// ------------------------------------------------------------
+// Editorial utility classes (used across components)
+// ------------------------------------------------------------
+.font-display {
+  font-family: var(--font-serif);
+  font-variation-settings: 'opsz' 144, 'SOFT' 0;
+  letter-spacing: -0.02em;
+}
+
+.font-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'zero' 1;
+}
+
+.label-micro {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: var(--font-sans);
+}
+
+.hairline {
+  border: 0;
+  border-top: 1px solid var(--border);
+  height: 0;
+  margin: 0;
+}
+
+.surface-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+// ------------------------------------------------------------
+// Scrollbar (subtle, Swiss)
+// ------------------------------------------------------------
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 10px;
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+// ------------------------------------------------------------
+// Selection
+// ------------------------------------------------------------
+::selection {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+// ------------------------------------------------------------
+// Focus ring — editorial accent, always visible on keyboard nav
+// ------------------------------------------------------------
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--accent);
+  border-radius: 6px;
+  transition: box-shadow 120ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--accent);
+}
+
+// Mouse users don't need the ring
+:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+// ------------------------------------------------------------
+// Shimmer keyframe (skeleton loaders)
+// ------------------------------------------------------------
+@keyframes shimmerPulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+@keyframes shimmerSlide {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-block {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 0%,
+    var(--border) 50%,
+    var(--surface-2) 100%
+  );
+  background-size: 400px 100%;
+  animation: shimmerSlide 1.8s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+// ------------------------------------------------------------
+// Global tooltip (rendered by TooltipDirective)
+// ------------------------------------------------------------
+.app-tooltip {
+  position: absolute;
+  z-index: 9999;
+  padding: 5px 10px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border-radius: 5px;
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 140ms ease, transform 140ms ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  max-width: 280px;
+}
+
+.app-tooltip--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-theme="dark"] .app-tooltip {
+  background: var(--ink);
+  color: #0a0a0a;
+}
+
+// ------------------------------------------------------------
+// Angular Material overrides — align with Operations Desk tokens
+// We keep Material for complex components (select, menu, table, tabs)
+// but strip its Roboto font and tune colors/radii.
+// ------------------------------------------------------------
+.mat-mdc-menu-panel,
+.mat-mdc-select-panel,
+.mat-mdc-autocomplete-panel,
+.mat-mdc-dialog-container,
+.mdc-menu-surface,
+.mat-mdc-tab-header,
+.mat-mdc-tab-body-wrapper {
+  font-family: var(--font-sans) !important;
+}
+
+.mat-mdc-menu-panel {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(12, 12, 12, 0.08), 0 0 0 1px rgba(12, 12, 12, 0.06) !important;
+}
+
+.mat-mdc-menu-item {
+  font-family: var(--font-sans) !important;
+  font-size: 13px !important;
+  min-height: 36px !important;
+  letter-spacing: 0 !important;
+}
+
+.mat-mdc-select-panel {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  padding: 4px !important;
+}
+
+.mat-mdc-option {
+  font-family: var(--font-sans) !important;
+  font-size: 13px !important;
+  min-height: 36px !important;
+  border-radius: 6px !important;
+  margin: 1px 0 !important;
+}
+
+.mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) .mdc-list-item__primary-text {
+  color: var(--accent) !important;
+}
+
+// Tabs — custom clean style
+.mat-mdc-tab-header {
+  border-bottom: 1px solid var(--border) !important;
+  --mdc-tab-indicator-active-indicator-color: var(--ink);
+  --mat-tab-header-active-label-text-color: var(--ink);
+  --mat-tab-header-active-focus-label-text-color: var(--ink);
+  --mat-tab-header-active-hover-label-text-color: var(--ink);
+  --mat-tab-header-inactive-label-text-color: var(--muted);
+  --mat-tab-header-inactive-focus-label-text-color: var(--muted);
+  --mat-tab-header-inactive-hover-label-text-color: var(--ink-muted);
+}
+
+.mat-mdc-tab .mdc-tab__text-label {
+  font-family: var(--font-sans) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em !important;
+  color: var(--muted) !important;
+  text-transform: uppercase;
+  transition: color 200ms ease !important;
+}
+
+.mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
+  color: var(--ink) !important;
+}
+
+.mat-mdc-tab-body-content {
+  padding: 24px 0 !important;
+}
+
+// Tab indicator: subtle inset pill instead of Material's default 2px bar
+.mat-mdc-tab .mdc-tab-indicator {
+  padding: 0 12px; // inset the pill from the tab edges
+}
+
+.mdc-tab-indicator__content--underline {
+  border-top-width: 0 !important;
+  background: var(--ink);
+  height: 1px;
+  border-radius: 1px;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.mdc-tab-indicator--active .mdc-tab-indicator__content--underline {
+  transform: scaleX(1);
+}
+
+// Ripple cleanup
+.mat-mdc-tab .mat-ripple-element {
+  background-color: transparent !important;
+}
+
+.mat-mdc-tab:hover {
+  background-color: var(--surface-2) !important;
+}
+
+// Material table
+.mat-mdc-table {
+  background: transparent !important;
+  font-family: var(--font-sans) !important;
+}
+
+.mat-mdc-header-cell {
+  font-family: var(--font-sans) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase;
+  color: var(--muted) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.mat-mdc-cell {
+  font-family: var(--font-sans) !important;
+  font-size: 13px !important;
+  color: var(--ink) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.mat-mdc-row:hover {
+  background: var(--surface-2) !important;
+}
+
+// Form field / select trigger
+.mat-mdc-form-field {
+  font-family: var(--font-sans) !important;
+  font-size: 13px !important;
+}
+
+.mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
+}
+
+.mdc-text-field--outlined .mdc-notched-outline__leading,
+.mdc-text-field--outlined .mdc-notched-outline__notch,
+.mdc-text-field--outlined .mdc-notched-outline__trailing {
+  border-color: var(--border) !important;
+}
+
+.mdc-text-field--outlined:not(.mdc-text-field--disabled):hover .mdc-notched-outline__leading,
+.mdc-text-field--outlined:not(.mdc-text-field--disabled):hover .mdc-notched-outline__notch,
+.mdc-text-field--outlined:not(.mdc-text-field--disabled):hover .mdc-notched-outline__trailing {
+  border-color: var(--border-strong) !important;
+}
+
+.mdc-text-field--outlined.mdc-text-field--focused .mdc-notched-outline__leading,
+.mdc-text-field--outlined.mdc-text-field--focused .mdc-notched-outline__notch,
+.mdc-text-field--outlined.mdc-text-field--focused .mdc-notched-outline__trailing {
+  border-color: var(--accent) !important;
+  border-width: 1px !important;
+}
+
+.mdc-floating-label {
+  font-family: var(--font-sans) !important;
+}
+
+// Chip
+.mat-mdc-chip {
+  background: var(--surface-2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12px !important;
+  height: 28px !important;
+}
+
+.mat-mdc-chip-focus-overlay {
+  display: none !important;
+}
+
+// Dark mode — override Material's prebuilt theme colors on dark
+[data-theme="dark"] {
+  .mat-mdc-menu-panel,
+  .mat-mdc-select-panel {
+    background: var(--surface) !important;
+  }
+
+  .mat-mdc-menu-item,
+  .mat-mdc-option {
+    color: var(--ink) !important;
+
+    &:hover {
+      background: var(--surface-2) !important;
+    }
+  }
+
+  .mat-mdc-select-value,
+  .mat-mdc-select-placeholder {
+    color: var(--ink) !important;
+  }
+
+  .mat-mdc-header-cell,
+  .mat-mdc-cell {
+    color: var(--ink) !important;
+    border-bottom-color: var(--border) !important;
+  }
+
+  .mat-mdc-row:hover {
+    background: var(--surface-2) !important;
+  }
+}
+
+// Button
+.mat-mdc-button, .mat-mdc-raised-button, .mat-mdc-stroked-button, .mat-mdc-flat-button {
+  font-family: var(--font-sans) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  border-radius: 8px !important;
+  height: 36px !important;
+}
+
+// Toolbar
+.mat-toolbar {
+  font-family: var(--font-sans) !important;
+  background: transparent !important;
+  color: var(--ink) !important;
+}
+
+// Checkbox
+.mat-mdc-checkbox {
+  font-family: var(--font-sans) !important;
+}
+
+// ------------------------------------------------------------
+// Print
+// ------------------------------------------------------------
+@media print {
+  body {
+    background: #fff;
+  }
+}

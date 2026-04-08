@@ -1,54 +1,173 @@
+// ============================================================
+// Service Breakup tab — editorial layout with 9 service cards
+// ============================================================
+
 .service-content {
-  display: grid;
-  grid-template-rows: auto 1fr 1fr;
-  gap: 1rem;
-  padding: 0 0.5rem;
-}
-.row { display: grid; gap: 1rem; }
-.row-service-cards {
-  grid-template-columns: repeat(9, 1fr);
-}
-.service-card {
-  padding: 0.75rem 1rem;
-  background: #fff;
-  border-radius: 10px;
-  text-align: center;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  transition: all 200ms ease;
-  border: 2px solid transparent;
-  &:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-  &.active { border-color: #1e88e5; background: #e3f2fd; }
-  .service-type  { font-weight: 700; font-size: 0.85rem; color: #666; }
-  .service-count { font-size: 1.4rem; font-weight: 700; color: #1e88e5; }
-  .service-pct   { font-size: 0.75rem; color: #999; }
-}
-.row-matrix-trend {
-  grid-template-columns: 3fr 2fr;
-  min-height: 280px;
-}
-.matrix-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  gap: 20px;
 }
-.chart-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; color: #333; }
-.matrix-scroll { overflow: auto; flex: 1; }
+
+.row { display: grid; gap: 20px; }
+
+// Row 1: 9 service type cards
+.row-service-cards {
+  grid-template-columns: repeat(9, 1fr);
+  gap: 10px;
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 14px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 180ms ease, transform 180ms ease, background 180ms ease;
+  position: relative;
+
+  &:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    border-color: var(--ink);
+    background: var(--surface);
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      right: -1px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 8px 8px 0 0;
+    }
+  }
+
+  .service-type {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .service-count {
+    font-family: var(--font-serif);
+    font-variation-settings: 'opsz' 144;
+    font-size: 26px;
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1;
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .service-pct {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+}
+
+// Row 2: Matrix table + stacked trend
+.row-matrix-trend {
+  grid-template-columns: 3fr 2fr;
+  min-height: 320px;
+}
+
+.matrix-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px 16px;
+  overflow: hidden;
+  gap: 14px;
+}
+
+.chart-title {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.matrix-scroll {
+  flex: 1;
+  overflow: auto;
+}
+
 .matrix-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
-  th, td { padding: 0.4rem 0.75rem; text-align: right; border-bottom: 1px solid #eee; }
-  th { background: #fafafa; font-weight: 600; color: #555; position: sticky; top: 0; }
-  .month-cell { text-align: left; font-weight: 600; }
-  .total-col  { background: #f5f7fa; font-weight: 600; }
-  .max-cell   { background: #fff59d; font-weight: 700; }
+  font-family: var(--font-sans);
+  font-size: 12px;
+
+  th, td {
+    padding: 8px 10px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  td {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  .month-cell {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .total-col {
+    background: var(--surface-2);
+    font-weight: 600;
+  }
+
+  .max-cell {
+    background: var(--accent-bg);
+    color: var(--accent-fg);
+    font-weight: 600;
+  }
+
+  tbody tr:hover {
+    background: var(--surface-2);
+  }
 }
-.row-charts-1-1 { grid-template-columns: 1fr 1fr; min-height: 260px; }
+
+// Row 3: two side-by-side charts
+.row-charts-1-1 {
+  grid-template-columns: 1fr 1fr;
+  min-height: 280px;
+}
 
 @media (max-width: 1200px) {
   .row-service-cards { grid-template-columns: repeat(3, 1fr); }

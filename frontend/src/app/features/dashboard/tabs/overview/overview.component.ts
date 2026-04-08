@@ -6,13 +6,14 @@ import { KpiCardComponent } from '../../components/kpi-card/kpi-card.component';
 import { BarChartComponent, BarDatum } from '../../../../shared/charts/bar-chart/bar-chart.component';
 import { DonutChartComponent, DonutDatum } from '../../../../shared/charts/donut-chart/donut-chart.component';
 import { HorizontalBarChartComponent } from '../../../../shared/charts/horizontal-bar-chart/horizontal-bar-chart.component';
+import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
 import { PrmDataService } from '../../services/prm-data.service';
 import { FilterStore } from '../../../../core/store/filter.store';
 
 @Component({
   selector: 'app-overview',
   standalone: true,
-  imports: [CommonModule, KpiCardComponent, BarChartComponent, DonutChartComponent, HorizontalBarChartComponent],
+  imports: [CommonModule, KpiCardComponent, BarChartComponent, DonutChartComponent, HorizontalBarChartComponent, CompactNumberPipe],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.scss',
 })

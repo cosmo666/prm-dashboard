@@ -1,0 +1,16 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+// Route transition — the element rendered right after <router-outlet />
+// is the freshly activated route's host, so animating its mount fades
+// every route change.
+::ng-deep router-outlet + * {
+  animation: routeFadeIn 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes routeFadeIn {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}

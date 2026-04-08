@@ -7,13 +7,14 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DateRangePickerComponent } from '../date-range-picker/date-range-picker.component';
+import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 import { FilterStore } from '../../../../core/store/filter.store';
 import { PrmDataService } from '../../services/prm-data.service';
 
 @Component({
   selector: 'app-filter-bar',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatSelectModule, MatChipsModule, MatButtonModule, MatIconModule, DateRangePickerComponent],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatSelectModule, MatChipsModule, MatButtonModule, MatIconModule, DateRangePickerComponent, TooltipDirective],
   templateUrl: './filter-bar.component.html',
   styleUrl: './filter-bar.component.scss',
 })

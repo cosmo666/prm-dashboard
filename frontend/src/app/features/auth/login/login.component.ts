@@ -1,13 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { TenantStore } from '../../../core/store/tenant.store';
@@ -15,7 +9,7 @@ import { TenantStore } from '../../../core/store/tenant.store';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatButtonModule, MatInputModule, MatFormFieldModule, MatCheckboxModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
@@ -26,11 +20,33 @@ export class LoginComponent {
 
   username = signal('');
   password = signal('');
-  rememberMe = signal(false);
+  showPassword = signal(false);
   loading = signal(false);
   error = signal<string | null>(null);
 
-  async onSubmit() {
+  tenantInitial = computed(() => (this.tenant.name() || this.tenant.slug() || 'P').charAt(0).toUpperCase());
+  currentTime = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+  // Mouse parallax — shift the background grid by a small amount based on cursor position
+  parallaxX = signal(0);
+  parallaxY = signal(0);
+
+  @HostListener('mousemove', ['$event'])
+  onMouseMove(e: MouseEvent): void {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    // -1 .. 1 range, then scale by 14px max travel
+    const x = (e.clientX / w - 0.5) * 2;
+    const y = (e.clientY / h - 0.5) * 2;
+    this.parallaxX.set(x * 14);
+    this.parallaxY.set(y * 14);
+  }
+
+  togglePassword(): void {
+    this.showPassword.update((v) => !v);
+  }
+
+  async onSubmit(): Promise<void> {
     if (!this.username() || !this.password()) {
       this.error.set('Username and password are required');
       return;
@@ -41,7 +57,7 @@ export class LoginComponent {
       await firstValueFrom(this.auth.login(this.username(), this.password(), this.tenant.slug()));
       this.router.navigate(['/home']);
     } catch (e: any) {
-      this.error.set(e?.error?.message ?? 'Login failed — check credentials');
+      this.error.set(e?.error?.message ?? 'Invalid credentials — try again');
     } finally {
       this.loading.set(false);
     }

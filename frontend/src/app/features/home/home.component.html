@@ -1,19 +1,117 @@
 <app-top-bar></app-top-bar>
 
-<main class="home-main">
-  <div class="welcome">
-    <h1>Welcome to your dashboards</h1>
-    <p>Select a dashboard to get started</p>
-  </div>
+<main class="home">
+  <!-- Hero: big serif greeting -->
+  <section class="hero">
+    <div class="hero__eyebrow label-micro">Welcome back</div>
+    <h1 class="hero__title">
+      Good day, <em>{{ firstName() }}</em>.
+    </h1>
+    <p class="hero__sub">
+      Select a dashboard to review PRM operations, agent performance, and passenger fulfillment.
+    </p>
 
-  <div class="dashboard-grid">
-    <a routerLink="/dashboard" class="dashboard-tile">
-      <mat-card class="tile-card">
-        <div class="tile-icon"><mat-icon>accessible</mat-icon></div>
-        <h2>PRM Dashboard</h2>
-        <p>Passenger with Reduced Mobility analytics across your airports</p>
-      </mat-card>
-    </a>
-    <!-- Future tiles can be added here -->
-  </div>
+    @if (airportCount() > 0) {
+      <div class="hero__chips">
+        <div class="chip-group">
+          <span class="label-micro">Your stations</span>
+          <div class="chips">
+            @for (code of airportCodes(); track code) {
+              <span class="chip font-data">{{ code }}</span>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- Dashboards grid -->
+  <section class="grid">
+    <div class="grid__header">
+      <div class="label-micro">Available Dashboards</div>
+      <div class="grid__count font-data">01 / 01</div>
+    </div>
+
+    <div class="tiles">
+      <!-- PRM Dashboard tile — the main product -->
+      <a routerLink="/dashboard" class="tile tile--primary">
+        <div class="tile__top">
+          <div class="tile__badge">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="4" r="2" />
+              <path d="M6 20a6 6 0 0 1 12 0" />
+              <path d="M12 6v4M8 10h8M10 14l-2 6M14 14l2 6" />
+            </svg>
+          </div>
+          <div class="tile__status">
+            <span class="dot"></span>
+            <span class="label-micro">Live</span>
+          </div>
+        </div>
+
+        <div class="tile__body">
+          <div class="label-micro">Analytics</div>
+          <h2 class="tile__title">PRM Dashboard</h2>
+          <p class="tile__desc">
+            Passenger with Reduced Mobility service analytics. Track wheelchair assists,
+            medical services, duration trends, and fulfillment rates.
+          </p>
+        </div>
+
+        <div class="tile__footer">
+          <div class="tile__metrics">
+            <div class="metric">
+              <div class="metric__value font-display">4</div>
+              <div class="metric__label label-micro">Tabs</div>
+            </div>
+            <div class="metric__divider"></div>
+            <div class="metric">
+              <div class="metric__value font-display">23</div>
+              <div class="metric__label label-micro">Endpoints</div>
+            </div>
+            <div class="metric__divider"></div>
+            <div class="metric">
+              <div class="metric__value font-display">17</div>
+              <div class="metric__label label-micro">Charts</div>
+            </div>
+          </div>
+
+          <div class="tile__cta">
+            <span>Open</span>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+      </a>
+
+      <!-- Placeholder future tile — "Coming soon" -->
+      <div class="tile tile--placeholder" aria-disabled="true">
+        <div class="tile__top">
+          <div class="tile__badge tile__badge--muted">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18M9 3v18" />
+            </svg>
+          </div>
+          <div class="tile__status">
+            <span class="label-micro">Planned</span>
+          </div>
+        </div>
+        <div class="tile__body">
+          <div class="label-micro">Analytics</div>
+          <h2 class="tile__title tile__title--muted">Baggage Ops</h2>
+          <p class="tile__desc">
+            Baggage handling analytics. Throughput, mishandling rates, and
+            carousel utilization.
+          </p>
+        </div>
+        <div class="tile__footer">
+          <div class="tile__cta tile__cta--muted">
+            <span>Coming soon</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>

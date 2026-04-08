@@ -23,10 +23,13 @@ frontend/src/app/
 │   │   └── tenant.resolver.ts             # Subdomain → tenant config
 │   ├── api/
 │   │   └── api.client.ts                  # Wrapper over HttpClient with base URL + withCredentials
-│   └── store/
-│       ├── auth.store.ts                  # Employee, access token, airports
-│       ├── tenant.store.ts                # Tenant slug, name, logo, primary color
-│       └── filter.store.ts                # Dashboard filters, URL-synced
+│   ├── store/
+│   │   ├── auth.store.ts                  # Employee, access token, airports
+│   │   ├── tenant.store.ts                # Tenant slug, name, logo, primary color
+│   │   ├── filter.store.ts                # Dashboard filters, URL-synced
+│   │   └── navigation.store.ts            # Active dashboard tab name for breadcrumb
+│   └── theme/
+│       └── theme.service.ts               # Light/dark toggle + prefers-color-scheme
 │
 ├── features/                              # Lazy-loaded route components
 │   ├── auth/login/                        # Split-layout login page
@@ -56,9 +59,11 @@ frontend/src/app/
     │   ├── horizontal-bar-chart/
     │   ├── sankey-chart/
     │   └── heatmap-chart/
-    └── components/
-        ├── top-bar/                       # Logo, tenant name, airport selector, user menu
-        └── airport-selector/              # RBAC-filtered dropdown bound to FilterStore
+    ├── components/
+    │   ├── top-bar/                       # Logo, tenant name, breadcrumb, airport selector, theme toggle
+    │   └── airport-selector/              # RBAC-filtered dropdown bound to FilterStore
+    └── directives/
+        └── tooltip.directive.ts           # [appTooltip] — replaces matTooltip, body-portal, viewport-clamped
 ```
 
 ## Component organization
@@ -171,6 +176,7 @@ npm run lint                               # ng lint
 - ❌ Business logic in templates — move computed values to `computed()` signals or component methods
 - ❌ Hardcoded API URLs — always via `environment.apiBaseUrl`
 - ❌ `any`-typed API responses — always define a DTO interface that mirrors the backend record
+- ❌ `matTooltip` — use the custom `[appTooltip]` directive (`shared/directives/tooltip.directive.ts`) so light/dark and styling stay consistent
 
 ## Tenant-aware behavior
 

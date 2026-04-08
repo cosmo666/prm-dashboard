@@ -1,69 +1,116 @@
 <div class="top10-content">
+  <!-- Row 1: Top airlines + Top flights -->
   <div class="row row-charts-1-1">
-    <app-bar-chart title="Top 10 Airlines" [data]="topAirlines()" [loading]="loading()"
-                   xLabel="Airline" yLabel="PRM Count"></app-bar-chart>
-    <app-bar-chart title="Top 10 Flights" [data]="topFlights()" [loading]="loading()"
-                   xLabel="Flight" yLabel="PRM Count"></app-bar-chart>
+    <app-bar-chart
+      title="Top 10 Airlines"
+      subtitle="By PRM volume"
+      [data]="topAirlines()"
+      [loading]="loading()"
+      xLabel="Airline"
+      yLabel="PRM Count"></app-bar-chart>
+    <app-bar-chart
+      title="Top 10 Flights"
+      subtitle="By PRM volume"
+      [data]="topFlights()"
+      [loading]="loading()"
+      xLabel="Flight"
+      yLabel="PRM Count"></app-bar-chart>
   </div>
 
-  <div class="row row-table">
-    <div class="table-card">
-      <div class="table-title">Top 10 Agents</div>
-      <table mat-table [dataSource]="topAgents()" class="agents-table">
-        <ng-container matColumnDef="rank">
-          <th mat-header-cell *matHeaderCellDef>Rank</th>
-          <td mat-cell *matCellDef="let row" class="rank-cell">{{ rankMedal(row.rank) }}</td>
-        </ng-container>
+  <!-- Row 2: Custom editorial agents table -->
+  <div class="agents-card">
+    <header class="agents-card__head">
+      <div class="agents-card__title-wrap">
+        <span class="label-micro">Personnel</span>
+        <h3 class="agents-card__title">Top 10 Agents</h3>
+      </div>
+      <div class="agents-card__meta">
+        <div class="label-micro">Ranked by</div>
+        <div class="agents-card__meta-value font-data">PRM count</div>
+      </div>
+    </header>
 
-        <ng-container matColumnDef="agentNo">
-          <th mat-header-cell *matHeaderCellDef>Agent #</th>
-          <td mat-cell *matCellDef="let row">{{ row.agentNo }}</td>
-        </ng-container>
+    <div class="agents-table">
+      <!-- Header row -->
+      <div class="agents-row agents-row--head">
+        <div class="cell cell--rank">Rank</div>
+        <div class="cell cell--agent">Agent</div>
+        <div class="cell cell--num">PRM</div>
+        <div class="cell cell--num">Avg Min</div>
+        <div class="cell cell--code">Service</div>
+        <div class="cell cell--code">Airline</div>
+        <div class="cell cell--num">Days</div>
+      </div>
 
-        <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef>Name</th>
-          <td mat-cell *matCellDef="let row">{{ row.name }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="count">
-          <th mat-header-cell *matHeaderCellDef>PRM Count</th>
-          <td mat-cell *matCellDef="let row"><strong>{{ row.count | number }}</strong></td>
-        </ng-container>
-
-        <ng-container matColumnDef="avgDuration">
-          <th mat-header-cell *matHeaderCellDef>Avg Duration</th>
-          <td mat-cell *matCellDef="let row">
-            <span class="duration-pill" [style.background]="durationColor(row.avgDuration)">
-              {{ row.avgDuration | number:'1.0-0' }} min
-            </span>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="topService">
-          <th mat-header-cell *matHeaderCellDef>Top Service</th>
-          <td mat-cell *matCellDef="let row">{{ row.topService }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="topAirline">
-          <th mat-header-cell *matHeaderCellDef>Top Airline</th>
-          <td mat-cell *matCellDef="let row">{{ row.topAirline }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="daysActive">
-          <th mat-header-cell *matHeaderCellDef>Days Active</th>
-          <td mat-cell *matCellDef="let row">{{ row.daysActive }}</td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns" class="agent-row"></tr>
-      </table>
+      @if (loading()) {
+        @for (i of skeletonAgents; track i) {
+          <div class="agents-row agents-row--skeleton">
+            <div class="cell cell--rank"><div class="skeleton-block" style="width: 24px; height: 20px;"></div></div>
+            <div class="cell cell--agent">
+              <div class="skeleton-block" style="width: 60%; height: 14px; margin-bottom: 6px;"></div>
+              <div class="skeleton-block" style="width: 40%; height: 11px;"></div>
+            </div>
+            <div class="cell cell--num"><div class="skeleton-block" style="width: 32px; height: 16px; margin-left: auto;"></div></div>
+            <div class="cell cell--num"><div class="skeleton-block" style="width: 40px; height: 18px; margin-left: auto;"></div></div>
+            <div class="cell cell--code"><div class="skeleton-block" style="width: 28px; height: 14px;"></div></div>
+            <div class="cell cell--code"><div class="skeleton-block" style="width: 24px; height: 14px;"></div></div>
+            <div class="cell cell--num"><div class="skeleton-block" style="width: 20px; height: 14px; margin-left: auto;"></div></div>
+          </div>
+        }
+      } @else if (topAgents().length === 0) {
+        <div class="agents-empty">
+          <div class="agents-empty__title">No agents</div>
+          <div class="agents-empty__hint">No agent activity in the selected period.</div>
+        </div>
+      } @else {
+        @for (agent of topAgents(); track agent.agentNo) {
+          <div class="agents-row" [class]="rankClass(agent.rank)">
+            <div class="cell cell--rank">
+              <span class="rank-num font-display">{{ formatRank(agent.rank) }}</span>
+            </div>
+            <div class="cell cell--agent">
+              <div class="agent-name">{{ agent.name }}</div>
+              <div class="agent-no font-data">#{{ agent.agentNo }}</div>
+            </div>
+            <div class="cell cell--num">
+              <span class="font-data">{{ agent.count | number }}</span>
+            </div>
+            <div class="cell cell--num">
+              <span class="duration-badge font-data" [class]="durationClass(agent.avgDuration)">
+                {{ agent.avgDuration | number:'1.0-0' }}
+              </span>
+            </div>
+            <div class="cell cell--code">
+              <span class="code-chip font-data">{{ agent.topService }}</span>
+            </div>
+            <div class="cell cell--code">
+              <span class="code-chip font-data">{{ agent.topAirline }}</span>
+            </div>
+            <div class="cell cell--num cell--days">
+              <span class="days-value font-data">{{ agent.daysActive }}<span class="days-unit">d</span></span>
+              <span class="days-label">{{ daysLabel(agent.daysActive) }}</span>
+            </div>
+          </div>
+        }
+      }
     </div>
   </div>
 
+  <!-- Row 3: Top routes + No-show rate -->
   <div class="row row-charts-1-1">
-    <app-horizontal-bar-chart title="Top 10 Routes" [data]="topRoutes()" [loading]="loading()"
-                              xLabel="Count" yLabel="Route"></app-horizontal-bar-chart>
-    <app-bar-chart title="No-Show Rate by Airline" [data]="noShows()" [loading]="loading()"
-                   xLabel="Airline" yLabel="No-Show %"></app-bar-chart>
+    <app-horizontal-bar-chart
+      title="Top 10 Routes"
+      subtitle="Departure → Arrival"
+      [data]="topRoutes()"
+      [loading]="loading()"
+      xLabel="Count"
+      yLabel="Route"></app-horizontal-bar-chart>
+    <app-bar-chart
+      title="No-Show Rate by Airline"
+      subtitle="Percentage"
+      [data]="noShows()"
+      [loading]="loading()"
+      xLabel="Airline"
+      yLabel="No-Show %"></app-bar-chart>
   </div>
 </div>

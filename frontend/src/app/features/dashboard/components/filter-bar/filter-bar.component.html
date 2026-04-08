@@ -1,43 +1,101 @@
 <div class="filter-bar">
-  <div class="filter-controls">
-    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
-      <mat-label>Airline</mat-label>
-      <mat-select [ngModel]="filters.airline()" (ngModelChange)="setAirline($event)">
+  <div class="filter-bar__head">
+    <div class="label-micro">Filters</div>
+    @if (filters.hasAnyFilter()) {
+      <button class="clear-btn" (click)="clearAll()">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+          <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span>Clear</span>
+      </button>
+    }
+  </div>
+
+  <div class="filter-bar__body">
+    <div class="filter-field">
+      <label class="label-micro">Airline</label>
+      <mat-select
+        class="fb-select"
+        [ngModel]="filters.airline() || ''"
+        (ngModelChange)="setAirline($event || null)"
+        panelClass="fb-panel"
+        placeholder="All airlines">
         <mat-option [value]="''">All airlines</mat-option>
-        <mat-option *ngFor="let a of airlines()" [value]="a">{{ a }}</mat-option>
+        @for (a of airlines(); track a) {
+          <mat-option [value]="a">{{ a }}</mat-option>
+        }
       </mat-select>
-    </mat-form-field>
+    </div>
 
-    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
-      <mat-label>Service Type</mat-label>
-      <mat-select [ngModel]="filters.service()" (ngModelChange)="setService($event)">
+    <div class="filter-field">
+      <label class="label-micro">Service Type</label>
+      <mat-select
+        class="fb-select"
+        [ngModel]="filters.service() || ''"
+        (ngModelChange)="setService($event || null)"
+        panelClass="fb-panel"
+        placeholder="All services">
         <mat-option [value]="''">All services</mat-option>
-        <mat-option *ngFor="let s of services()" [value]="s">{{ s }}</mat-option>
+        @for (s of services(); track s) {
+          <mat-option [value]="s">{{ s }}</mat-option>
+        }
       </mat-select>
-    </mat-form-field>
+    </div>
 
-    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
-      <mat-label>Handled By</mat-label>
-      <mat-select [ngModel]="filters.handledBy()" (ngModelChange)="setHandledBy($event)">
+    <div class="filter-field">
+      <label class="label-micro">Handled By</label>
+      <mat-select
+        class="fb-select"
+        [ngModel]="filters.handledBy() || ''"
+        (ngModelChange)="setHandledBy($event || null)"
+        panelClass="fb-panel"
+        placeholder="Both">
         <mat-option [value]="''">Both</mat-option>
         <mat-option value="SELF">Self</mat-option>
         <mat-option value="OUTSOURCED">Outsourced</mat-option>
       </mat-select>
-    </mat-form-field>
+    </div>
 
-    <app-date-range-picker></app-date-range-picker>
+    <div class="filter-spacer"></div>
+
+    <div class="filter-field filter-field--date">
+      <label class="label-micro">Date Range</label>
+      <app-date-range-picker></app-date-range-picker>
+    </div>
   </div>
 
-  <mat-chip-set class="active-chips" *ngIf="filters.hasAnyFilter()">
-    <mat-chip *ngIf="filters.airline()" (removed)="setAirline(null)">
-      Airline: {{ filters.airline() }} <mat-icon matChipRemove>cancel</mat-icon>
-    </mat-chip>
-    <mat-chip *ngIf="filters.service()" (removed)="setService(null)">
-      Service: {{ filters.service() }} <mat-icon matChipRemove>cancel</mat-icon>
-    </mat-chip>
-    <mat-chip *ngIf="filters.handledBy()" (removed)="setHandledBy(null)">
-      {{ filters.handledBy() }} <mat-icon matChipRemove>cancel</mat-icon>
-    </mat-chip>
-    <button mat-button color="warn" (click)="clearAll()">Clear All</button>
-  </mat-chip-set>
+  @if (filters.hasAnyFilter()) {
+    <div class="filter-bar__chips">
+      @if (filters.airline()) {
+        <button class="chip-pill" (click)="setAirline(null)" appTooltip="Remove filter">
+          <span class="chip-pill__key">Airline</span>
+          <span class="chip-pill__sep">·</span>
+          <span class="chip-pill__val font-data">{{ filters.airline() }}</span>
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+            <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      }
+      @if (filters.service()) {
+        <button class="chip-pill" (click)="setService(null)" appTooltip="Remove filter">
+          <span class="chip-pill__key">Service</span>
+          <span class="chip-pill__sep">·</span>
+          <span class="chip-pill__val font-data">{{ filters.service() }}</span>
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+            <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      }
+      @if (filters.handledBy()) {
+        <button class="chip-pill" (click)="setHandledBy(null)" appTooltip="Remove filter">
+          <span class="chip-pill__key">Handled</span>
+          <span class="chip-pill__sep">·</span>
+          <span class="chip-pill__val font-data">{{ filters.handledBy() }}</span>
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+            <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      }
+    </div>
+  }
 </div>

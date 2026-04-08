@@ -1,24 +1,58 @@
 <div class="fulfillment-content">
   <!-- Row 1: 4 KPI cards -->
   <div class="row row-kpis">
-    <app-kpi-card label="PRM Requested" [value]="(totalRequested() | number) ?? ''" icon="how_to_reg" gradient="blue"></app-kpi-card>
-    <app-kpi-card label="Provided vs Requested" [value]="((providedPct() | number:'1.1-1') ?? '') + '%'" icon="verified" gradient="green"></app-kpi-card>
-    <app-kpi-card label="Total Provided" [value]="(totalProvided() | number) ?? ''" icon="accessible" gradient="teal"></app-kpi-card>
-    <app-kpi-card label="Walk-up Rate" [value]="((walkupRate() | number:'1.1-1') ?? '') + '%'" icon="directions_walk" gradient="orange"></app-kpi-card>
+    <app-kpi-card
+      label="PRM Requested"
+      [value]="totalRequested() | compactNumber"
+      accent="blue"
+      [loading]="loading()"></app-kpi-card>
+    <app-kpi-card
+      label="Provided vs Requested"
+      [value]="((providedPct() | number:'1.1-1') ?? '') + '%'"
+      accent="green"
+      [loading]="loading()"></app-kpi-card>
+    <app-kpi-card
+      label="Total Provided"
+      [value]="totalProvided() | compactNumber"
+      accent="teal"
+      [loading]="loading()"></app-kpi-card>
+    <app-kpi-card
+      label="Walk-up Rate"
+      [value]="((walkupRate() | number:'1.1-1') ?? '') + '%'"
+      accent="amber"
+      [loading]="loading()"></app-kpi-card>
   </div>
 
-  <!-- Row 2: Dual-axis (1/2) + Sankey (1/2) -->
+  <!-- Row 2: Dual-axis + Sankey -->
   <div class="row row-charts-1-1">
-    <app-line-chart title="Daily Provided vs Requested" [series]="dualAxisSeries()" [loading]="loading()"
-                    [dualAxis]="true" [showAvgLine]="false"></app-line-chart>
-    <app-sankey-chart title="Agent Type / Service / Flight" [nodes]="sankeyNodes()" [links]="sankeyLinks()" [loading]="loading()"></app-sankey-chart>
+    <app-line-chart
+      title="Daily Provided vs Requested"
+      subtitle="Dual axis"
+      [series]="dualAxisSeries()"
+      [loading]="loading()"
+      [dualAxis]="true"
+      [showAvgLine]="false"></app-line-chart>
+    <app-sankey-chart
+      title="Agent Type → Service → Flight"
+      [nodes]="sankeyNodes()"
+      [links]="sankeyLinks()"
+      [loading]="loading()"></app-sankey-chart>
   </div>
 
-  <!-- Row 3: Time of Day (1/2) + Cumulative pace (1/2) -->
+  <!-- Row 3: Time of Day + Cumulative pace -->
   <div class="row row-charts-1-1">
-    <app-bar-chart title="PRM by Time of Day" [data]="timeOfDay()" [loading]="loading()"
-                   xLabel="Time Slot" yLabel="PRM Count"></app-bar-chart>
-    <app-line-chart title="Cumulative PRM Pace" [series]="cumulativeSeries()" [loading]="loading()"
-                    [showAvgLine]="false"></app-line-chart>
+    <app-bar-chart
+      title="PRM by Time of Day"
+      subtitle="Hourly buckets"
+      [data]="timeOfDay()"
+      [loading]="loading()"
+      xLabel="Time Slot"
+      yLabel="PRM Count"></app-bar-chart>
+    <app-line-chart
+      title="Cumulative PRM Pace"
+      subtitle="Running total"
+      [series]="cumulativeSeries()"
+      [loading]="loading()"
+      [showAvgLine]="false"></app-line-chart>
   </div>
 </div>

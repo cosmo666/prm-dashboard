@@ -1,24 +1,88 @@
-<mat-toolbar class="top-bar" [style.border-bottom-color]="tenant.primaryColor()">
-  <div class="brand">
-    <img *ngIf="tenant.logoUrl()" [src]="tenant.logoUrl()" alt="logo" class="logo"/>
-    <span class="tenant-name">{{ tenant.name() }}</span>
-  </div>
+<header class="topbar">
+  <div class="topbar__inner">
+    <a routerLink="/home" class="brand">
+      <div class="brand__mark">
+        <span class="brand__glyph">{{ tenantInitial() }}</span>
+      </div>
+      <div class="brand__meta">
+        <div class="label-micro">Ground Operations</div>
+        <div class="brand__name">{{ tenant.name() }}</div>
+      </div>
+    </a>
 
-  <span class="spacer"></span>
+    <div class="topbar__divider"></div>
 
-  <app-airport-selector></app-airport-selector>
+    <nav class="nav" aria-label="Breadcrumb">
+      <a routerLink="/home" class="nav__item">Home</a>
+      @if (showBack()) {
+        <span class="nav__sep" aria-hidden="true">/</span>
+        <a
+          routerLink="/dashboard"
+          class="nav__item"
+          [class.nav__current]="!nav.activeTab()"
+          [attr.aria-current]="!nav.activeTab() ? 'page' : null">PRM Dashboard</a>
+        @if (nav.activeTab()) {
+          <span class="nav__sep" aria-hidden="true">/</span>
+          <span class="nav__item nav__current" aria-current="page">{{ nav.activeTab() }}</span>
+        }
+      }
+    </nav>
 
-  <a *ngIf="showBack()" mat-button routerLink="/home" class="back-btn">
-    <mat-icon>arrow_back</mat-icon> Back
-  </a>
+    <div class="topbar__spacer"></div>
 
-  <button mat-button [matMenuTriggerFor]="userMenu" class="user-btn">
-    <mat-icon>account_circle</mat-icon>
-    <span>{{ auth.employee()?.name }}</span>
-  </button>
-  <mat-menu #userMenu="matMenu">
-    <button mat-menu-item (click)="logout()">
-      <mat-icon>logout</mat-icon><span>Logout</span>
+    <app-airport-selector></app-airport-selector>
+
+    <button
+      class="theme-toggle"
+      type="button"
+      (click)="toggleTheme()"
+      [appTooltip]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+      tooltipPosition="bottom"
+      [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'">
+      @if (theme.isDark()) {
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+        </svg>
+      } @else {
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+      }
     </button>
-  </mat-menu>
-</mat-toolbar>
+
+    <button class="user" [matMenuTriggerFor]="userMenu" aria-label="User menu">
+      <div class="user__avatar">
+        <span class="user__initials">{{ userInitials() }}</span>
+      </div>
+      <div class="user__meta">
+        <span class="user__name">{{ auth.employee()?.name }}</span>
+        <span class="user__tenant">{{ tenant.slug() }}</span>
+      </div>
+      <svg class="user__caret" width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <mat-menu #userMenu="matMenu" xPosition="before" class="user-menu">
+      <div class="menu">
+        <div class="menu__header">
+          <div class="label-micro">Signed in as</div>
+          <div class="menu__name">{{ auth.employee()?.name }}</div>
+          @if (auth.employee()?.airports?.length) {
+            <div class="menu__email font-data">
+              {{ auth.employee()!.airports.length }} airport(s)
+            </div>
+          }
+        </div>
+        <div class="menu__divider"></div>
+        <button mat-menu-item (click)="logout()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-right: 8px">
+            <path d="M9 11l3-4-3-4M12 7H5M8 12H2V2h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Sign out</span>
+        </button>
+      </div>
+    </mat-menu>
+  </div>
+</header>

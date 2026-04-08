@@ -1,46 +1,153 @@
-<div class="login-container">
-  <div class="login-left">
-    <div class="login-form-wrapper">
-      <div class="tenant-brand">
-        <img *ngIf="tenant.logoUrl()" [src]="tenant.logoUrl()" [alt]="tenant.name()" class="tenant-logo"/>
-        <h1 class="tenant-name">{{ tenant.name() || 'PRM Dashboard' }}</h1>
+<main class="login">
+  <!-- LEFT: brand + operational context -->
+  <aside class="login__brand">
+    <div class="brand__grid" [style.transform]="'translate3d(' + parallaxX() + 'px, ' + parallaxY() + 'px, 0)'"></div>
+    <div class="brand__glow" [style.transform]="'translate3d(' + (-parallaxX() * 2) + 'px, ' + (-parallaxY() * 2) + 'px, 0)'"></div>
+    <div class="brand__noise"></div>
+
+    <header class="brand__header">
+      <div class="mark">
+        <div class="mark__square">
+          <span class="mark__glyph">{{ tenantInitial() }}</span>
+        </div>
+        <div class="mark__meta">
+          <div class="label-micro">Ground Operations</div>
+          <div class="mark__tenant">{{ tenant.name() || 'PRM Dashboard' }}</div>
+        </div>
+      </div>
+    </header>
+
+    <section class="brand__hero">
+      <div class="label-micro">Passenger with Reduced Mobility</div>
+      <h1 class="brand__title">
+        Ground handling,<br />
+        <em>reimagined.</em>
+      </h1>
+      <p class="brand__tagline">
+        Real-time intelligence on PRM services across your airport network.
+        Track agents, durations, fulfillment — without spreadsheets.
+      </p>
+    </section>
+
+    <footer class="brand__footer">
+      <div class="strip">
+        <div class="strip__item">
+          <div class="label-micro">Stations</div>
+          <div class="strip__value">BLR · HYD · DEL</div>
+        </div>
+        <div class="strip__divider"></div>
+        <div class="strip__item">
+          <div class="label-micro">Local Time</div>
+          <div class="strip__value">{{ currentTime }} IST</div>
+        </div>
+        <div class="strip__divider"></div>
+        <div class="strip__item">
+          <div class="label-micro">Status</div>
+          <div class="strip__value">
+            <span class="pulse"></span> Online
+          </div>
+        </div>
+      </div>
+    </footer>
+  </aside>
+
+  <!-- RIGHT: sign-in -->
+  <section class="login__panel">
+    <div class="panel__inner">
+      <div class="panel__nav">
+        <div class="label-micro">Workspace</div>
+        <div class="panel__slug">{{ tenant.slug() || '—' }}.prm-app.com</div>
       </div>
 
-      <form class="login-form" (ngSubmit)="onSubmit()">
-        <h2>Sign in</h2>
-        <p class="subtitle">Access your PRM analytics dashboard</p>
+      <div class="panel__heading">
+        <div class="label-micro">Authentication</div>
+        <h2 class="panel__title">Sign in to continue</h2>
+        <p class="panel__sub">Access your PRM analytics dashboard.</p>
+      </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Username</mat-label>
-          <input matInput [ngModel]="username()" (ngModelChange)="username.set($event)" name="username" autocomplete="username" required />
-          <mat-icon matPrefix>person</mat-icon>
-        </mat-form-field>
+      <form class="form" (ngSubmit)="onSubmit()" autocomplete="on">
+        <div class="field">
+          <label class="field__label" for="username">Username</label>
+          <div class="field__wrap">
+            <input
+              id="username"
+              class="field__input font-data"
+              type="text"
+              autocomplete="username"
+              spellcheck="false"
+              placeholder="admin"
+              [ngModel]="username()"
+              (ngModelChange)="username.set($event)"
+              name="username"
+              required />
+          </div>
+        </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Password</mat-label>
-          <input matInput type="password" [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" autocomplete="current-password" required />
-          <mat-icon matPrefix>lock</mat-icon>
-        </mat-form-field>
+        <div class="field">
+          <label class="field__label" for="password">Password</label>
+          <div class="field__wrap">
+            <input
+              id="password"
+              class="field__input font-data"
+              [type]="showPassword() ? 'text' : 'password'"
+              autocomplete="current-password"
+              placeholder="••••••••"
+              [ngModel]="password()"
+              (ngModelChange)="password.set($event)"
+              name="password"
+              required />
+            <button
+              type="button"
+              class="field__toggle"
+              (click)="togglePassword()"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+              {{ showPassword() ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+        </div>
 
-        <mat-checkbox [ngModel]="rememberMe()" (ngModelChange)="rememberMe.set($event)" name="remember">Remember me</mat-checkbox>
+        @if (error()) {
+          <div class="alert" role="alert">
+            <span class="alert__dot"></span>
+            <span>{{ error() }}</span>
+          </div>
+        }
 
-        <div class="error-message" *ngIf="error()">{{ error() }}</div>
-
-        <button mat-raised-button color="primary" type="submit" class="full-width login-btn" [disabled]="loading()">
-          <mat-spinner *ngIf="loading()" diameter="20"></mat-spinner>
-          <span *ngIf="!loading()">Log in</span>
+        <button type="submit" class="submit" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner"></span>
+            <span>Authenticating…</span>
+          } @else {
+            <span>Sign in</span>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          }
         </button>
       </form>
 
-      <footer class="login-footer">Powered by <strong>PRM Dashboard</strong></footer>
-    </div>
-  </div>
+      <div class="hint">
+        <div class="label-micro">Demo Credentials</div>
+        <div class="hint__rows">
+          <div class="hint__row">
+            <span class="font-data">admin</span>
+            <span class="hint__sep">/</span>
+            <span class="font-data">admin123</span>
+            <span class="hint__label">Full airport access</span>
+          </div>
+          <div class="hint__row">
+            <span class="font-data">john</span>
+            <span class="hint__sep">/</span>
+            <span class="font-data">admin123</span>
+            <span class="hint__label">BLR + HYD only</span>
+          </div>
+        </div>
+      </div>
 
-  <div class="login-right" [style.background-image]="'url(/assets/images/aviation-bg.jpg)'">
-    <div class="overlay"></div>
-    <div class="right-content">
-      <h2>Ground Handling. Reimagined.</h2>
-      <p>Real-time insights into PRM services across your airports.</p>
+      <footer class="panel__foot">
+        <div class="label-micro">v0.1 — POC</div>
+        <div class="label-micro">PRM Dashboard</div>
+      </footer>
     </div>
-  </div>
-</div>
+  </section>
+</main>

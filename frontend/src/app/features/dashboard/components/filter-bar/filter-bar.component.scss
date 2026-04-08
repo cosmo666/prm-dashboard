@@ -1,13 +1,180 @@
+// ============================================================
+// Filter bar — editorial section with labeled mat-selects
+// ============================================================
+
+:host {
+  display: block;
+  margin-top: 20px;
+}
+
 .filter-bar {
-  padding: 1rem 1.5rem;
-  background: #fff;
-  border-bottom: 1px solid #e5e5e5;
-}
-.filter-controls {
   display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  gap: 14px;
 }
-.filter-field { min-width: 180px; }
-.active-chips { margin-top: 0.75rem; }
+
+.filter-bar__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+
+  &:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+    background: var(--surface);
+  }
+}
+
+.filter-bar__body {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+  flex: 1 1 auto;
+
+  .label-micro {
+    color: var(--muted);
+    font-size: 10px;
+  }
+}
+
+.filter-field--date {
+  min-width: 220px;
+  flex: 0 0 auto;
+}
+
+.filter-spacer {
+  flex: 1 0 0;
+  min-width: 0;
+}
+
+// Custom mat-select wrapper to match the design system
+:host ::ng-deep .fb-select {
+  display: block;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
+
+  .mat-mdc-select-trigger {
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  .mat-mdc-select-value {
+    color: var(--ink);
+    font-size: 13px;
+  }
+
+  .mat-mdc-select-placeholder {
+    color: var(--muted);
+  }
+
+  .mat-mdc-select-arrow {
+    color: var(--muted);
+  }
+}
+
+:host ::ng-deep .fb-select.mat-mdc-select.ng-focused {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.08);
+}
+
+// Active filter pills
+.filter-bar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 6px;
+}
+
+.chip-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--accent-bg);
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--accent-fg);
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+
+  &:hover {
+    background: #dbeafe;
+    border-color: #bfdbfe;
+  }
+
+  svg {
+    margin-left: 2px;
+    opacity: 0.6;
+  }
+
+  &:hover svg {
+    opacity: 1;
+  }
+}
+
+.chip-pill__key {
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+}
+
+.chip-pill__sep {
+  color: #93c5fd;
+}
+
+.chip-pill__val {
+  font-weight: 600;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .filter-bar__body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-field {
+    min-width: 0;
+    width: 100%;
+  }
+}

@@ -6,6 +6,7 @@ import { KpiCardComponent } from '../../components/kpi-card/kpi-card.component';
 import { LineChartComponent, LineSeries } from '../../../../shared/charts/line-chart/line-chart.component';
 import { BarChartComponent, BarDatum } from '../../../../shared/charts/bar-chart/bar-chart.component';
 import { SankeyChartComponent, SankeyNode, SankeyLink } from '../../../../shared/charts/sankey-chart/sankey-chart.component';
+import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
 import { PrmDataService } from '../../services/prm-data.service';
 import { FilterStore } from '../../../../core/store/filter.store';
 
@@ -26,7 +27,7 @@ const BIN_COLORS: Record<string, string> = {
 @Component({
   selector: 'app-fulfillment',
   standalone: true,
-  imports: [CommonModule, KpiCardComponent, LineChartComponent, BarChartComponent, SankeyChartComponent],
+  imports: [CommonModule, KpiCardComponent, LineChartComponent, BarChartComponent, SankeyChartComponent, CompactNumberPipe],
   templateUrl: './fulfillment.component.html',
   styleUrl: './fulfillment.component.scss',
 })
