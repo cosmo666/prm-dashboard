@@ -5,7 +5,7 @@ Project instructions for Claude Code working in this repo. Inherits from `dev-ai
 ## What this project is
 
 Multi-tenant PRM (Passenger with Reduced Mobility) analytics POC for airport ground-handling operations. See [README.md](README.md) and [docs/superpowers/specs/2026-04-08-prm-dashboard-design.md](docs/superpowers/specs/2026-04-08-prm-dashboard-design.md).
-
+  
 ## Tech stack (authoritative)
 
 | Layer | Tech |
@@ -221,9 +221,9 @@ When adding a new tenant, the flow is:
 | Phase | Tasks | Status | Notes |
 |---|---|---|---|
 | **1. Infrastructure** | T1 Docker+MySQL init, T2 .NET solution + Shared library | ✅ **Complete** (commits `49543ce`, `92363af`, `5f5ac6e`, `f27cdd3`, `b98c806`) | docker-compose with 6 services, master DB schema, 3 tenant DBs, 5 EF entities, 9 DTO files, TimeHelpers |
-| **2. Auth Service** | T3 project setup + DbContext, T4 JWT + login/refresh/logout/me | 🟡 **In progress** | BCrypt password hashing, 15-min JWT, 7-day httpOnly refresh cookie, `BCRYPT_PENDING:` bootstrap convention |
-| **3. Tenant Service** | T5 resolution + SchemaMigrator + 3 endpoints | ⏳ Pending | **Includes runtime tenant onboarding via embedded versioned migrations** (added mid-Phase-1 per requirement) |
-| **4. PRM Service** | T6 setup + tenant DB factory, T7 KPI/filter endpoints, T8 trends/rankings/breakdowns/performance/records | ⏳ Pending | 19 analytics endpoints, airport RBAC middleware, dedup queries |
+| **2. Auth Service** | T3 project setup + DbContext, T4 JWT + login/refresh/logout/me | ✅ **Complete** | BCrypt password hashing, 15-min JWT, 7-day httpOnly refresh cookie, `BCRYPT_PENDING:` bootstrap convention, atomic refresh rotation |
+| **3. Tenant Service** | T5 resolution + SchemaMigrator + 3 endpoints | ✅ **Complete** | Runtime tenant onboarding via embedded versioned migrations, 5-min connection cache, semaphore-guarded migration |
+| **4. PRM Service** | T6 setup + tenant DB factory, T7 KPI/filter endpoints, T8 trends/rankings/breakdowns/performance/records | ✅ **Complete** | 23 endpoints (19 analytics + filter + 3 KPI), airport RBAC middleware, dedup queries, PrmControllerBase, global exception handler |
 | **5. API Gateway** | T9 Ocelot routing + subdomain middleware | ⏳ Pending | Extracts `X-Tenant-Slug` from subdomain, JWT validation |
 | **6. Seed data** | T10 SQL seeds + Python PRM data generator | ⏳ Pending | 3 tenants, 12 employees, ~15k PRM records (Dec 2025–Mar 2026) |
 | **7. Frontend core** | T11 Angular scaffolding, T12 auth + stores + interceptor | ⏳ Pending | NgRx Signal Store, ApiClient, AuthInterceptor with auto-refresh on 401 |
@@ -231,6 +231,7 @@ When adding a new tenant, the flow is:
 | **9. Integration & polish** | T20 E2E checklist, T21 docs/adding-a-tenant.md | ⏳ Pending | Multi-tenant isolation tests, RBAC verification, loading/empty states |
 
 **Phase 1 deliverables (in `main` branch):**
+
 - `docker-compose.yml`, `.env.example`
 - `database/init/01-master-schema.sql` (4 tables)
 - `database/init/02-tenant-schema.sql` (3 tenant DBs + `prm_services` table)
@@ -238,13 +239,13 @@ When adding a new tenant, the flow is:
 - `README.md`, `CLAUDE.md`, `.gitignore` (full .NET + Angular tree)
 - `.claude/` realigned to PRM stack (skill, rules, agents, settings)
 
-**What's left across remaining 19 tasks (Phases 2–9):**
-- 4 .NET microservices (Auth, Tenant, PRM, Gateway)
-- ~60 backend files (controllers, services, DbContexts, middleware, Dockerfiles)
-- 1 schema migration runner (`SchemaMigrator` in TenantService) — enables runtime tenant onboarding
+**What's left across remaining 11 tasks (Phases 5–9):**
+
+- 1 .NET microservice (Gateway)
+- ~5 backend files (Ocelot config, subdomain middleware, Dockerfile)
 - 1 Angular SPA (~50 files: core auth, stores, dashboard with 4 tabs, 6 chart wrappers, login, home)
 - 5 SQL seed scripts + Python generator
 - E2E test checklist + adding-a-tenant doc
 - Final polish: loading skeletons, empty states, multi-tenant isolation verification
 
-Last updated: 2026-04-08 (after Phase 1 completion, before Phase 2 dispatch)
+Last updated: 2026-04-08 (after Phase 4 completion, before Phase 5 dispatch)
