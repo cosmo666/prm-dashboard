@@ -43,7 +43,7 @@ export class OverviewComponent {
     effect(() => {
       this.filters.queryParams(); // track filter changes
       this.fetchAll();
-    });
+    }, { allowSignalWrites: true });
   }
 
   fetchAll() {

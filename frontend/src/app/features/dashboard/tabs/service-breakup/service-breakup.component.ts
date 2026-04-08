@@ -29,7 +29,7 @@ export class ServiceBreakupComponent {
   summaries = signal<ServiceSummary[]>([]);
   matrix = signal<MatrixRow[]>([]);
   trendSeries = signal<LineSeries[]>([]);
-  durationBars = signal<BarDatum[]>([]);
+  serviceCountBars = signal<BarDatum[]>([]);
   dowBars = signal<BarDatum[]>([]);
 
   maxPerColumn = computed<Record<ServiceType, number>>(() => {
@@ -41,7 +41,7 @@ export class ServiceBreakupComponent {
   });
 
   constructor() {
-    effect(() => { this.filters.queryParams(); this.fetchAll(); });
+    effect(() => { this.filters.queryParams(); this.fetchAll(); }, { allowSignalWrites: true });
   }
 
   fetchAll() {
@@ -82,9 +82,9 @@ export class ServiceBreakupComponent {
           data: monthRows.map(m => [m.month, m.counts[t]] as [string, number]),
         })));
 
-        // Duration by service type: DurationStatsResponse has no by_service field
-        // Use topServices ranking as a proxy for per-service bars
-        this.durationBars.set((r.topServices.items ?? []).map((d: any) => ({
+        // PRM count by service type (backend has no per-service duration aggregation;
+        // add one later if needed — for now we show volumes which is meaningful).
+        this.serviceCountBars.set((r.topServices.items ?? []).map((d: any) => ({
           label: d.label, value: d.count,
         })));
 

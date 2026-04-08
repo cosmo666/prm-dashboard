@@ -46,7 +46,7 @@ export class Top10Component {
   displayedColumns = ['rank', 'agentNo', 'name', 'count', 'avgDuration', 'topService', 'topAirline', 'daysActive'];
 
   constructor() {
-    effect(() => { this.filters.queryParams(); this.fetchAll(); });
+    effect(() => { this.filters.queryParams(); this.fetchAll(); }, { allowSignalWrites: true });
   }
 
   fetchAll() {

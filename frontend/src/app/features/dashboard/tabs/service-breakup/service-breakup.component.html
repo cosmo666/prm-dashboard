@@ -44,7 +44,7 @@
 
   <!-- Row 3: Avg Duration by Service + Day of Week -->
   <div class="row row-charts-1-1">
-    <app-bar-chart title="PRM Count by Service Type" [data]="durationBars()" [loading]="loading()"
+    <app-bar-chart title="PRM Count by Service Type" [data]="serviceCountBars()" [loading]="loading()"
                    xLabel="Service" yLabel="Count"></app-bar-chart>
     <app-bar-chart title="PRM by Day of Week" [data]="dowBars()" [loading]="loading()"
                    xLabel="Day" yLabel="Count"></app-bar-chart>

@@ -24,14 +24,19 @@ public class RecordService : BaseQueryService
         int page = 1, int pageSize = 20, string sort = "service_date:desc")
     {
         await using var db = await _factory.CreateDbContextAsync(tenantSlug);
-        var query = ApplyFilters(db, filters);
 
-        // Dedup: first row per id
-        var deduped = query
+        // Dedup: find the MIN(row_id) per distinct id from filtered set.
+        // EF Core 8 cannot translate .GroupBy(id).Select(g => g.OrderBy(...).First()) directly,
+        // but it can translate GroupBy → Min, so we fetch the canonical row ids and
+        // join back via Contains (which becomes a WHERE IN subquery).
+        var canonicalRowIds = ApplyFilters(db, filters)
             .GroupBy(r => r.Id)
-            .Select(g => g.OrderBy(r => r.RowId).First());
+            .Select(g => g.Min(r => r.RowId));
 
-        // Apply sorting
+        var deduped = db.PrmServices.AsNoTracking()
+            .Where(r => canonicalRowIds.Contains(r.RowId));
+
+        // Apply sorting on the deduped set
         deduped = sort switch
         {
             "start_time:asc" => deduped.OrderBy(r => r.StartTime),
@@ -42,7 +47,7 @@ public class RecordService : BaseQueryService
         };
 
         int totalCount = await deduped.CountAsync();
-        int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+        int totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling((double)totalCount / pageSize);
 
         var items = await deduped
             .Skip((page - 1) * pageSize)

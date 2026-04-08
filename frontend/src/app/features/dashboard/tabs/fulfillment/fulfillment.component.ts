@@ -47,7 +47,7 @@ export class FulfillmentComponent {
   cumulativeSeries = signal<LineSeries[]>([]);
 
   constructor() {
-    effect(() => { this.filters.queryParams(); this.fetchAll(); });
+    effect(() => { this.filters.queryParams(); this.fetchAll(); }, { allowSignalWrites: true });
   }
 
   fetchAll() {
