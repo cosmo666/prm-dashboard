@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgxEchartsDirective } from 'ngx-echarts';
 import { EChartsOption } from 'echarts';
@@ -8,7 +8,11 @@ import { EChartsOption } from 'echarts';
   standalone: true,
   imports: [CommonModule, NgxEchartsDirective],
   template: `
-    <section class="chart">
+    <section
+      class="chart"
+      role="img"
+      [attr.aria-label]="ariaDescription()"
+      [attr.aria-busy]="loading() ? 'true' : null">
       @if (title()) {
         <header class="chart__head">
           <span class="chart__title">{{ title() }}</span>
@@ -18,9 +22,9 @@ import { EChartsOption } from 'echarts';
         </header>
       }
 
-      <div class="chart__body">
+      <div class="chart__body" aria-live="polite">
         @if (loading()) {
-          <div class="chart__skeleton" aria-label="Loading chart data">
+          <div class="chart__skeleton" role="status" aria-label="Loading chart data">
             <div class="shimmer shimmer--bar" style="height: 22%"></div>
             <div class="shimmer shimmer--bar" style="height: 45%"></div>
             <div class="shimmer shimmer--bar" style="height: 32%"></div>
@@ -31,8 +35,8 @@ import { EChartsOption } from 'echarts';
             <div class="shimmer shimmer--bar" style="height: 48%"></div>
           </div>
         } @else if (isEmpty()) {
-          <div class="chart__empty">
-            <div class="chart__empty-mark">
+          <div class="chart__empty" role="status">
+            <div class="chart__empty-mark" aria-hidden="true">
               <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                 <circle cx="14" cy="14" r="13" stroke="currentColor" stroke-width="0.75" stroke-dasharray="2 3" opacity="0.5"/>
                 <path d="M9 14h10M14 9v10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
@@ -47,7 +51,8 @@ import { EChartsOption } from 'echarts';
             [options]="options()"
             [autoResize]="true"
             (chartClick)="chartClick.emit($event)"
-            class="chart__canvas"></div>
+            class="chart__canvas"
+            role="presentation"></div>
         }
       </div>
     </section>
@@ -193,4 +198,16 @@ export class BaseChartComponent {
   loading = input<boolean>(false);
   isEmpty = input<boolean>(false);
   chartClick = output<any>();
+
+  // Screen-reader description — falls back to title/subtitle if no explicit
+  // description is provided by the caller.
+  ariaDescription = computed<string>(() => {
+    const parts: string[] = [];
+    if (this.title()) parts.push(this.title());
+    if (this.subtitle()) parts.push(this.subtitle());
+    if (this.loading()) parts.push('loading');
+    else if (this.isEmpty()) parts.push('no data available');
+    else parts.push('chart');
+    return parts.join(', ');
+  });
 }

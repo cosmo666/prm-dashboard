@@ -42,12 +42,15 @@ backend/
     PrmDashboard.Gateway/                  # Ocelot routing + subdomain→X-Tenant-Slug middleware
 frontend/                                   # Angular 17 SPA (lazy-loaded features, standalone components)
   src/app/
-    core/                                  # Singletons: auth, api, stores (Tenant/Auth/Filter)
-    features/auth/login/                   # Login page (split layout)
+    core/                                  # Singletons: auth, api, theme, progress, stores (Tenant/Auth/Filter/Navigation)
+    features/auth/login/                   # Login page (split layout, mouse-parallax dark panel)
     features/home/                         # Home with PRM Dashboard tile
     features/dashboard/                    # 4-tab dashboard (Overview, Top 10, Service Breakup, Fulfillment)
+    features/not-found/                    # Editorial 404 — "Flight diverted"
     shared/charts/                         # ECharts wrapper components (6 chart types)
-    shared/components/                     # TopBar, AirportSelector
+    shared/components/                     # TopBar, AirportSelector, ProgressBar
+    shared/directives/                     # [appTooltip] — replaces matTooltip
+    shared/pipes/                          # CompactNumberPipe (15.2k / 1.5M / —)
 database/
   init/                                    # Runs once on MySQL container boot
     01-master-schema.sql                   # Master DB schema

@@ -23,6 +23,8 @@ frontend/src/app/
 │   │   └── tenant.resolver.ts             # Subdomain → tenant config
 │   ├── api/
 │   │   └── api.client.ts                  # Wrapper over HttpClient with base URL + withCredentials
+│   ├── progress/
+│   │   └── progress.service.ts            # In-flight counter for global top progress bar (start/stop/wrap)
 │   ├── store/
 │   │   ├── auth.store.ts                  # Employee, access token, airports
 │   │   ├── tenant.store.ts                # Tenant slug, name, logo, primary color
@@ -32,8 +34,9 @@ frontend/src/app/
 │       └── theme.service.ts               # Light/dark toggle + prefers-color-scheme
 │
 ├── features/                              # Lazy-loaded route components
-│   ├── auth/login/                        # Split-layout login page
+│   ├── auth/login/                        # Split-layout login page (mouse-parallax dark panel)
 │   ├── home/                              # Dashboard tile picker
+│   ├── not-found/                         # Editorial 404 — "Flight diverted" page
 │   └── dashboard/                         # 4-tab PRM dashboard
 │       ├── dashboard.component.ts
 │       ├── components/
@@ -61,9 +64,12 @@ frontend/src/app/
     │   └── heatmap-chart/
     ├── components/
     │   ├── top-bar/                       # Logo, tenant name, breadcrumb, airport selector, theme toggle
-    │   └── airport-selector/              # RBAC-filtered dropdown bound to FilterStore
-    └── directives/
-        └── tooltip.directive.ts           # [appTooltip] — replaces matTooltip, body-portal, viewport-clamped
+    │   ├── airport-selector/              # RBAC-filtered dropdown bound to FilterStore
+    │   └── progress-bar/                  # 2px global top progress bar bound to ProgressService
+    ├── directives/
+    │   └── tooltip.directive.ts           # [appTooltip] — replaces matTooltip, body-portal, viewport-clamped
+    └── pipes/
+        └── compact-number.pipe.ts         # 15234 → "15.2k", 1.5M → "1.5M", null → "—"
 ```
 
 ## Component organization

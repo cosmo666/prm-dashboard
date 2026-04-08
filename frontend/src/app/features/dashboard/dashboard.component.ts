@@ -60,6 +60,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const idx = this.activeTab();
       this.nav.setActiveTab(TAB_NAMES[idx] ?? null);
     }, { allowSignalWrites: true });
+
+    // Listen for tab-switch requests from outside (e.g. the command palette).
+    // The tick signal changes on every request so this effect fires even when
+    // the requested index matches the current one.
+    effect(() => {
+      const tick = this.nav.requestedTabTick();
+      if (tick === 0) return;
+      const idx = this.nav.requestedTabIndex();
+      if (idx != null && idx >= 0 && idx < TAB_NAMES.length) {
+        this.activeTab.set(idx);
+      }
+    }, { allowSignalWrites: true });
   }
 
   ngOnInit(): void {

@@ -18,6 +18,7 @@ export interface FilterState {
   handledBy: string;
   flight: string;
   agentNo: string;
+  compareMode: boolean;
 }
 
 const initialState: FilterState = {
@@ -30,6 +31,7 @@ const initialState: FilterState = {
   handledBy: '',
   flight: '',
   agentNo: '',
+  compareMode: false,
 };
 
 export const FilterStore = signalStore(
@@ -53,6 +55,9 @@ export const FilterStore = signalStore(
           params[key] = value;
         }
       }
+      if (state.compareMode()) {
+        params['compare'] = '1';
+      }
       return params;
     }),
     hasAnyFilter: computed(() =>
@@ -72,6 +77,9 @@ export const FilterStore = signalStore(
     clearSecondary(): void {
       patchState(store, { airline: '', service: '', handledBy: '', flight: '', agentNo: '' });
     },
+    toggleCompare(): void {
+      patchState(store, { compareMode: !store.compareMode() });
+    },
     loadFromQueryParams(params: Record<string, string>): void {
       patchState(store, {
         airport: params['airport'] || '',
@@ -82,6 +90,7 @@ export const FilterStore = signalStore(
         handledBy: params['handled_by'] || '',
         flight: params['flight'] || '',
         agentNo: params['agent_no'] || '',
+        compareMode: params['compare'] === '1',
       });
     },
     reset(): void {

@@ -7,6 +7,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DateRangePickerComponent } from '../date-range-picker/date-range-picker.component';
+import { SavedViewsMenuComponent } from '../../../../shared/components/saved-views-menu/saved-views-menu.component';
 import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 import { FilterStore } from '../../../../core/store/filter.store';
 import { PrmDataService } from '../../services/prm-data.service';
@@ -14,7 +15,7 @@ import { PrmDataService } from '../../services/prm-data.service';
 @Component({
   selector: 'app-filter-bar',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatSelectModule, MatChipsModule, MatButtonModule, MatIconModule, DateRangePickerComponent, TooltipDirective],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatSelectModule, MatChipsModule, MatButtonModule, MatIconModule, DateRangePickerComponent, SavedViewsMenuComponent, TooltipDirective],
   templateUrl: './filter-bar.component.html',
   styleUrl: './filter-bar.component.scss',
 })
@@ -41,4 +42,5 @@ export class FilterBarComponent implements OnInit {
   setService(v: string | null)  { this.filters.setFilter({ service: v ?? '' }); }
   setHandledBy(v: string | null) { this.filters.setFilter({ handledBy: v ?? '' }); }
   clearAll() { this.filters.clearSecondary(); }
+  toggleCompare() { this.filters.toggleCompare(); }
 }

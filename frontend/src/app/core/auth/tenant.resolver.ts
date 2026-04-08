@@ -5,6 +5,7 @@ import { ApiClient } from '../api/api.client';
 import { TenantStore } from '../store/tenant.store';
 import { ProgressService } from '../progress/progress.service';
 import { environment } from '../../../environments/environment';
+import { readDevTenantOverride } from '../../shared/components/dev-tenant-picker/dev-tenant-picker.component';
 
 // Mirror backend TenantConfigResponse (camelCase by default ASP.NET serialization)
 interface TenantConfigResponse {
@@ -19,7 +20,8 @@ function extractSlugFromHostname(): string {
   const hostname = window.location.hostname;
 
   if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
-    return environment.defaultTenantSlug;
+    // Dev-only: DevTenantPicker may have stashed a slug override in localStorage.
+    return readDevTenantOverride() ?? environment.defaultTenantSlug;
   }
 
   const parts = hostname.split('.');

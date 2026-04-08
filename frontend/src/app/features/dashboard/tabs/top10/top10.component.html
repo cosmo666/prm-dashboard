@@ -7,14 +7,16 @@
       [data]="topAirlines()"
       [loading]="loading()"
       xLabel="Airline"
-      yLabel="PRM Count"></app-bar-chart>
+      yLabel="PRM Count"
+      (barClick)="onAirlineClick($event)"></app-bar-chart>
     <app-bar-chart
       title="Top 10 Flights"
       subtitle="By PRM volume"
       [data]="topFlights()"
       [loading]="loading()"
       xLabel="Flight"
-      yLabel="PRM Count"></app-bar-chart>
+      yLabel="PRM Count"
+      (barClick)="onFlightClick($event)"></app-bar-chart>
   </div>
 
   <!-- Row 2: Custom editorial agents table -->
@@ -30,63 +32,63 @@
       </div>
     </header>
 
-    <div class="agents-table">
+    <div class="agents-table" role="table" aria-label="Top 10 agents by PRM count">
       <!-- Header row -->
-      <div class="agents-row agents-row--head">
-        <div class="cell cell--rank">Rank</div>
-        <div class="cell cell--agent">Agent</div>
-        <div class="cell cell--num">PRM</div>
-        <div class="cell cell--num">Avg Min</div>
-        <div class="cell cell--code">Service</div>
-        <div class="cell cell--code">Airline</div>
-        <div class="cell cell--num">Days</div>
+      <div class="agents-row agents-row--head" role="row">
+        <div class="cell cell--rank" role="columnheader">Rank</div>
+        <div class="cell cell--agent" role="columnheader">Agent</div>
+        <div class="cell cell--num" role="columnheader">PRM</div>
+        <div class="cell cell--num" role="columnheader">Avg Min</div>
+        <div class="cell cell--code" role="columnheader">Service</div>
+        <div class="cell cell--code" role="columnheader">Airline</div>
+        <div class="cell cell--num" role="columnheader">Days</div>
       </div>
 
       @if (loading()) {
         @for (i of skeletonAgents; track i) {
-          <div class="agents-row agents-row--skeleton">
-            <div class="cell cell--rank"><div class="skeleton-block" style="width: 24px; height: 20px;"></div></div>
-            <div class="cell cell--agent">
+          <div class="agents-row agents-row--skeleton" role="row" aria-busy="true">
+            <div class="cell cell--rank" role="cell"><div class="skeleton-block" style="width: 24px; height: 20px;"></div></div>
+            <div class="cell cell--agent" role="cell">
               <div class="skeleton-block" style="width: 60%; height: 14px; margin-bottom: 6px;"></div>
               <div class="skeleton-block" style="width: 40%; height: 11px;"></div>
             </div>
-            <div class="cell cell--num"><div class="skeleton-block" style="width: 32px; height: 16px; margin-left: auto;"></div></div>
-            <div class="cell cell--num"><div class="skeleton-block" style="width: 40px; height: 18px; margin-left: auto;"></div></div>
-            <div class="cell cell--code"><div class="skeleton-block" style="width: 28px; height: 14px;"></div></div>
-            <div class="cell cell--code"><div class="skeleton-block" style="width: 24px; height: 14px;"></div></div>
-            <div class="cell cell--num"><div class="skeleton-block" style="width: 20px; height: 14px; margin-left: auto;"></div></div>
+            <div class="cell cell--num" role="cell"><div class="skeleton-block" style="width: 32px; height: 16px; margin-left: auto;"></div></div>
+            <div class="cell cell--num" role="cell"><div class="skeleton-block" style="width: 40px; height: 18px; margin-left: auto;"></div></div>
+            <div class="cell cell--code" role="cell"><div class="skeleton-block" style="width: 28px; height: 14px;"></div></div>
+            <div class="cell cell--code" role="cell"><div class="skeleton-block" style="width: 24px; height: 14px;"></div></div>
+            <div class="cell cell--num" role="cell"><div class="skeleton-block" style="width: 20px; height: 14px; margin-left: auto;"></div></div>
           </div>
         }
       } @else if (topAgents().length === 0) {
-        <div class="agents-empty">
+        <div class="agents-empty" role="status">
           <div class="agents-empty__title">No agents</div>
           <div class="agents-empty__hint">No agent activity in the selected period.</div>
         </div>
       } @else {
         @for (agent of topAgents(); track agent.agentNo) {
-          <div class="agents-row" [class]="rankClass(agent.rank)">
-            <div class="cell cell--rank">
+          <div class="agents-row" [class]="rankClass(agent.rank)" role="row">
+            <div class="cell cell--rank" role="cell">
               <span class="rank-num font-display">{{ formatRank(agent.rank) }}</span>
             </div>
-            <div class="cell cell--agent">
+            <div class="cell cell--agent" role="cell">
               <div class="agent-name">{{ agent.name }}</div>
               <div class="agent-no font-data">#{{ agent.agentNo }}</div>
             </div>
-            <div class="cell cell--num">
+            <div class="cell cell--num" role="cell">
               <span class="font-data">{{ agent.count | number }}</span>
             </div>
-            <div class="cell cell--num">
+            <div class="cell cell--num" role="cell">
               <span class="duration-badge font-data" [class]="durationClass(agent.avgDuration)">
                 {{ agent.avgDuration | number:'1.0-0' }}
               </span>
             </div>
-            <div class="cell cell--code">
+            <div class="cell cell--code" role="cell">
               <span class="code-chip font-data">{{ agent.topService }}</span>
             </div>
-            <div class="cell cell--code">
+            <div class="cell cell--code" role="cell">
               <span class="code-chip font-data">{{ agent.topAirline }}</span>
             </div>
-            <div class="cell cell--num cell--days">
+            <div class="cell cell--num cell--days" role="cell">
               <span class="days-value font-data">{{ agent.daysActive }}<span class="days-unit">d</span></span>
               <span class="days-label">{{ daysLabel(agent.daysActive) }}</span>
             </div>

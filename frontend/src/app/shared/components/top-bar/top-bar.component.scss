@@ -10,7 +10,8 @@
 }
 
 .topbar {
-  background: rgba(250, 250, 247, 0.85);
+  // Tokenized so dark mode flips with the rest of the app.
+  background: var(--topbar-bg);
   backdrop-filter: saturate(180%) blur(14px);
   -webkit-backdrop-filter: saturate(180%) blur(14px);
   border-bottom: 1px solid var(--border);

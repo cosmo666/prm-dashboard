@@ -71,6 +71,9 @@
   height: 6px;
   background: var(--accent);
   border-radius: 50%;
+  flex-shrink: 0;
+  transform-origin: center;
+  animation: summaryPulse 1.6s ease-in-out infinite;
 }
 
 .summary-text {
@@ -80,6 +83,15 @@
 @keyframes summaryEnter {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes summaryPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.78); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .summary-dot { animation: none; }
 }
 
 .page-head__right {

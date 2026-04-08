@@ -1,62 +1,13 @@
 <main class="login">
-  <!-- LEFT: brand + operational context -->
-  <aside class="login__brand">
-    <div class="brand__grid" [style.transform]="'translate3d(' + parallaxX() + 'px, ' + parallaxY() + 'px, 0)'"></div>
-    <div class="brand__glow" [style.transform]="'translate3d(' + (-parallaxX() * 2) + 'px, ' + (-parallaxY() * 2) + 'px, 0)'"></div>
-    <div class="brand__noise"></div>
-
-    <header class="brand__header">
-      <div class="mark">
-        <div class="mark__square">
-          <span class="mark__glyph">{{ tenantInitial() }}</span>
-        </div>
-        <div class="mark__meta">
-          <div class="label-micro">Ground Operations</div>
-          <div class="mark__tenant">{{ tenant.name() || 'PRM Dashboard' }}</div>
-        </div>
-      </div>
-    </header>
-
-    <section class="brand__hero">
-      <div class="label-micro">Passenger with Reduced Mobility</div>
-      <h1 class="brand__title">
-        Ground handling,<br />
-        <em>reimagined.</em>
-      </h1>
-      <p class="brand__tagline">
-        Real-time intelligence on PRM services across your airport network.
-        Track agents, durations, fulfillment — without spreadsheets.
-      </p>
-    </section>
-
-    <footer class="brand__footer">
-      <div class="strip">
-        <div class="strip__item">
-          <div class="label-micro">Stations</div>
-          <div class="strip__value">BLR · HYD · DEL</div>
-        </div>
-        <div class="strip__divider"></div>
-        <div class="strip__item">
-          <div class="label-micro">Local Time</div>
-          <div class="strip__value">{{ currentTime }} IST</div>
-        </div>
-        <div class="strip__divider"></div>
-        <div class="strip__item">
-          <div class="label-micro">Status</div>
-          <div class="strip__value">
-            <span class="pulse"></span> Online
-          </div>
-        </div>
-      </div>
-    </footer>
-  </aside>
-
-  <!-- RIGHT: sign-in -->
+  <!-- LEFT: sign-in -->
   <section class="login__panel">
     <div class="panel__inner">
       <div class="panel__nav">
-        <div class="label-micro">Workspace</div>
-        <div class="panel__slug">{{ tenant.slug() || '—' }}.prm-app.com</div>
+        <div class="panel__nav-left">
+          <div class="label-micro">Workspace</div>
+          <div class="panel__slug">{{ tenant.slug() || '—' }}.prm-app.com</div>
+        </div>
+        <app-dev-tenant-picker></app-dev-tenant-picker>
       </div>
 
       <div class="panel__heading">
@@ -127,20 +78,19 @@
       </form>
 
       <div class="hint">
-        <div class="label-micro">Demo Credentials</div>
+        <div class="hint__head">
+          <div class="label-micro">Demo Credentials</div>
+          <div class="hint__tenant font-data">{{ tenant.slug() || '—' }}</div>
+        </div>
         <div class="hint__rows">
-          <div class="hint__row">
-            <span class="font-data">admin</span>
-            <span class="hint__sep">/</span>
-            <span class="font-data">admin123</span>
-            <span class="hint__label">Full airport access</span>
-          </div>
-          <div class="hint__row">
-            <span class="font-data">john</span>
-            <span class="hint__sep">/</span>
-            <span class="font-data">admin123</span>
-            <span class="hint__label">BLR + HYD only</span>
-          </div>
+          @for (u of demoUsers(); track u.username) {
+            <div class="hint__row">
+              <span class="font-data">{{ u.username }}</span>
+              <span class="hint__sep">/</span>
+              <span class="font-data">{{ u.password }}</span>
+              <span class="hint__label">{{ u.access }}</span>
+            </div>
+          }
         </div>
       </div>
 
@@ -150,4 +100,56 @@
       </footer>
     </div>
   </section>
+
+  <!-- RIGHT: brand + operational context -->
+  <aside class="login__brand">
+    <div class="brand__grid" [style.transform]="'translate3d(' + parallaxX() + 'px, ' + parallaxY() + 'px, 0)'"></div>
+    <div class="brand__glow" [style.transform]="'translate3d(' + (-parallaxX() * 2) + 'px, ' + (-parallaxY() * 2) + 'px, 0)'"></div>
+    <div class="brand__noise"></div>
+
+    <header class="brand__header">
+      <div class="mark">
+        <div class="mark__square">
+          <span class="mark__glyph">{{ tenantInitial() }}</span>
+        </div>
+        <div class="mark__meta">
+          <div class="label-micro">Ground Operations</div>
+          <div class="mark__tenant">{{ tenant.name() || 'PRM Dashboard' }}</div>
+        </div>
+      </div>
+    </header>
+
+    <section class="brand__hero">
+      <div class="label-micro">Passenger with Reduced Mobility</div>
+      <h1 class="brand__title">
+        Ground handling,<br />
+        <em>reimagined.</em>
+      </h1>
+      <p class="brand__tagline">
+        Real-time intelligence on PRM services across your airport network.
+        Track agents, durations, fulfillment — without spreadsheets.
+      </p>
+    </section>
+
+    <footer class="brand__footer">
+      <div class="strip">
+        <div class="strip__item">
+          <div class="label-micro">Stations</div>
+          <div class="strip__value">BLR · HYD · DEL</div>
+        </div>
+        <div class="strip__divider"></div>
+        <div class="strip__item">
+          <div class="label-micro">Local Time</div>
+          <div class="strip__value">{{ currentTime }} IST</div>
+        </div>
+        <div class="strip__divider"></div>
+        <div class="strip__item">
+          <div class="label-micro">Status</div>
+          <div class="strip__value">
+            <span class="pulse"></span> Online
+          </div>
+        </div>
+      </div>
+    </footer>
+  </aside>
 </main>

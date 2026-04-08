@@ -6,6 +6,7 @@ import { BarChartComponent, BarDatum } from '../../../../shared/charts/bar-chart
 import { HorizontalBarChartComponent } from '../../../../shared/charts/horizontal-bar-chart/horizontal-bar-chart.component';
 import { PrmDataService } from '../../services/prm-data.service';
 import { FilterStore } from '../../../../core/store/filter.store';
+import { ToastService } from '../../../../core/toast/toast.service';
 
 export interface AgentRow {
   rank: number;
@@ -41,6 +42,7 @@ const CARRIER_COLORS: Record<string, string> = {
 })
 export class Top10Component {
   private data = inject(PrmDataService);
+  private toast = inject(ToastService);
   filters = inject(FilterStore);
 
   loading = signal(true);
@@ -130,5 +132,17 @@ export class Top10Component {
     if (days >= 5) return 'regular';
     if (days >= 1) return 'occasional';
     return 'inactive';
+  }
+
+  onAirlineClick(code: string): void {
+    if (!code) return;
+    this.filters.setFilter({ airline: code });
+    this.toast.show(`Filtered by airline: ${code}`);
+  }
+
+  onFlightClick(code: string): void {
+    if (!code) return;
+    this.filters.setFilter({ flight: code });
+    this.toast.show(`Filtered by flight: ${code}`);
   }
 }

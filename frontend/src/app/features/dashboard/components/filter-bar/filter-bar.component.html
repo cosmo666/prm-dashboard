@@ -2,7 +2,7 @@
   <div class="filter-bar__head">
     <div class="label-micro">Filters</div>
     @if (filters.hasAnyFilter()) {
-      <button class="clear-btn" (click)="clearAll()">
+      <button type="button" class="clear-btn" (click)="clearAll()" aria-label="Clear all active filters">
         <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
           <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
@@ -13,9 +13,10 @@
 
   <div class="filter-bar__body">
     <div class="filter-field">
-      <label class="label-micro">Airline</label>
+      <span class="label-micro" id="fb-airline-label">Airline</span>
       <mat-select
         class="fb-select"
+        aria-labelledby="fb-airline-label"
         [ngModel]="filters.airline() || ''"
         (ngModelChange)="setAirline($event || null)"
         panelClass="fb-panel"
@@ -28,9 +29,10 @@
     </div>
 
     <div class="filter-field">
-      <label class="label-micro">Service Type</label>
+      <span class="label-micro" id="fb-service-label">Service Type</span>
       <mat-select
         class="fb-select"
+        aria-labelledby="fb-service-label"
         [ngModel]="filters.service() || ''"
         (ngModelChange)="setService($event || null)"
         panelClass="fb-panel"
@@ -43,9 +45,10 @@
     </div>
 
     <div class="filter-field">
-      <label class="label-micro">Handled By</label>
+      <span class="label-micro" id="fb-handled-label">Handled By</span>
       <mat-select
         class="fb-select"
+        aria-labelledby="fb-handled-label"
         [ngModel]="filters.handledBy() || ''"
         (ngModelChange)="setHandledBy($event || null)"
         panelClass="fb-panel"
@@ -58,16 +61,37 @@
 
     <div class="filter-spacer"></div>
 
+    <div class="filter-field filter-field--views">
+      <span class="label-micro">Saved</span>
+      <app-saved-views-menu></app-saved-views-menu>
+    </div>
+
+    <div class="filter-field filter-field--compare">
+      <span class="label-micro">Compare</span>
+      <button
+        type="button"
+        class="compare-pill"
+        [class.compare-pill--active]="filters.compareMode()"
+        (click)="toggleCompare()"
+        [attr.aria-pressed]="filters.compareMode()"
+        aria-label="Toggle previous period comparison">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M2 8h2M6 8h2M10 8h2M14 8h0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span>{{ filters.compareMode() ? 'Comparing' : 'Compare' }}</span>
+      </button>
+    </div>
+
     <div class="filter-field filter-field--date">
-      <label class="label-micro">Date Range</label>
-      <app-date-range-picker></app-date-range-picker>
+      <span class="label-micro" id="fb-date-label">Date Range</span>
+      <app-date-range-picker aria-labelledby="fb-date-label"></app-date-range-picker>
     </div>
   </div>
 
   @if (filters.hasAnyFilter()) {
-    <div class="filter-bar__chips">
+    <div class="filter-bar__chips" role="status" aria-live="polite" aria-label="Active filters">
       @if (filters.airline()) {
-        <button class="chip-pill" (click)="setAirline(null)" appTooltip="Remove filter">
+        <button type="button" class="chip-pill" (click)="setAirline(null)" [attr.aria-label]="'Remove airline filter: ' + filters.airline()" appTooltip="Remove filter">
           <span class="chip-pill__key">Airline</span>
           <span class="chip-pill__sep">·</span>
           <span class="chip-pill__val font-data">{{ filters.airline() }}</span>
@@ -77,7 +101,7 @@
         </button>
       }
       @if (filters.service()) {
-        <button class="chip-pill" (click)="setService(null)" appTooltip="Remove filter">
+        <button type="button" class="chip-pill" (click)="setService(null)" [attr.aria-label]="'Remove service filter: ' + filters.service()" appTooltip="Remove filter">
           <span class="chip-pill__key">Service</span>
           <span class="chip-pill__sep">·</span>
           <span class="chip-pill__val font-data">{{ filters.service() }}</span>
@@ -87,7 +111,7 @@
         </button>
       }
       @if (filters.handledBy()) {
-        <button class="chip-pill" (click)="setHandledBy(null)" appTooltip="Remove filter">
+        <button type="button" class="chip-pill" (click)="setHandledBy(null)" [attr.aria-label]="'Remove handled-by filter: ' + filters.handledBy()" appTooltip="Remove filter">
           <span class="chip-pill__key">Handled</span>
           <span class="chip-pill__sep">·</span>
           <span class="chip-pill__val font-data">{{ filters.handledBy() }}</span>

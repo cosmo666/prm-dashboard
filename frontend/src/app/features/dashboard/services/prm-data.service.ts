@@ -33,6 +33,8 @@ export class PrmDataService {
   private params(extra: Record<string, string | number | null | undefined> = {}): Record<string, string | undefined> {
     const base = this.filters.queryParams();
     const result: Record<string, string | undefined> = { ...base };
+    // compare=1 is a UI-only flag for URL sync — never sent to backend
+    delete result['compare'];
     for (const [key, value] of Object.entries(extra)) {
       result[key] = value != null ? String(value) : undefined;
     }
@@ -53,6 +55,12 @@ export class PrmDataService {
   // Trends
   trendsDaily(metric: 'count' | 'duration' | 'agents' = 'count'): Observable<DailyTrendResponse> {
     return this.api.get<DailyTrendResponse>('/prm/trends/daily', this.params({ metric }));
+  }
+  trendsDailyRange(from: string, to: string, metric: 'count' | 'duration' | 'agents' = 'count'): Observable<DailyTrendResponse> {
+    return this.api.get<DailyTrendResponse>(
+      '/prm/trends/daily',
+      this.params({ metric, date_from: from, date_to: to }),
+    );
   }
   trendsMonthly(): Observable<MonthlyTrendResponse> {
     return this.api.get<MonthlyTrendResponse>('/prm/trends/monthly', this.params());

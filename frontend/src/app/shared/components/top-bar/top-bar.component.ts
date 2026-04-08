@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatMenuModule } from '@angular/material/menu';
 import { AirportSelectorComponent } from '../airport-selector/airport-selector.component';
+import { DevTenantPickerComponent } from '../dev-tenant-picker/dev-tenant-picker.component';
 import { TooltipDirective } from '../../directives/tooltip.directive';
 import { TenantStore } from '../../../core/store/tenant.store';
 import { AuthStore } from '../../../core/store/auth.store';
@@ -13,7 +14,7 @@ import { ThemeService } from '../../../core/theme/theme.service';
 @Component({
   selector: 'app-top-bar',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatMenuModule, AirportSelectorComponent, TooltipDirective],
+  imports: [CommonModule, RouterLink, MatMenuModule, AirportSelectorComponent, DevTenantPickerComponent, TooltipDirective],
   templateUrl: './top-bar.component.html',
   styleUrl: './top-bar.component.scss',
 })

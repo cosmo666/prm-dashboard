@@ -11,7 +11,8 @@
 
 .login {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  // Sign-in panel on left (1fr), brand/display panel on right (1.15fr)
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
   min-height: 100vh;
   width: 100%;
 }
@@ -116,7 +117,7 @@
 }
 
 .mark__meta .label-micro {
-  color: rgba(250, 250, 247, 0.5);
+  color: rgba(250, 250, 247, 0.6);
 }
 
 // Hero typography
@@ -177,8 +178,9 @@
   flex-direction: column;
   gap: 4px;
 
+  // Bumped from 0.45 → 0.62 to clear WCAG AA on the dark brand panel
   .label-micro {
-    color: rgba(250, 250, 247, 0.45);
+    color: rgba(250, 250, 247, 0.62);
   }
 }
 
@@ -237,9 +239,17 @@
 .panel__nav {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 16px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--border);
+}
+
+.panel__nav-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
 .panel__slug {
@@ -325,8 +335,14 @@
   color: var(--ink);
   letter-spacing: 0;
 
+  // Placeholder: typed mono text at full contrast read as "already filled in".
+  // Use the sans family, lighter weight, and softer color so the hint is
+  // visually distinct from real input content.
   &::placeholder {
-    color: #a8a29e;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    color: var(--border-strong);
+    opacity: 1;
   }
 }
 
@@ -435,6 +451,24 @@
   gap: 10px;
 }
 
+.hint__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hint__tenant {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted);
+  padding: 2px 7px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
 .hint__rows {
   display: flex;
   flex-direction: column;
@@ -471,20 +505,24 @@
   color: var(--muted);
 }
 
-// Responsive
+// Responsive — on narrow viewports stack the panels vertically,
+// brand on top (visual identity) then sign-in form below.
 @media (max-width: 968px) {
   .login {
     grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+  .login__panel {
+    order: 2;
+    padding: 32px 24px;
   }
   .login__brand {
+    order: 1;
     padding: 32px 24px;
     min-height: 40vh;
   }
   .brand__title {
     font-size: clamp(40px, 10vw, 56px);
-  }
-  .login__panel {
-    padding: 32px 24px;
   }
 }
 

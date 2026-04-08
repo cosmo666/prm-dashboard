@@ -22,17 +22,21 @@ import { CommonModule, DecimalPipe } from '@angular/common';
 
         <footer class="kpi__foot">
           @if (delta() !== null) {
-            <div class="delta" [class.delta--up]="(delta() ?? 0) >= 0" [class.delta--down]="(delta() ?? 0) < 0">
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <div
+              class="delta"
+              [class.delta--up]="(delta() ?? 0) >= 0"
+              [class.delta--down]="(delta() ?? 0) < 0"
+              [attr.aria-label]="((delta() ?? 0) >= 0 ? 'Up ' : 'Down ') + ((delta() ?? 0) | number:'1.1-1') + ' percent versus previous period'">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                 @if ((delta() ?? 0) >= 0) {
                   <path d="M3 8l3-3 3 3M6 5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
                 } @else {
                   <path d="M3 4l3 3 3-3M6 7V3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
                 }
               </svg>
-              <span class="font-data">{{ (delta() ?? 0) | number:'1.1-1' }}%</span>
+              <span class="font-data" aria-hidden="true">{{ (delta() ?? 0) | number:'1.1-1' }}%</span>
             </div>
-            <span class="delta__period">vs prev</span>
+            <span class="delta__period" aria-hidden="true">vs prev</span>
           }
           @if (subtext()) {
             <div class="subtext">{{ subtext() }}</div>

@@ -5,11 +5,13 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { TenantStore } from '../../../core/store/tenant.store';
+import { DevTenantPickerComponent } from '../../../shared/components/dev-tenant-picker/dev-tenant-picker.component';
+import { credentialsFor } from './demo-credentials';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DevTenantPickerComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
@@ -25,6 +27,7 @@ export class LoginComponent {
   error = signal<string | null>(null);
 
   tenantInitial = computed(() => (this.tenant.name() || this.tenant.slug() || 'P').charAt(0).toUpperCase());
+  demoUsers = computed(() => credentialsFor(this.tenant.slug()));
   currentTime = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
 
   // Mouse parallax — shift the background grid by a small amount based on cursor position
