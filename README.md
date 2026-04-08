@@ -2,7 +2,7 @@
 
 Multi-tenant analytics POC for **Passenger with Reduced Mobility (PRM)** ground handling services. Airports and ground-handling companies use this to monitor wheelchair assists, medical-assist services, and other accessibility operations across their locations.
 
-> **Status:** Work-in-progress POC. Phase 1/9 complete (infrastructure + shared library). Tracking via [docs/superpowers/plans/2026-04-08-prm-dashboard-plan.md](docs/superpowers/plans/2026-04-08-prm-dashboard-plan.md).
+> **Status:** POC feature-complete. All 9 phases / 21 tasks implemented. See [docs/e2e-checklist.md](docs/e2e-checklist.md) for verification steps.
 
 ## What it does
 
@@ -41,7 +41,7 @@ Each tenant DB can live on a completely separate MySQL instance. The `Tenant.Get
 
 **Infrastructure** — Docker Compose for local development, cloud-ready containers
 
-## Quick start (once Phase 1–6 complete)
+## Quick start
 
 ```bash
 git clone https://github.com/cosmo666/prm-dashboard.git
@@ -50,20 +50,19 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Then visit `http://aeroground.localhost:4200` and log in with `admin` / `admin123`.
+Then visit `http://aeroground.localhost:4200` (or use the `X-Tenant-Slug` header in dev) and log in with `admin` / `admin123`.
 
 ## Demo credentials
 
-Each of the 3 seed tenants (`aeroground`, `skyserve`, `globalprm`) has the same 4 demo users:
+All seed users share the password `admin123` (hashed on first login via the `BCRYPT_PENDING:` bootstrap convention).
 
-| Username | Password | Role |
-|----------|----------|------|
-| `admin` | `admin123` | All airports for the tenant |
-| `john`  | `john123`  | 2 airports |
-| `jane`  | `jane123`  | 1 airport |
-| `bob`   | `bob123`   | 1 (different) airport |
+| Tenant | Users | Airports |
+|---|---|---|
+| **aeroground** | admin (BLR+HYD+DEL), john (BLR+HYD), priya (BLR), ravi (DEL) | BLR, HYD, DEL |
+| **skyserve** | admin (BLR+BOM+MAA), anika (BLR+BOM), deepak (MAA), sunita (BOM) | BLR, BOM, MAA |
+| **globalprm** | admin (SYD+KUL+JFK), sarah (SYD+KUL), mike (JFK), li (KUL) | SYD, KUL, JFK |
 
-Scoped by tenant via the subdomain — the same username exists independently in each tenant.
+Each username exists independently per tenant — scoped by the `X-Tenant-Slug` header.
 
 ## Project structure
 
@@ -73,38 +72,61 @@ prm-dashboard/
 │   ├── PrmDashboard.sln
 │   └── src/
 │       ├── PrmDashboard.Shared/        # Entity models, DTOs, time helpers
-│       ├── PrmDashboard.AuthService/    # Login, refresh, logout, /me  (Phase 2)
-│       ├── PrmDashboard.TenantService/  # Tenant resolution + schema migrator (Phase 3)
-│       ├── PrmDashboard.PrmService/     # 19 analytics endpoints (Phase 4)
-│       └── PrmDashboard.Gateway/        # Ocelot routing + subdomain middleware (Phase 5)
-├── frontend/                            # Angular 17 SPA (Phases 7-8)
+│       ├── PrmDashboard.AuthService/    # Login, refresh, logout, /me
+│       ├── PrmDashboard.TenantService/  # Tenant resolution + SchemaMigrator
+│       ├── PrmDashboard.PrmService/     # 23 analytics endpoints
+│       └── PrmDashboard.Gateway/        # Ocelot routing + subdomain middleware
+├── frontend/                            # Angular 17 SPA — login, home, 4 dashboard tabs
+│   └── src/app/
+│       ├── core/                        # auth, api client, stores (tenant, auth, filter)
+│       ├── features/                    # auth/login, home, dashboard/{tabs, components}
+│       └── shared/                      # 6 chart wrappers, top-bar, airport-selector
 ├── database/
-│   └── init/                            # MySQL init scripts (schemas + seed data)
+│   ├── init/                            # MySQL init + seed scripts (run on container boot)
+│   └── seed/                            # Python PRM data generator
 ├── docs/
+│   ├── e2e-checklist.md                 # E2E verification checklist
 │   └── superpowers/
 │       ├── specs/                       # Design specs
-│       └── plans/                       # Implementation plans (executed task-by-task)
+│       └── plans/                       # Implementation plan (21 tasks / 9 phases)
 ├── docker-compose.yml
 ├── .env.example
-└── README.md                            # (this file)
+└── README.md
 ```
 
 ## Adding a new tenant
 
-Once Phase 3 is complete, onboarding a new tenant is:
+Onboarding a new tenant at runtime:
 
 1. Create an empty MySQL database on any reachable host
-2. `INSERT INTO prm_master.tenants (name, slug, db_host, db_port, db_name, db_user, db_password, is_active, primary_color) VALUES (...)` — password pre-encrypted, or use the `PLAINTEXT:` bootstrap prefix
+2. `INSERT INTO prm_master.tenants (name, slug, db_host, db_port, db_name, db_user, db_password, is_active, primary_color) VALUES (...)`
 3. `INSERT` employees + `employee_airports` rows for that tenant
-4. Point `{slug}.prm-app.com` DNS at the Angular app
-5. First request auto-bootstraps the tenant DB schema via the embedded migration runner
+4. Point `{slug}.your-domain.com` DNS at the Angular app (or set `X-Tenant-Slug` header in dev)
+5. First request auto-bootstraps the tenant DB schema via the embedded `SchemaMigrator`
 
 No deploys, no manual DDL, no downtime.
+
+## Build & test
+
+```bash
+# Backend
+cd backend && dotnet build                             # 0 errors, 0 warnings
+
+# Frontend
+cd frontend && npm install && npx ng build             # Production bundle
+
+# Full stack
+docker compose up --build
+```
+
+Then walk the [E2E checklist](docs/e2e-checklist.md) for manual verification.
 
 ## Docs
 
 - [Design spec](docs/superpowers/specs/2026-04-08-prm-dashboard-design.md) — full data model, API design, frontend architecture
-- [Implementation plan](docs/superpowers/plans/2026-04-08-prm-dashboard-plan.md) — 21 tasks across 9 phases with bite-sized TDD steps
+- [Implementation plan](docs/superpowers/plans/2026-04-08-prm-dashboard-plan.md) — 21 tasks across 9 phases
+- [E2E checklist](docs/e2e-checklist.md) — manual verification scenarios
+- [CLAUDE.md](CLAUDE.md) — project instructions for Claude Code
 
 ## License
 

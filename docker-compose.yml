@@ -63,6 +63,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__MasterDb=Server=mysql;Port=3306;Database=prm_master;User=root;Password=${MYSQL_ROOT_PASSWORD:-rootpassword}
+      - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-change-in-production}
+      - Jwt__Issuer=${JWT_ISSUER:-prm-dashboard}
+      - Jwt__Audience=${JWT_AUDIENCE:-prm-dashboard-client}
     depends_on:
       mysql:
         condition: service_healthy
@@ -76,6 +79,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__MasterDb=Server=mysql;Port=3306;Database=prm_master;User=root;Password=${MYSQL_ROOT_PASSWORD:-rootpassword}
       - TenantServiceUrl=http://tenant:8080
+      - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-change-in-production}
+      - Jwt__Issuer=${JWT_ISSUER:-prm-dashboard}
+      - Jwt__Audience=${JWT_AUDIENCE:-prm-dashboard-client}
     depends_on:
       mysql:
         condition: service_healthy
