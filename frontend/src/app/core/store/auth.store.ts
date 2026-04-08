@@ -28,7 +28,7 @@ export const AuthStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
   withComputed((state) => ({
-    isAuthenticated: computed(() => state.accessToken() !== '' && state.employee() !== null),
+    isAuthenticated: computed(() => !!state.accessToken() && state.employee() !== null),
     airportCodes: computed(() => state.employee()?.airports.map((a) => a.code) ?? []),
   })),
   withMethods((store) => ({

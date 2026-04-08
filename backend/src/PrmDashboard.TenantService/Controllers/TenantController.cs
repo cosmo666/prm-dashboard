@@ -48,7 +48,13 @@ public class TenantController : ControllerBase
         if (tenant == null)
             return Problem(detail: $"Tenant '{slug}' not found or inactive", statusCode: 404, title: "Not Found");
 
-        var response = new TenantResolveResponse(tenant.Id, tenant.GetConnectionString());
+        var response = new TenantResolveResponse(
+            tenant.Id,
+            tenant.DbHost,
+            tenant.DbPort,
+            tenant.DbName,
+            tenant.DbUser,
+            tenant.DbPassword);
         return Ok(response);
     }
 

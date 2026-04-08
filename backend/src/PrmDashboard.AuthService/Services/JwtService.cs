@@ -9,16 +9,22 @@ namespace PrmDashboard.AuthService.Services;
 
 public class JwtService
 {
-    private readonly IConfiguration _config;
+    private readonly string _secret;
+    private readonly string _issuer;
+    private readonly string _audience;
+    private readonly int _accessTokenMinutes;
 
-    public JwtService(IConfiguration config)
+    public JwtService(IConfiguration configuration)
     {
-        _config = config;
+        _secret = configuration["Jwt:Secret"] ?? throw new InvalidOperationException("Jwt:Secret is required");
+        _issuer = configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer is required");
+        _audience = configuration["Jwt:Audience"] ?? throw new InvalidOperationException("Jwt:Audience is required");
+        _accessTokenMinutes = int.TryParse(configuration["Jwt:AccessTokenMinutes"], out var m) && m > 0 ? m : 15;
     }
 
     public string GenerateAccessToken(Employee employee, string tenantSlug)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Secret"]!));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var airportCodes = employee.Airports.Select(a => a.AirportCode).ToList();
@@ -38,18 +44,15 @@ public class JwtService
         };
 
         var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
+            issuer: _issuer,
+            audience: _audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(GetAccessTokenMinutes()),
+            expires: DateTime.UtcNow.AddMinutes(_accessTokenMinutes),
             signingCredentials: creds
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-
-    private int GetAccessTokenMinutes() =>
-        int.TryParse(_config["Jwt:AccessTokenMinutes"], out var m) && m > 0 ? m : 15;
 
     public string GenerateRefreshToken()
     {

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, tap, catchError, of } from 'rxjs';
+import { Observable, tap, catchError, of, take } from 'rxjs';
 import { ApiClient } from '../api/api.client';
 import { AuthStore, Employee } from '../store/auth.store';
 import { TenantStore } from '../store/tenant.store';
@@ -44,6 +44,7 @@ export class AuthService {
 
   logout(): void {
     this.api.post('/auth/logout').pipe(
+      take(1),
       catchError(() => of(null)),
     ).subscribe(() => {
       this.authStore.clear();

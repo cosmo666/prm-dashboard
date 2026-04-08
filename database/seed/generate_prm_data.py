@@ -118,7 +118,7 @@ def generate_tenant(tenant, id_counter):
                 agent_name = AGENT_NAMES[agent_idx]
                 agent_no = AGENT_NOS[agent_idx]
                 seat = f"{random.randint(1, 42)}{random.choice('ABCDEF')}"
-                agent_type = "OUTSOURCED" if random.random() < 0.005 else "SELF"
+                agent_type = "OUTSOURCED" if random.random() < 0.15 else "SELF"
                 no_show = "'N'" if random.random() < 0.04 else "NULL"
                 requested = 1 if random.random() < 0.02 else 0
                 is_paused = random.random() < 0.12

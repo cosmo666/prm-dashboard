@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { TenantStore } from '../../../core/store/tenant.store';
 
@@ -37,12 +38,7 @@ export class LoginComponent {
     this.loading.set(true);
     this.error.set(null);
     try {
-      await new Promise<void>((resolve, reject) => {
-        this.auth.login(this.username(), this.password(), this.tenant.slug()).subscribe({
-          next: () => resolve(),
-          error: (e) => reject(e),
-        });
-      });
+      await firstValueFrom(this.auth.login(this.username(), this.password(), this.tenant.slug()));
       this.router.navigate(['/home']);
     } catch (e: any) {
       this.error.set(e?.error?.message ?? 'Login failed — check credentials');

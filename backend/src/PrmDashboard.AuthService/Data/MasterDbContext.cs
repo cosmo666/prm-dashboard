@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PrmDashboard.Shared.Extensions;
 using PrmDashboard.Shared.Models;
 
 namespace PrmDashboard.AuthService.Data;
@@ -46,15 +47,8 @@ public class MasterDbContext : DbContext
         {
             foreach (var property in entity.GetProperties())
             {
-                property.SetColumnName(ToSnakeCase(property.Name));
+                property.SetColumnName(property.Name.ToSnakeCase());
             }
         }
     }
-
-    private static string ToSnakeCase(string name) =>
-        System.Text.RegularExpressions.Regex.Replace(
-            System.Text.RegularExpressions.Regex.Replace(name, @"([A-Z]+)([A-Z][a-z])", "$1_$2"),
-            @"([a-z\d])([A-Z])",
-            "$1_$2"
-        ).ToLower();
 }

@@ -102,6 +102,12 @@ public class SchemaMigrator
         }
     }
 
+    /// <summary>
+    /// Loads embedded SQL migrations sorted by filename. Convention: files must be named
+    /// NNN_description.sql where NNN is a zero-padded 3-digit ordinal. Lexicographic sort
+    /// of resource names (embedded as PrmDashboard.TenantService.Schema.Migrations.NNN_...)
+    /// matches execution order because of the zero-padding.
+    /// </summary>
     private static List<(string Version, string Sql)> LoadEmbeddedMigrations()
     {
         var assembly = Assembly.GetExecutingAssembly();
@@ -129,6 +135,6 @@ public class SchemaMigrator
             migrations.Add((version, sql));
         }
 
-        return migrations.OrderBy(m => m.Version).ToList();
+        return migrations;
     }
 }

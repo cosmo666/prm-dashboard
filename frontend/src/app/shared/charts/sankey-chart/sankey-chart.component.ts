@@ -25,7 +25,7 @@ export class SankeyChartComponent {
       data: this.nodes(),
       links: this.links(),
       emphasis: { focus: 'adjacency' },
-      lineStyle: { color: 'gradient', curveness: 0.5 },
+      lineStyle: { curveness: 0.5 },
       label: { formatter: '{b}' },
       animationDuration: 300,
     }],
