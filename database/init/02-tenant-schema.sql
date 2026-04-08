@@ -11,7 +11,7 @@ BEGIN
     SET @sql = CONCAT('
         CREATE TABLE IF NOT EXISTS ', db_name, '.prm_services (
             row_id INT AUTO_INCREMENT PRIMARY KEY,
-            id INT NOT NULL,
+            id INT NOT NULL,  -- source-system PRM service ID; can repeat across rows when a service is paused/resumed (see dedup logic in spec §3.3)
             flight VARCHAR(20) NOT NULL,
             flight_number INT NOT NULL,
             agent_name VARCHAR(100) NULL,
