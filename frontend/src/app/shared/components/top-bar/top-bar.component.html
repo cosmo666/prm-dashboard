@@ -1,0 +1,24 @@
+<mat-toolbar class="top-bar" [style.border-bottom-color]="tenant.primaryColor()">
+  <div class="brand">
+    <img *ngIf="tenant.logoUrl()" [src]="tenant.logoUrl()" alt="logo" class="logo"/>
+    <span class="tenant-name">{{ tenant.name() }}</span>
+  </div>
+
+  <span class="spacer"></span>
+
+  <app-airport-selector></app-airport-selector>
+
+  <a *ngIf="showBack()" mat-button routerLink="/home" class="back-btn">
+    <mat-icon>arrow_back</mat-icon> Back
+  </a>
+
+  <button mat-button [matMenuTriggerFor]="userMenu" class="user-btn">
+    <mat-icon>account_circle</mat-icon>
+    <span>{{ auth.employee()?.name }}</span>
+  </button>
+  <mat-menu #userMenu="matMenu">
+    <button mat-menu-item (click)="logout()">
+      <mat-icon>logout</mat-icon><span>Logout</span>
+    </button>
+  </mat-menu>
+</mat-toolbar>

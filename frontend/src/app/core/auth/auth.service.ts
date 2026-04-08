@@ -57,6 +57,24 @@ export class AuthService {
     });
   }
 
+  ensureProfile(): Observable<LoginResponse> {
+    return this.api.get<LoginResponse>('/auth/me').pipe(
+      tap((res) => {
+        const tok = this.authStore.accessToken();
+        if (tok) {
+          const employee: Employee = {
+            id: res.employee.id,
+            name: res.employee.name,
+            tenantId: res.employee.tenant_id,
+            tenantSlug: res.employee.tenant_slug,
+            airports: res.employee.airports,
+          };
+          this.authStore.setSession(tok, employee);
+        }
+      }),
+    );
+  }
+
   get token(): string {
     return this.authStore.accessToken();
   }

@@ -1,0 +1,39 @@
+.home-main {
+  padding: 3rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.welcome {
+  text-align: center;
+  margin-bottom: 3rem;
+  h1 { font-size: 2rem; font-weight: 600; margin: 0 0 0.5rem; }
+  p  { color: #666; font-size: 1.1rem; margin: 0; }
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 320px));
+  gap: 2rem;
+  justify-content: center;
+}
+.dashboard-tile {
+  text-decoration: none;
+  color: inherit;
+  transition: transform 200ms ease;
+  &:hover { transform: translateY(-4px); }
+}
+.tile-card {
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1e88e5, #1565c0);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(25, 118, 210, 0.25);
+  h2 { margin: 1rem 0 0.5rem; font-size: 1.5rem; }
+  p  { opacity: 0.9; margin: 0; }
+}
+.tile-icon mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+}

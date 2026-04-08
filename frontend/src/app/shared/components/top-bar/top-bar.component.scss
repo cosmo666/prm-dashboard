@@ -1,0 +1,17 @@
+.top-bar {
+  background: #fff;
+  color: #222;
+  border-bottom: 3px solid #1976d2;
+  padding: 0 1.5rem;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.brand { display: flex; align-items: center; gap: 0.75rem; }
+.logo { height: 32px; }
+.tenant-name { font-weight: 600; font-size: 1.1rem; }
+.spacer { flex: 1; }
+.back-btn, .user-btn { text-transform: none; }
+.user-btn span { margin-left: 0.25rem; }
