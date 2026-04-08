@@ -2,6 +2,7 @@ services:
   mysql:
     image: mysql:8.0
     container_name: prm-mysql
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
     ports:
@@ -21,6 +22,7 @@ services:
       context: ./backend
       dockerfile: src/PrmDashboard.Gateway/Dockerfile
     container_name: prm-gateway
+    restart: unless-stopped
     ports:
       - "${GATEWAY_PORT:-5000}:8080"
     environment:
@@ -42,12 +44,19 @@ services:
         condition: service_started
       prm:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   auth:
     build:
       context: ./backend
       dockerfile: src/PrmDashboard.AuthService/Dockerfile
     container_name: prm-auth
+    restart: unless-stopped
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__MasterDb=Server=mysql;Port=3306;Database=prm_master;User=root;Password=${MYSQL_ROOT_PASSWORD:-rootpassword}
@@ -69,6 +78,7 @@ services:
       context: ./backend
       dockerfile: src/PrmDashboard.TenantService/Dockerfile
     container_name: prm-tenant
+    restart: unless-stopped
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__MasterDb=Server=mysql;Port=3306;Database=prm_master;User=root;Password=${MYSQL_ROOT_PASSWORD:-rootpassword}
@@ -88,6 +98,7 @@ services:
       context: ./backend
       dockerfile: src/PrmDashboard.PrmService/Dockerfile
     container_name: prm-prm
+    restart: unless-stopped
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__MasterDb=Server=mysql;Port=3306;Database=prm_master;User=root;Password=${MYSQL_ROOT_PASSWORD:-rootpassword}
@@ -110,10 +121,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: prm-frontend
+    restart: unless-stopped
     ports:
       - "4200:80"
     depends_on:
-      - gateway
+      gateway:
+        condition: service_healthy
 
 volumes:
   mysql-data:

@@ -14,7 +14,7 @@ CREATE TABLE tenants (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     logo_url VARCHAR(500) NULL,
     primary_color VARCHAR(7) NOT NULL DEFAULT '#2563eb'
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE employees (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -26,18 +26,18 @@ CREATE TABLE employees (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login DATETIME NULL,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE KEY uq_tenant_username (tenant_id, username)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE employee_airports (
     id INT AUTO_INCREMENT PRIMARY KEY,
     employee_id INT NOT NULL,
     airport_code VARCHAR(10) NOT NULL,
     airport_name VARCHAR(100) NOT NULL,
-    FOREIGN KEY (employee_id) REFERENCES employees(id),
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE KEY uq_employee_airport (employee_id, airport_code)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE refresh_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -46,5 +46,6 @@ CREATE TABLE refresh_tokens (
     expires_at DATETIME NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     revoked BOOLEAN NOT NULL DEFAULT FALSE,
-    FOREIGN KEY (employee_id) REFERENCES employees(id)
-);
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX idx_employee_active (employee_id, revoked, expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

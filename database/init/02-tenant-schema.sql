@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS prm_services (
     INDEX idx_service (service),
     INDEX idx_agent (agent_no),
     INDEX idx_prm_type (prm_agent_type)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
 -- Tenant 2: skyserve_db
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS prm_services (
     INDEX idx_service (service),
     INDEX idx_agent (agent_no),
     INDEX idx_prm_type (prm_agent_type)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
 -- Tenant 3: globalprm_db
@@ -124,4 +124,4 @@ CREATE TABLE IF NOT EXISTS prm_services (
     INDEX idx_service (service),
     INDEX idx_agent (agent_no),
     INDEX idx_prm_type (prm_agent_type)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
