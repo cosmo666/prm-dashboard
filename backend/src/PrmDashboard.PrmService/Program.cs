@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using PrmDashboard.PrmService.Data;
 using PrmDashboard.PrmService.Middleware;
+using PrmDashboard.PrmService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +56,10 @@ builder.Services.AddHttpClient<TenantDbContextFactory>(client =>
 {
     client.BaseAddress = new Uri(tenantServiceUrl);
 });
+
+// PRM query services
+builder.Services.AddScoped<KpiService>();
+builder.Services.AddScoped<FilterService>();
 
 // CORS — allow any origin with credentials for the gateway/frontend during dev
 builder.Services.AddCors(options =>
