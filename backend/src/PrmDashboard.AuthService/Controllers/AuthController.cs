@@ -9,6 +9,14 @@ namespace PrmDashboard.AuthService.Controllers;
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
+    private static readonly CookieOptions BaseRefreshCookieOptions = new()
+    {
+        HttpOnly = true,
+        Secure = true,
+        SameSite = SameSiteMode.Strict,
+        Path = "/api/auth"  // Scoped to auth endpoints only — gateway forwards /api/auth/** here
+    };
+
     private readonly AuthenticationService _authService;
 
     public AuthController(AuthenticationService authService)
@@ -21,11 +29,11 @@ public class AuthController : ControllerBase
     {
         var tenantSlug = Request.Headers["X-Tenant-Slug"].FirstOrDefault();
         if (string.IsNullOrEmpty(tenantSlug))
-            return BadRequest(new { error = "Missing X-Tenant-Slug header" });
+            return Problem(detail: "Missing X-Tenant-Slug header", statusCode: 400, title: "Bad Request");
 
         var result = await _authService.LoginAsync(tenantSlug, request, ct);
         if (result == null)
-            return Unauthorized(new { error = "Invalid credentials" });
+            return Problem(detail: "Invalid credentials", statusCode: 401, title: "Unauthorized");
 
         // Create refresh token and set as httpOnly cookie
         var refreshToken = await _authService.CreateRefreshTokenAsync(result.Employee.Id, ct);
@@ -39,11 +47,11 @@ public class AuthController : ControllerBase
     {
         var token = Request.Cookies["refreshToken"];
         if (string.IsNullOrEmpty(token))
-            return Unauthorized(new { error = "No refresh token" });
+            return Problem(detail: "No refresh token", statusCode: 401, title: "Unauthorized");
 
         var (accessToken, newRefreshToken) = await _authService.RefreshAsync(token, ct);
         if (accessToken == null || newRefreshToken == null)
-            return Unauthorized(new { error = "Invalid or expired refresh token" });
+            return Problem(detail: "Invalid or expired refresh token", statusCode: 401, title: "Unauthorized");
 
         SetRefreshTokenCookie(newRefreshToken.Token, newRefreshToken.ExpiresAt);
         return Ok(new RefreshResponse(accessToken));
@@ -57,7 +65,7 @@ public class AuthController : ControllerBase
         if (!string.IsNullOrEmpty(token))
         {
             await _authService.RevokeRefreshTokenAsync(token, ct);
-            Response.Cookies.Delete("refreshToken");
+            Response.Cookies.Delete("refreshToken", BaseRefreshCookieOptions);
         }
         return Ok(new { message = "Logged out" });
     }
@@ -78,12 +86,14 @@ public class AuthController : ControllerBase
 
     private void SetRefreshTokenCookie(string token, DateTime expires)
     {
-        Response.Cookies.Append("refreshToken", token, new CookieOptions
+        var options = new CookieOptions
         {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
+            HttpOnly = BaseRefreshCookieOptions.HttpOnly,
+            Secure = BaseRefreshCookieOptions.Secure,
+            SameSite = BaseRefreshCookieOptions.SameSite,
+            Path = BaseRefreshCookieOptions.Path,
             Expires = expires
-        });
+        };
+        Response.Cookies.Append("refreshToken", token, options);
     }
 }

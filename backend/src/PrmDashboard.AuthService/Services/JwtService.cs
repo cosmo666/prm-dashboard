@@ -29,6 +29,11 @@ public class JwtService
             new("tenant_id", employee.TenantId.ToString()),
             new("tenant_slug", tenantSlug),
             new("name", employee.DisplayName),
+            // `airports` is stored as a comma-joined string (e.g., "BLR,HYD,DEL"), not as
+            // multiple Claim entries with the same name. The PRM Service airport-RBAC
+            // middleware (Task 6) MUST split this on ',' when validating ?airport= against
+            // the JWT claim. Single-value contract is intentional for simpler claim
+            // extraction in downstream middleware.
             new("airports", string.Join(",", airportCodes)),
         };
 
@@ -36,12 +41,15 @@ public class JwtService
             issuer: _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(int.Parse(_config["Jwt:AccessTokenMinutes"] ?? "15")),
+            expires: DateTime.UtcNow.AddMinutes(GetAccessTokenMinutes()),
             signingCredentials: creds
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    private int GetAccessTokenMinutes() =>
+        int.TryParse(_config["Jwt:AccessTokenMinutes"], out var m) && m > 0 ? m : 15;
 
     public string GenerateRefreshToken()
     {

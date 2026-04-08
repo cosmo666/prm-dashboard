@@ -31,7 +31,11 @@ public class AuthenticationService
         var tenant = await _db.Tenants
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Slug == tenantSlug && t.IsActive, ct);
-        if (tenant == null) return null;
+        if (tenant == null)
+        {
+            _logger.LogWarning("Login failed: unknown or inactive tenant {TenantSlug}", tenantSlug);
+            return null;
+        }
 
         var employee = await _db.Employees
             .Include(e => e.Airports)
@@ -39,10 +43,18 @@ public class AuthenticationService
                 e => e.TenantId == tenant.Id && e.Username == request.Username && e.IsActive,
                 ct);
 
-        if (employee == null) return null;
+        if (employee == null)
+        {
+            _logger.LogWarning("Login failed: unknown user {Username} for tenant {TenantId}",
+                request.Username, tenant.Id);
+            return null;
+        }
 
         if (!VerifyAndMaybeBootstrapPassword(employee, request.Password))
+        {
+            _logger.LogWarning("Login failed: bad password for employee {EmployeeId}", employee.Id);
             return null;
+        }
 
         employee.LastLogin = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
@@ -83,7 +95,7 @@ public class AuthenticationService
 
     public async Task<RefreshToken> CreateRefreshTokenAsync(int employeeId, CancellationToken ct = default)
     {
-        var refreshDays = int.Parse(_config["Jwt:RefreshTokenDays"] ?? "7");
+        var refreshDays = int.TryParse(_config["Jwt:RefreshTokenDays"], out var d) && d > 0 ? d : 7;
         var refreshToken = new RefreshToken
         {
             EmployeeId = employeeId,
@@ -98,21 +110,33 @@ public class AuthenticationService
 
     public async Task<(string? accessToken, RefreshToken? newRefreshToken)> RefreshAsync(string token, CancellationToken ct = default)
     {
-        var existing = await _db.RefreshTokens
+        // Atomic compare-and-swap: revoke the token only if it's currently valid.
+        // This prevents a race where two parallel requests both see the token as
+        // valid and both issue new ones.
+        var now = DateTime.UtcNow;
+        var rowsAffected = await _db.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE refresh_tokens SET revoked = 1 WHERE token = {token} AND revoked = 0 AND expires_at > {now}",
+            ct);
+
+        if (rowsAffected == 0)
+        {
+            _logger.LogWarning("Refresh failed: token not found, already revoked, or expired");
+            return (null, null);
+        }
+
+        // Now that we own the revocation, load the employee for JWT generation
+        var revoked = await _db.RefreshTokens
             .Include(rt => rt.Employee)
                 .ThenInclude(e => e.Airports)
             .Include(rt => rt.Employee)
                 .ThenInclude(e => e.Tenant)
-            .FirstOrDefaultAsync(rt => rt.Token == token && !rt.Revoked && rt.ExpiresAt > DateTime.UtcNow, ct);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(rt => rt.Token == token, ct);
 
-        if (existing == null) return (null, null);
+        if (revoked == null) return (null, null); // shouldn't happen but be safe
 
-        // Revoke old token
-        existing.Revoked = true;
-
-        // Create new tokens (CreateRefreshTokenAsync calls SaveChangesAsync which persists the revoke too)
-        var accessToken = _jwt.GenerateAccessToken(existing.Employee, existing.Employee.Tenant.Slug);
-        var newRefresh = await CreateRefreshTokenAsync(existing.EmployeeId, ct);
+        var accessToken = _jwt.GenerateAccessToken(revoked.Employee, revoked.Employee.Tenant.Slug);
+        var newRefresh = await CreateRefreshTokenAsync(revoked.EmployeeId, ct);
 
         return (accessToken, newRefresh);
     }
