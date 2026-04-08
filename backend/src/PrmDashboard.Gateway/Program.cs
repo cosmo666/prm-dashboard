@@ -62,8 +62,17 @@ var app = builder.Build();
 
 app.UseCors();
 
-// Health endpoint before Ocelot (not routed through Ocelot)
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "gateway" }));
+// Health endpoint as a middleware branch — short-circuits BEFORE Ocelot so the
+// catch-all upstream doesn't swallow /health and return 404.
+app.MapWhen(ctx => ctx.Request.Path == "/health", branch =>
+{
+    branch.Run(async ctx =>
+    {
+        ctx.Response.StatusCode = 200;
+        ctx.Response.ContentType = "application/json";
+        await ctx.Response.WriteAsync("{\"status\":\"healthy\",\"service\":\"gateway\"}");
+    });
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
