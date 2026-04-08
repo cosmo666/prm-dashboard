@@ -1,0 +1,52 @@
+<div class="service-content">
+  <!-- Row 1: 9 service summary cards -->
+  <div class="row row-service-cards">
+    <div *ngFor="let s of summaries()"
+         class="service-card"
+         [class.active]="filters.service() === s.type"
+         (click)="clickServiceCard(s.type)">
+      <div class="service-type">{{ s.type }}</div>
+      <div class="service-count">{{ s.count | number }}</div>
+      <div class="service-pct">{{ s.pct | number:'1.1-1' }}%</div>
+    </div>
+  </div>
+
+  <!-- Row 2: Matrix (60%) + Stacked trend (40%) -->
+  <div class="row row-matrix-trend">
+    <div class="matrix-card">
+      <div class="chart-title">Monthly Service Matrix</div>
+      <div class="matrix-scroll">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th *ngFor="let t of serviceTypes">{{ t }}</th>
+              <th class="total-col">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of matrix()">
+              <td class="month-cell">{{ row.month }}</td>
+              <td *ngFor="let t of serviceTypes"
+                  [class.max-cell]="isMaxInColumn(t, row.counts[t])">
+                {{ row.counts[t] | number }}
+              </td>
+              <td class="total-col"><strong>{{ row.total | number }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <app-line-chart title="Service Trend (Top 5)" [series]="trendSeries()" [loading]="loading()"
+                    [showAvgLine]="false" [stacked]="true"></app-line-chart>
+  </div>
+
+  <!-- Row 3: Avg Duration by Service + Day of Week -->
+  <div class="row row-charts-1-1">
+    <app-bar-chart title="PRM Count by Service Type" [data]="durationBars()" [loading]="loading()"
+                   xLabel="Service" yLabel="Count"></app-bar-chart>
+    <app-bar-chart title="PRM by Day of Week" [data]="dowBars()" [loading]="loading()"
+                   xLabel="Day" yLabel="Count"></app-bar-chart>
+  </div>
+</div>
