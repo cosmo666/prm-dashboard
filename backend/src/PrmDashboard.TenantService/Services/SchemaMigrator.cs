@@ -108,7 +108,7 @@ public class SchemaMigrator
     /// of resource names (embedded as PrmDashboard.TenantService.Schema.Migrations.NNN_...)
     /// matches execution order because of the zero-padding.
     /// </summary>
-    private static List<(string Version, string Sql)> LoadEmbeddedMigrations()
+    internal static List<(string Version, string Sql)> LoadEmbeddedMigrations()
     {
         var assembly = Assembly.GetExecutingAssembly();
         var resourceNames = assembly.GetManifestResourceNames()

@@ -24,4 +24,8 @@
     <EmbeddedResource Include="Schema\Migrations\*.sql" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="PrmDashboard.Tests" />
+  </ItemGroup>
+
 </Project>
