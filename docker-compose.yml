@@ -1,0 +1,95 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: prm-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/init:/docker-entrypoint-initdb.d
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  gateway:
+    build:
+      context: ./backend
+      dockerfile: src/PrmDashboard.Gateway/Dockerfile
+    container_name: prm-gateway
+    ports:
+      - "${GATEWAY_PORT:-5000}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - AUTH_SERVICE_URL=http://auth:8080
+      - TENANT_SERVICE_URL=http://tenant:8080
+      - PRM_SERVICE_URL=http://prm:8080
+    depends_on:
+      auth:
+        condition: service_started
+      tenant:
+        condition: service_started
+      prm:
+        condition: service_started
+
+  auth:
+    build:
+      context: ./backend
+      dockerfile: src/PrmDashboard.AuthService/Dockerfile
+    container_name: prm-auth
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__MasterDb=Server=mysql;Port=3306;Database=prm_master;User=root;Password=${MYSQL_ROOT_PASSWORD:-rootpassword}
+      - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-change-in-production}
+      - Jwt__Issuer=${JWT_ISSUER:-prm-dashboard}
+      - Jwt__Audience=${JWT_AUDIENCE:-prm-dashboard-client}
+      - Jwt__AccessTokenMinutes=${JWT_ACCESS_TOKEN_MINUTES:-15}
+      - Jwt__RefreshTokenDays=${JWT_REFRESH_TOKEN_DAYS:-7}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  tenant:
+    build:
+      context: ./backend
+      dockerfile: src/PrmDashboard.TenantService/Dockerfile
+    container_name: prm-tenant
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__MasterDb=Server=mysql;Port=3306;Database=prm_master;User=root;Password=${MYSQL_ROOT_PASSWORD:-rootpassword}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  prm:
+    build:
+      context: ./backend
+      dockerfile: src/PrmDashboard.PrmService/Dockerfile
+    container_name: prm-prm
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__MasterDb=Server=mysql;Port=3306;Database=prm_master;User=root;Password=${MYSQL_ROOT_PASSWORD:-rootpassword}
+      - TenantServiceUrl=http://tenant:8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+      tenant:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: prm-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - gateway
+
+volumes:
+  mysql-data:
