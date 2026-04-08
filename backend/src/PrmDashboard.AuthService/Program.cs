@@ -15,7 +15,7 @@ var connStr = builder.Configuration.GetConnectionString("MasterDb")
     ?? throw new InvalidOperationException("ConnectionStrings:MasterDb is required");
 
 builder.Services.AddDbContext<MasterDbContext>(opt =>
-    opt.UseMySql(connStr, ServerVersion.AutoDetect(connStr)));
+    opt.UseMySql(connStr, new MySqlServerVersion(new Version(8, 0, 36))));
 
 var app = builder.Build();
 

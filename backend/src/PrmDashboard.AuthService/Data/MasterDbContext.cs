@@ -51,10 +51,10 @@ public class MasterDbContext : DbContext
         }
     }
 
-    private static string ToSnakeCase(string name)
-    {
-        return string.Concat(name.Select((c, i) =>
-            i > 0 && char.IsUpper(c) ? "_" + c : c.ToString()
-        )).ToLower();
-    }
+    private static string ToSnakeCase(string name) =>
+        System.Text.RegularExpressions.Regex.Replace(
+            System.Text.RegularExpressions.Regex.Replace(name, @"([A-Z]+)([A-Z][a-z])", "$1_$2"),
+            @"([a-z\d])([A-Z])",
+            "$1_$2"
+        ).ToLower();
 }
