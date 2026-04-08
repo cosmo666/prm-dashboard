@@ -8,7 +8,7 @@ namespace PrmDashboard.PrmService.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/prm/breakdowns")]
-public class BreakdownsController : ControllerBase
+public class BreakdownsController : PrmControllerBase
 {
     private readonly BreakdownService _breakdownService;
 
@@ -21,8 +21,6 @@ public class BreakdownsController : ControllerBase
     public async Task<IActionResult> GetByServiceType([FromQuery] PrmFilterParams filters)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _breakdownService.GetByServiceTypeAsync(slug, filters);
         return Ok(result);
     }
@@ -31,8 +29,6 @@ public class BreakdownsController : ControllerBase
     public async Task<IActionResult> GetByAgentType([FromQuery] PrmFilterParams filters)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _breakdownService.GetByAgentTypeAsync(slug, filters);
         return Ok(result);
     }
@@ -41,8 +37,6 @@ public class BreakdownsController : ControllerBase
     public async Task<IActionResult> GetByAirline([FromQuery] PrmFilterParams filters)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _breakdownService.GetByAirlineAsync(slug, filters);
         return Ok(result);
     }
@@ -51,8 +45,6 @@ public class BreakdownsController : ControllerBase
     public async Task<IActionResult> GetByLocation([FromQuery] PrmFilterParams filters)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _breakdownService.GetByLocationAsync(slug, filters);
         return Ok(result);
     }
@@ -62,14 +54,7 @@ public class BreakdownsController : ControllerBase
         [FromQuery] PrmFilterParams filters, [FromQuery] int limit = 10)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _breakdownService.GetByRouteAsync(slug, filters, limit);
         return Ok(result);
-    }
-
-    private string? GetTenantSlug()
-    {
-        return Request.Headers["X-Tenant-Slug"].FirstOrDefault();
     }
 }

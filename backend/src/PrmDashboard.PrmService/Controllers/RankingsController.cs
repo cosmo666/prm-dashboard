@@ -8,7 +8,7 @@ namespace PrmDashboard.PrmService.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/prm/rankings")]
-public class RankingsController : ControllerBase
+public class RankingsController : PrmControllerBase
 {
     private readonly RankingService _rankingService;
 
@@ -22,8 +22,6 @@ public class RankingsController : ControllerBase
         [FromQuery] PrmFilterParams filters, [FromQuery] int limit = 10)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _rankingService.GetTopAirlinesAsync(slug, filters, limit);
         return Ok(result);
     }
@@ -33,8 +31,6 @@ public class RankingsController : ControllerBase
         [FromQuery] PrmFilterParams filters, [FromQuery] int limit = 10)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _rankingService.GetTopFlightsAsync(slug, filters, limit);
         return Ok(result);
     }
@@ -44,8 +40,6 @@ public class RankingsController : ControllerBase
         [FromQuery] PrmFilterParams filters, [FromQuery] int limit = 10)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _rankingService.GetTopAgentsAsync(slug, filters, limit);
         return Ok(result);
     }
@@ -54,14 +48,7 @@ public class RankingsController : ControllerBase
     public async Task<IActionResult> GetTopServices([FromQuery] PrmFilterParams filters)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _rankingService.GetTopServicesAsync(slug, filters);
         return Ok(result);
-    }
-
-    private string? GetTenantSlug()
-    {
-        return Request.Headers["X-Tenant-Slug"].FirstOrDefault();
     }
 }

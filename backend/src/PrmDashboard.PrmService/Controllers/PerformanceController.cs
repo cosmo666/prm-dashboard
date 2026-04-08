@@ -8,7 +8,7 @@ namespace PrmDashboard.PrmService.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/prm/performance")]
-public class PerformanceController : ControllerBase
+public class PerformanceController : PrmControllerBase
 {
     private readonly PerformanceService _performanceService;
 
@@ -21,8 +21,6 @@ public class PerformanceController : ControllerBase
     public async Task<IActionResult> GetDurationDistribution([FromQuery] PrmFilterParams filters)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _performanceService.GetDurationDistributionAsync(slug, filters);
         return Ok(result);
     }
@@ -31,8 +29,6 @@ public class PerformanceController : ControllerBase
     public async Task<IActionResult> GetDurationStats([FromQuery] PrmFilterParams filters)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _performanceService.GetDurationStatsAsync(slug, filters);
         return Ok(result);
     }
@@ -41,8 +37,6 @@ public class PerformanceController : ControllerBase
     public async Task<IActionResult> GetNoShows([FromQuery] PrmFilterParams filters)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _performanceService.GetNoShowsAsync(slug, filters);
         return Ok(result);
     }
@@ -51,14 +45,7 @@ public class PerformanceController : ControllerBase
     public async Task<IActionResult> GetPauseAnalysis([FromQuery] PrmFilterParams filters)
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _performanceService.GetPauseAnalysisAsync(slug, filters);
         return Ok(result);
-    }
-
-    private string? GetTenantSlug()
-    {
-        return Request.Headers["X-Tenant-Slug"].FirstOrDefault();
     }
 }

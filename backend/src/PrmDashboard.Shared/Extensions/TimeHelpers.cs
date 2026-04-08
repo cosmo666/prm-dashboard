@@ -19,9 +19,9 @@ public static class TimeHelpers
     public static double CalculateActiveMinutes(int startTime, int? pausedAt, int endTime)
     {
         if (pausedAt.HasValue)
-            return HhmmToMinutes(pausedAt.Value) - HhmmToMinutes(startTime);
+            return Math.Max(0, HhmmToMinutes(pausedAt.Value) - HhmmToMinutes(startTime));
 
-        return HhmmToMinutes(endTime) - HhmmToMinutes(startTime);
+        return Math.Max(0, HhmmToMinutes(endTime) - HhmmToMinutes(startTime));
     }
 
     /// <summary>

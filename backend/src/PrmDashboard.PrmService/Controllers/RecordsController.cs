@@ -8,7 +8,7 @@ namespace PrmDashboard.PrmService.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/prm")]
-public class RecordsController : ControllerBase
+public class RecordsController : PrmControllerBase
 {
     private readonly RecordService _recordService;
 
@@ -25,8 +25,6 @@ public class RecordsController : ControllerBase
         [FromQuery] string sort = "service_date:desc")
     {
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _recordService.GetRecordsAsync(slug, filters, page, size, sort);
         return Ok(result);
     }
@@ -38,14 +36,7 @@ public class RecordsController : ControllerBase
             return BadRequest("The 'airport' query parameter is required.");
 
         var slug = GetTenantSlug();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
         var result = await _recordService.GetSegmentsAsync(slug, id, airport);
         return Ok(result);
-    }
-
-    private string? GetTenantSlug()
-    {
-        return Request.Headers["X-Tenant-Slug"].FirstOrDefault();
     }
 }

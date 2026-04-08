@@ -30,13 +30,6 @@ public class AirportAccessMiddleware
             return;
         }
 
-        // Skip health endpoint
-        if (path.Equals("/health", StringComparison.OrdinalIgnoreCase))
-        {
-            await _next(context);
-            return;
-        }
-
         var airportParam = context.Request.Query["airport"].FirstOrDefault();
         if (string.IsNullOrEmpty(airportParam))
         {

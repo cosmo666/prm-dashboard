@@ -7,7 +7,7 @@ namespace PrmDashboard.PrmService.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/prm/filters")]
-public class FiltersController : ControllerBase
+public class FiltersController : PrmControllerBase
 {
     private readonly FilterService _filterService;
     private readonly ILogger<FiltersController> _logger;
@@ -24,9 +24,7 @@ public class FiltersController : ControllerBase
         if (string.IsNullOrEmpty(airport))
             return BadRequest("The 'airport' query parameter is required.");
 
-        var slug = Request.Headers["X-Tenant-Slug"].FirstOrDefault();
-        if (slug is null) return BadRequest("Missing X-Tenant-Slug header");
-
+        var slug = GetTenantSlug();
         var result = await _filterService.GetOptionsAsync(slug, airport);
         return Ok(result);
     }
