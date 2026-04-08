@@ -1,0 +1,25 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Environment
+.env
+*.db
+
+# IDE
+.idea/
+.vscode/
+
+# Docker
+docker-data/
+
+# Superpowers (local agent state)
+.superpowers/
