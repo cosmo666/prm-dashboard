@@ -1,0 +1,46 @@
+<div class="login-container">
+  <div class="login-left">
+    <div class="login-form-wrapper">
+      <div class="tenant-brand">
+        <img *ngIf="tenant.logoUrl()" [src]="tenant.logoUrl()" [alt]="tenant.name()" class="tenant-logo"/>
+        <h1 class="tenant-name">{{ tenant.name() || 'PRM Dashboard' }}</h1>
+      </div>
+
+      <form class="login-form" (ngSubmit)="onSubmit()">
+        <h2>Sign in</h2>
+        <p class="subtitle">Access your PRM analytics dashboard</p>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Username</mat-label>
+          <input matInput [ngModel]="username()" (ngModelChange)="username.set($event)" name="username" autocomplete="username" required />
+          <mat-icon matPrefix>person</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" autocomplete="current-password" required />
+          <mat-icon matPrefix>lock</mat-icon>
+        </mat-form-field>
+
+        <mat-checkbox [ngModel]="rememberMe()" (ngModelChange)="rememberMe.set($event)" name="remember">Remember me</mat-checkbox>
+
+        <div class="error-message" *ngIf="error()">{{ error() }}</div>
+
+        <button mat-raised-button color="primary" type="submit" class="full-width login-btn" [disabled]="loading()">
+          <mat-spinner *ngIf="loading()" diameter="20"></mat-spinner>
+          <span *ngIf="!loading()">Log in</span>
+        </button>
+      </form>
+
+      <footer class="login-footer">Powered by <strong>PRM Dashboard</strong></footer>
+    </div>
+  </div>
+
+  <div class="login-right" [style.background-image]="'url(/assets/images/aviation-bg.jpg)'">
+    <div class="overlay"></div>
+    <div class="right-content">
+      <h2>Ground Handling. Reimagined.</h2>
+      <p>Real-time insights into PRM services across your airports.</p>
+    </div>
+  </div>
+</div>
