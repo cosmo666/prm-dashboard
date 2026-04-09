@@ -50,7 +50,7 @@ export class HeatmapChartComponent {
         axisTick: { show: false },
         axisLabel: {
           color: CHART_COLORS.muted,
-          fontFamily: '"IBM Plex Mono", monospace',
+          fontFamily: '"IBM Plex Sans", sans-serif',
           fontSize: 10,
         },
         splitArea: { show: false },
@@ -62,7 +62,7 @@ export class HeatmapChartComponent {
         axisTick: { show: false },
         axisLabel: {
           color: CHART_COLORS.muted,
-          fontFamily: '"IBM Plex Mono", monospace',
+          fontFamily: '"IBM Plex Sans", sans-serif',
           fontSize: 10,
         },
         splitArea: { show: false },
@@ -77,7 +77,7 @@ export class HeatmapChartComponent {
         itemWidth: 12,
         itemHeight: 140,
         textStyle: {
-          fontFamily: '"IBM Plex Mono", monospace',
+          fontFamily: '"IBM Plex Sans", sans-serif',
           fontSize: 10,
           color: CHART_COLORS.muted,
         },

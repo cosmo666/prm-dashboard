@@ -60,7 +60,7 @@ export class SankeyChartComponent {
           },
           itemStyle: { borderWidth: 0 },
           label: {
-            fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
+            fontFamily: '"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif',
             fontSize: 10,
             fontWeight: 500,
             color: CHART_COLORS.ink,
@@ -73,13 +73,13 @@ export class SankeyChartComponent {
             },
             rich: {
               name: {
-                fontFamily: '"IBM Plex Mono", monospace',
+                fontFamily: '"IBM Plex Sans", sans-serif',
                 fontSize: 10,
                 fontWeight: 600,
                 color: CHART_COLORS.ink,
               },
               val: {
-                fontFamily: '"IBM Plex Mono", monospace',
+                fontFamily: '"IBM Plex Sans", sans-serif',
                 fontSize: 10,
                 fontWeight: 400,
                 color: CHART_COLORS.muted,

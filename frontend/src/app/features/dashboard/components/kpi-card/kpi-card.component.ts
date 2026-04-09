@@ -18,7 +18,7 @@ import { CommonModule, DecimalPipe } from '@angular/common';
         <div class="kpi__skeleton-value"></div>
         <div class="kpi__skeleton-foot"></div>
       } @else {
-        <div class="kpi__value font-display">{{ value() }}</div>
+        <div class="kpi__value">{{ value() }}</div>
 
         <footer class="kpi__foot">
           @if (delta() !== null) {
@@ -94,21 +94,24 @@ import { CommonModule, DecimalPipe } from '@angular/common';
       margin-top: 5px;
     }
 
-    .accent--blue   { background: #1d4ed8; }
-    .accent--teal   { background: #0d9488; }
-    .accent--amber  { background: #d97706; }
-    .accent--plum   { background: #7c3aed; }
-    .accent--green  { background: #059669; }
+    .accent--blue   { background: var(--accent); }
+    .accent--teal   { background: var(--success); }
+    .accent--amber  { background: var(--warning); }
+    .accent--plum   { background: #7c3aed; }    // no token for purple yet — intentional
+    .accent--green  { background: var(--success); }
 
+    // Dashboard-style numeric display — IBM Plex Sans, semibold, tabular figures.
+    // Intentionally NOT Fraunces serif because editorial serif numbers are
+    // harder to scan in dense operational dashboards.
     .kpi__value {
-      font-family: var(--font-serif);
-      font-variation-settings: 'opsz' 144;
-      font-size: 44px;
-      line-height: 0.98;
-      font-weight: 300;
+      font-family: var(--font-sans);
+      font-size: 32px;
+      line-height: 1.1;
+      font-weight: 600;
       color: var(--ink);
       letter-spacing: -0.02em;
       font-variant-numeric: tabular-nums;
+      font-feature-settings: 'tnum' 1, 'zero' 1;
       margin: 4px 0;
       animation: kpiValueEnter 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
     }
@@ -178,15 +181,15 @@ import { CommonModule, DecimalPipe } from '@angular/common';
     }
 
     .delta--up {
-      background: #ecfdf5;
-      color: #047857;
-      border: 1px solid #d1fae5;
+      background: color-mix(in srgb, var(--success) 14%, transparent);
+      color: var(--success);
+      border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
     }
 
     .delta--down {
-      background: #fef2f2;
-      color: #b91c1c;
-      border: 1px solid #fecaca;
+      background: color-mix(in srgb, var(--danger) 14%, transparent);
+      color: var(--danger);
+      border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
     }
 
     .delta__period {

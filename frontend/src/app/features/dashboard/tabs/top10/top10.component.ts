@@ -136,7 +136,7 @@ export class Top10Component {
 
   onAirlineClick(code: string): void {
     if (!code) return;
-    this.filters.setFilter({ airline: code });
+    this.filters.setAirline([code]);
     this.toast.show(`Filtered by airline: ${code}`);
   }
 
@@ -144,5 +144,16 @@ export class Top10Component {
     if (!code) return;
     this.filters.setFilter({ flight: code });
     this.toast.show(`Filtered by flight: ${code}`);
+  }
+
+  onRouteClick(label: string): void {
+    if (!label) return;
+    this.toast.show(`Route: ${label}`);
+  }
+
+  onNoShowAirlineClick(code: string): void {
+    if (!code) return;
+    this.filters.setAirline([code]);
+    this.toast.show(`Filtered by airline: ${code}`);
   }
 }

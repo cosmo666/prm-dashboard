@@ -394,7 +394,7 @@
   width: 100%;
   height: 44px;
   background: var(--ink);
-  color: #fafaf7;
+  color: var(--on-ink);
   border: 1px solid var(--ink);
   border-radius: 8px;
   font-family: var(--font-sans);
@@ -405,7 +405,7 @@
   transition: background 160ms ease, transform 160ms ease;
 
   &:hover:not(:disabled) {
-    background: #1a1a1a;
+    background: var(--ink-muted);
     transform: translateY(-1px);
   }
 
@@ -430,8 +430,8 @@
 .spinner {
   width: 14px;
   height: 14px;
-  border: 1.5px solid rgba(250, 250, 247, 0.3);
-  border-top-color: #fafaf7;
+  border: 1.5px solid color-mix(in srgb, var(--on-ink) 30%, transparent);
+  border-top-color: var(--on-ink);
   border-radius: 50%;
   animation: spin 700ms linear infinite;
 }

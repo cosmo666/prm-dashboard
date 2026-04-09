@@ -1,21 +1,39 @@
-import { Component, inject, ElementRef, ViewChild, ViewChildren, QueryList, signal } from '@angular/core';
+import { Component, inject, ViewChild, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { FilterStore, DatePreset } from '../../../../core/store/filter.store';
-import { PRESET_DEFS, resolvePreset } from '../../utils/date-presets';
+import { PRESET_DEFS, resolvePreset, POC_TODAY } from '../../utils/date-presets';
 
+/**
+ * Two-panel date range picker:
+ *   Left  — scrollable list of 15 quick presets + "Custom Range"
+ *   Right — always-visible MatCalendar in range-selection mode, with
+ *           From/To pills above the month header
+ *
+ * User flow:
+ *   * Click a preset → applies immediately, closes menu
+ *   * Click a calendar day → sets From (if no range) or To (if only From),
+ *     or restarts range (if both set). When both From and To exist, the
+ *     filter is applied immediately via the effect below.
+ *
+ * Wire contract preserved: still calls FilterStore.setDateRange(preset,
+ * from, to) with ISO `YYYY-MM-DD` strings so the rest of the dashboard
+ * doesn't need to change.
+ */
 @Component({
   selector: 'app-date-range-picker',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatMenuModule],
+  imports: [CommonModule, FormsModule, MatMenuModule, MatDatepickerModule, MatNativeDateModule],
   template: `
     <button
       #trigger
       class="range-btn"
       [matMenuTriggerFor]="menu"
       type="button"
-      (keydown)="onTriggerKeydown($event)"
+      (menuOpened)="onMenuOpened()"
       [attr.aria-label]="'Date range: ' + currentLabel() + ', ' + rangeDisplay()">
       <div class="range-btn__icon">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
@@ -32,87 +50,86 @@ import { PRESET_DEFS, resolvePreset } from '../../utils/date-presets';
       </svg>
     </button>
 
-    <mat-menu #menu="matMenu" class="date-preset-menu" xPosition="before">
-      <div class="preset-wrap" (keydown)="onMenuKeydown($event)">
-        <div class="preset-head">
-          <div class="label-micro">Date range</div>
-          <div class="preset-head__hint font-data">↑ ↓ ↵</div>
-        </div>
-        <div class="preset-list">
-          @for (p of presets; track p.key; let i = $index) {
-            <button
-              #item
-              mat-menu-item
-              type="button"
-              class="preset-item"
-              [class.active]="filters.datePreset() === p.key"
-              (click)="select(p.key, $event)">
-              <div class="preset-item__label">{{ p.label }}</div>
-              <div class="preset-item__range font-data">{{ presetRange(p.key) }}</div>
-              @if (filters.datePreset() === p.key) {
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" class="preset-item__check">
-                  <path d="M2 7l3 3 7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              }
-            </button>
-          }
+    <mat-menu #menu="matMenu" class="drp-menu" xPosition="before">
+      <div class="drp-wrap" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
 
-          <!-- Custom row: NOT a mat-menu-item, so clicking it doesn't auto-close the menu -->
-          <button
-            type="button"
-            class="preset-item preset-item--custom"
-            [class.active]="filters.datePreset() === 'custom' || showCustom()"
-            (click)="openCustom($event)">
-            <div class="preset-item__label">Custom Range</div>
-            <div class="preset-item__range font-data">
-              {{ filters.datePreset() === 'custom' ? rangeDisplay() : 'Pick dates →' }}
-            </div>
-            @if (filters.datePreset() === 'custom') {
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" class="preset-item__check">
-                <path d="M2 7l3 3 7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+        <!-- Left: preset list -->
+        <aside class="drp-presets">
+          <div class="drp-presets__head label-micro">Quick presets</div>
+          <ul class="drp-presets__list">
+            @for (p of presets; track p.key) {
+              <li>
+                <button
+                  type="button"
+                  class="drp-preset"
+                  [class.is-active]="filters.datePreset() === p.key"
+                  (click)="selectPreset(p.key)">
+                  <span class="drp-preset__label">{{ p.label }}</span>
+                  <span class="drp-preset__range font-data">{{ presetRange(p.key) }}</span>
+                </button>
+              </li>
             }
-          </button>
-        </div>
-
-        @if (showCustom()) {
-          <div class="custom-panel" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
-            <div class="custom-panel__head label-micro">Custom range</div>
-            <div class="custom-panel__row">
-              <label class="custom-field">
-                <span class="custom-field__label">From</span>
-                <input
-                  type="date"
-                  class="custom-field__input font-data"
-                  [(ngModel)]="customFrom"
-                  [max]="customTo() || undefined" />
-              </label>
-              <label class="custom-field">
-                <span class="custom-field__label">To</span>
-                <input
-                  type="date"
-                  class="custom-field__input font-data"
-                  [(ngModel)]="customTo"
-                  [min]="customFrom() || undefined" />
-              </label>
-            </div>
-            <div class="custom-panel__actions">
-              <button type="button" class="custom-btn custom-btn--ghost" (click)="cancelCustom()">Cancel</button>
+            <li class="drp-preset-divider"></li>
+            <li>
               <button
                 type="button"
-                class="custom-btn custom-btn--primary"
-                [disabled]="!canApplyCustom()"
-                (click)="applyCustom()">Apply</button>
+                class="drp-preset drp-preset--custom"
+                [class.is-active]="filters.datePreset() === 'custom'"
+                (click)="$event.stopPropagation()">
+                <span class="drp-preset__label">Custom Range</span>
+                <span class="drp-preset__range font-data">Pick on calendar →</span>
+              </button>
+            </li>
+          </ul>
+        </aside>
+
+        <!-- Right: calendar -->
+        <section class="drp-cal">
+          <div class="drp-cal__pills">
+            <div class="drp-pill" [class.drp-pill--active]="pickingStart()">
+              <span class="label-micro">From</span>
+              <span class="drp-pill__value font-data">{{ formatFriendly(draftFrom()) || '—' }}</span>
             </div>
+            <div class="drp-pill__arrow">→</div>
+            <div class="drp-pill" [class.drp-pill--active]="!pickingStart()">
+              <span class="label-micro">To</span>
+              <span class="drp-pill__value font-data">{{ formatFriendly(draftTo()) || '—' }}</span>
+            </div>
+            @if (draftFrom() || draftTo()) {
+              <button type="button" class="drp-cal__clear" (click)="resetDraft()" aria-label="Clear selection">
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+            }
           </div>
-        }
+
+          <mat-calendar
+            class="drp-calendar"
+            [selected]="calendarSelection()"
+            [startAt]="calendarStartAt()"
+            [maxDate]="maxDate"
+            (selectedChange)="onDayClick($event)">
+          </mat-calendar>
+
+          <div class="drp-cal__actions">
+            <button
+              type="button"
+              class="drp-btn drp-btn--ghost"
+              (click)="closeMenu()">Cancel</button>
+            <button
+              type="button"
+              class="drp-btn drp-btn--primary"
+              [disabled]="!canApply()"
+              (click)="applyCustom()">Apply</button>
+          </div>
+        </section>
       </div>
     </mat-menu>
   `,
   styles: [`
     :host { display: block; }
 
-    // Trigger
     .range-btn {
       display: flex;
       align-items: center;
@@ -131,9 +148,7 @@ import { PRESET_DEFS, resolvePreset } from '../../utils/date-presets';
       text-align: left;
     }
 
-    .range-btn:hover {
-      border-color: var(--border-strong);
-    }
+    .range-btn:hover { border-color: var(--border-strong); }
 
     .range-btn__icon {
       color: var(--muted);
@@ -171,231 +186,45 @@ import { PRESET_DEFS, resolvePreset } from '../../utils/date-presets';
       flex-shrink: 0;
     }
 
-    // Menu
-    :host ::ng-deep .date-preset-menu {
-      min-width: 320px !important;
-      max-width: 360px !important;
-    }
-
-    :host ::ng-deep .preset-wrap {
-      padding: 6px;
-    }
-
-    :host ::ng-deep .preset-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 12px 10px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 4px;
-    }
-
-    :host ::ng-deep .preset-head__hint {
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 0.08em;
-    }
-
-    :host ::ng-deep .preset-list {
-      max-height: 360px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-    }
-
-    :host ::ng-deep .preset-item {
-      display: flex !important;
-      align-items: center !important;
-      gap: 12px !important;
-      padding: 8px 12px !important;
-      min-height: auto !important;
-      border-radius: 6px !important;
-      font-family: var(--font-sans) !important;
-      font-size: 12px !important;
-      line-height: 1.25 !important;
-      position: relative;
-      color: var(--ink) !important;
-    }
-
-    :host ::ng-deep .preset-item.active {
-      background: var(--accent-bg) !important;
-    }
-
-    :host ::ng-deep .preset-item.active .preset-item__label {
-      color: var(--accent-fg) !important;
-      font-weight: 600 !important;
-    }
-
-    :host ::ng-deep .preset-item__label {
-      flex: 1;
-      color: var(--ink);
-      font-weight: 500;
-    }
-
-    :host ::ng-deep .preset-item__range {
-      font-size: 10px;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-
-    :host ::ng-deep .preset-item__check {
-      color: var(--accent-fg);
-      margin-left: 4px;
-      flex-shrink: 0;
-    }
-
-    // Custom row (plain button — matches preset-item visuals)
-    :host ::ng-deep button.preset-item--custom {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-      padding: 8px 12px;
-      border: none;
-      background: transparent;
-      border-radius: 6px;
-      font-family: var(--font-sans);
-      font-size: 12px;
-      line-height: 1.25;
-      color: var(--ink);
-      cursor: pointer;
-      text-align: left;
-      margin-top: 4px;
-      border-top: 1px solid var(--border);
-      padding-top: 12px;
-    }
-
-    :host ::ng-deep button.preset-item--custom:hover {
-      background: var(--surface-2);
-    }
-
-    :host ::ng-deep button.preset-item--custom.active {
-      background: var(--accent-bg);
-    }
-
-    :host ::ng-deep button.preset-item--custom.active .preset-item__label {
-      color: var(--accent-fg);
-      font-weight: 600;
-    }
-
-    // Custom range panel
-    :host ::ng-deep .custom-panel {
-      margin-top: 6px;
-      padding: 12px;
-      border-top: 1px solid var(--border);
-      background: var(--surface-2);
-      border-radius: 6px;
-    }
-
-    :host ::ng-deep .custom-panel__head {
-      margin-bottom: 10px;
-      color: var(--muted);
-    }
-
-    :host ::ng-deep .custom-panel__row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    :host ::ng-deep .custom-field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    :host ::ng-deep .custom-field__label {
-      font-family: var(--font-sans);
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    :host ::ng-deep .custom-field__input {
-      height: 32px;
-      padding: 0 8px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      font-size: 12px;
-      color: var(--ink);
-      font-family: var(--font-mono);
-      transition: border-color 160ms ease;
-    }
-
-    :host ::ng-deep .custom-field__input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    :host ::ng-deep .custom-panel__actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-
-    :host ::ng-deep .custom-btn {
-      height: 28px;
-      padding: 0 12px;
-      border-radius: 4px;
-      font-family: var(--font-sans);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      cursor: pointer;
-      transition: background 160ms ease, border-color 160ms ease, opacity 160ms ease;
-    }
-
-    :host ::ng-deep .custom-btn--ghost {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--ink-muted);
-    }
-
-    :host ::ng-deep .custom-btn--ghost:hover {
-      border-color: var(--border-strong);
-      color: var(--ink);
-    }
-
-    :host ::ng-deep .custom-btn--primary {
-      background: var(--ink);
-      border: 1px solid var(--ink);
-      color: var(--bg);
-    }
-
-    :host ::ng-deep .custom-btn--primary:hover:not(:disabled) {
-      background: var(--accent);
-      border-color: var(--accent);
-    }
-
-    :host ::ng-deep .custom-btn--primary:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+    // All menu panel styles live in global styles.scss keyed on
+    // .mat-mdc-menu-panel.drp-menu — see the "Date range picker menu"
+    // block. Component-local :host ::ng-deep doesn't apply once
+    // mat-menu portals into cdk-overlay-container.
   `],
 })
 export class DateRangePickerComponent {
   @ViewChild(MatMenuTrigger) trigger?: MatMenuTrigger;
-  @ViewChildren('item') items?: QueryList<ElementRef<HTMLButtonElement>>;
 
   filters = inject(FilterStore);
-  // Quick presets (everything except 'custom' — Custom gets its own row that doesn't auto-close the menu)
+
+  // All presets EXCEPT 'custom' — custom is the implicit mode when you
+  // click dates on the calendar without picking a preset.
   presets = PRESET_DEFS.filter((p) => p.key !== 'custom');
 
-  // Custom range panel state
-  showCustom = signal(false);
-  customFrom = signal('');
-  customTo = signal('');
+  // Draft range shown in the calendar while the menu is open. Only
+  // commits to the filter store when the user clicks Apply or picks
+  // a preset.
+  draftFrom = signal<Date | null>(null);
+  draftTo = signal<Date | null>(null);
 
-  canApplyCustom(): boolean {
-    const f = this.customFrom();
-    const t = this.customTo();
-    return !!(f && t && f <= t);
-  }
+  // When true, the next day click sets `from`; otherwise it sets `to`.
+  pickingStart = computed(() => !this.draftFrom() || (!!this.draftFrom() && !!this.draftTo()));
+
+  // The POC dataset ends on 2026-03-31 — disable future dates so users
+  // don't get an empty-result surprise by picking May.
+  readonly maxDate = POC_TODAY;
+
+  // What MatCalendar shows as "selected". We feed it only a single date
+  // because we're implementing range selection manually (full range
+  // selection in MatCalendar requires the component developer mode API
+  // which is heavier than we need for this UX).
+  calendarSelection = computed<Date | null>(() => {
+    return this.draftTo() ?? this.draftFrom();
+  });
+
+  calendarStartAt = computed<Date | null>(() => {
+    return this.draftFrom() ?? this.parseIso(this.filters.dateFrom()) ?? POC_TODAY;
+  });
 
   currentLabel(): string {
     const p = PRESET_DEFS.find((x) => x.key === this.filters.datePreset());
@@ -416,65 +245,89 @@ export class DateRangePickerComponent {
     return `${this.formatShort(r.from)} → ${this.formatShort(r.to)}`;
   }
 
-  select(preset: DatePreset, _e?: Event): void {
-    this.showCustom.set(false);
+  onMenuOpened(): void {
+    // Seed the draft with the currently applied filter so the calendar
+    // opens already showing the active range.
+    this.draftFrom.set(this.parseIso(this.filters.dateFrom()));
+    this.draftTo.set(this.parseIso(this.filters.dateTo()));
+  }
+
+  selectPreset(preset: DatePreset): void {
     const r = resolvePreset(preset);
     this.filters.setDateRange(preset, r.from, r.to);
-  }
-
-  openCustom(e: Event): void {
-    e.stopPropagation();
-    e.preventDefault();
-    // Seed inputs with current range so the user can tweak from where they are
-    this.customFrom.set(this.filters.dateFrom() || '');
-    this.customTo.set(this.filters.dateTo() || '');
-    this.showCustom.set(true);
-  }
-
-  applyCustom(): void {
-    if (!this.canApplyCustom()) return;
-    this.filters.setDateRange('custom', this.customFrom(), this.customTo());
-    this.showCustom.set(false);
     this.trigger?.closeMenu();
   }
 
-  cancelCustom(): void {
-    this.showCustom.set(false);
-  }
+  onDayClick(day: Date | null): void {
+    if (!day) return;
 
-  // Keyboard navigation on the trigger button opens the menu
-  onTriggerKeydown(e: KeyboardEvent): void {
-    if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      this.trigger?.openMenu();
+    // Three-state range selection cycle:
+    //   * Nothing selected                      → set from
+    //   * Only `from` set, clicked day >= from  → set to
+    //   * Only `from` set, clicked day < from   → replace from
+    //   * Both set                              → restart with new from
+    const from = this.draftFrom();
+    const to = this.draftTo();
+
+    if (!from || (from && to)) {
+      this.draftFrom.set(day);
+      this.draftTo.set(null);
+      return;
     }
-  }
 
-  // Keyboard navigation inside the menu
-  onMenuKeydown(e: KeyboardEvent): void {
-    const items = this.items?.toArray() ?? [];
-    if (items.length === 0) return;
-
-    const active = document.activeElement as HTMLElement | null;
-    const idx = items.findIndex((ref) => ref.nativeElement === active);
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const next = idx < items.length - 1 ? idx + 1 : 0;
-      items[next].nativeElement.focus();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const prev = idx > 0 ? idx - 1 : items.length - 1;
-      items[prev].nativeElement.focus();
+    if (day.getTime() < from.getTime()) {
+      this.draftFrom.set(day);
+      this.draftTo.set(null);
+      return;
     }
+
+    this.draftTo.set(day);
   }
 
-  // Short display: "Dec 1" / "Mar 31 2026"
+  canApply(): boolean {
+    return !!(this.draftFrom() && this.draftTo());
+  }
+
+  applyCustom(): void {
+    const from = this.draftFrom();
+    const to = this.draftTo();
+    if (!from || !to) return;
+    this.filters.setDateRange('custom', this.isoOf(from), this.isoOf(to));
+    this.trigger?.closeMenu();
+  }
+
+  resetDraft(): void {
+    this.draftFrom.set(null);
+    this.draftTo.set(null);
+  }
+
+  closeMenu(): void {
+    this.trigger?.closeMenu();
+  }
+
+  formatFriendly(d: Date | null): string {
+    if (!d) return '';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  }
+
   private formatShort(iso: string): string {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return iso;
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const m = months[d.getMonth()];
-    return `${m} ${d.getDate()}`;
+    return `${months[d.getMonth()]} ${d.getDate()}`;
+  }
+
+  private parseIso(iso: string): Date | null {
+    if (!iso) return null;
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  private isoOf(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
   }
 }

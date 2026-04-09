@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BarChartComponent, BarDatum } from '../bar-chart/bar-chart.component';
 
@@ -8,7 +8,8 @@ import { BarChartComponent, BarDatum } from '../bar-chart/bar-chart.component';
   imports: [CommonModule, BarChartComponent],
   template: `
     <app-bar-chart [title]="title()" [data]="data()" [loading]="loading()" [horizontal]="true"
-                   [xLabel]="xLabel()" [yLabel]="yLabel()"></app-bar-chart>
+                   [xLabel]="xLabel()" [yLabel]="yLabel()"
+                   (barClick)="barClick.emit($event)"></app-bar-chart>
   `,
 })
 export class HorizontalBarChartComponent {
@@ -17,4 +18,5 @@ export class HorizontalBarChartComponent {
   loading = input<boolean>(false);
   xLabel  = input<string>('Count');
   yLabel  = input<string>('');
+  barClick = output<string>();
 }

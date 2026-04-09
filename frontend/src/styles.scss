@@ -74,9 +74,15 @@
   // Translucent chrome backgrounds (used by sticky top bar)
   --topbar-bg: rgba(250, 250, 247, 0.85);
 
+  // Text/icon color that sits ON an --ink-colored surface (brand marks,
+  // primary buttons, user avatars). Must always contrast with --ink regardless
+  // of theme. In light mode --ink is near-black so on-ink is off-white; in
+  // dark mode --ink is near-white so on-ink flips to near-black.
+  --on-ink: #fafaf7;
+
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Fraunces", ui-serif, Georgia, serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-serif: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 // DARK theme — deep ink with warm highlights; triggered by [data-theme="dark"] on <html>
@@ -101,6 +107,9 @@
   --shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.6);
 
   --topbar-bg: rgba(10, 10, 10, 0.78);
+
+  // Dark mode: --ink is near-white, so on-ink flips to near-black
+  --on-ink: #0a0a0a;
 }
 
 // ------------------------------------------------------------
@@ -153,9 +162,15 @@ a {
   text-decoration: none;
 }
 
-button {
+button, [role="button"], [role="tab"], [role="option"],
+summary, label[for], a[href] {
   font-family: inherit;
   cursor: pointer;
+}
+
+// Material overrides that lose cursor: pointer when disabled
+button:disabled, [aria-disabled="true"] {
+  cursor: not-allowed;
 }
 
 input, select, textarea {
@@ -332,16 +347,670 @@ textarea:focus-visible,
 }
 
 .mat-mdc-menu-panel {
+  background: var(--surface) !important;
   border: 1px solid var(--border) !important;
   border-radius: 8px !important;
-  box-shadow: 0 8px 24px rgba(12, 12, 12, 0.08), 0 0 0 1px rgba(12, 12, 12, 0.06) !important;
+  box-shadow: var(--shadow-elevated) !important;
+  padding: 6px !important;
+  min-width: 220px !important;
+  overflow: hidden;
+}
+
+// Strip the default inner content padding so our 6px panel padding is the
+// only gutter; Material otherwise stacks an 8px inset on .mat-mdc-menu-content.
+.mat-mdc-menu-panel .mat-mdc-menu-content {
+  padding: 0 !important;
 }
 
 .mat-mdc-menu-item {
   font-family: var(--font-sans) !important;
   font-size: 13px !important;
-  min-height: 36px !important;
+  min-height: auto !important;
+  height: auto !important;
+  line-height: 1.2 !important;
   letter-spacing: 0 !important;
+  padding: 10px 12px !important;
+  margin: 1px 0 !important;
+  border-radius: 6px !important;
+  color: var(--ink) !important;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.mat-mdc-menu-item:hover:not([disabled]),
+.mat-mdc-menu-item.cdk-program-focused,
+.mat-mdc-menu-item.cdk-keyboard-focused {
+  background: var(--surface-2) !important;
+}
+
+.mat-mdc-menu-item[disabled] {
+  color: var(--muted) !important;
+  opacity: 0.6;
+}
+
+// Strip Material's internal ripple and focus overlays — we use background instead
+.mat-mdc-menu-item .mat-mdc-menu-ripple,
+.mat-mdc-menu-item .mat-mdc-focus-indicator,
+.mat-mdc-menu-item .mat-ripple-element {
+  display: none !important;
+}
+
+// Active/selected state marker (components set .is-active on the item)
+.mat-mdc-menu-item.is-active {
+  background: var(--accent-bg) !important;
+}
+
+.mat-mdc-menu-item.is-active .mdc-list-item__primary-text,
+.mat-mdc-menu-item.is-active > * {
+  color: var(--accent-fg) !important;
+}
+
+// ------------------------------------------------------------
+// Structured menu header — used by dev picker, airport selector,
+// user menu. Renders a small label above the list of items.
+// ------------------------------------------------------------
+.mat-mdc-menu-panel .devpick-menu__head,
+.mat-mdc-menu-panel .ap-menu__head,
+.mat-mdc-menu-panel .menu__header {
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid var(--border);
+  margin: 0 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mat-mdc-menu-panel .devpick-menu__hint {
+  font-size: 10px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+// ------------------------------------------------------------
+// Structured menu items — two-column layout with mono slug + name
+// Used by: airport selector, dev tenant picker
+// ------------------------------------------------------------
+.mat-mdc-menu-panel.ap-menu,
+.mat-mdc-menu-panel.devpick-menu {
+  min-width: 260px !important;
+}
+
+.mat-mdc-menu-panel .ap-menu__item,
+.mat-mdc-menu-panel .devpick-menu__item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.mat-mdc-menu-panel .ap-menu__code,
+.mat-mdc-menu-panel .devpick-menu__slug {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 44px;
+}
+
+.mat-mdc-menu-panel .ap-menu__name,
+.mat-mdc-menu-panel .devpick-menu__name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mat-mdc-menu-panel .ap-menu__check,
+.mat-mdc-menu-panel .devpick-menu__check {
+  color: var(--accent-fg);
+  flex-shrink: 0;
+}
+
+// is-active row color cascade (the base .is-active rule above handles bg;
+// here we recolor the nested slug + name text so contrast stays consistent)
+.mat-mdc-menu-panel .ap-menu__item.is-active .ap-menu__code,
+.mat-mdc-menu-panel .ap-menu__item.is-active .ap-menu__name,
+.mat-mdc-menu-panel .devpick-menu__item.is-active .devpick-menu__slug,
+.mat-mdc-menu-panel .devpick-menu__item.is-active .devpick-menu__name {
+  color: var(--accent-fg) !important;
+}
+
+// ------------------------------------------------------------
+// User menu (top bar) — "Signed in as" header + sign-out button
+// ------------------------------------------------------------
+.mat-mdc-menu-panel.user-menu {
+  min-width: 240px !important;
+}
+
+.mat-mdc-menu-panel .menu__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-top: 4px;
+}
+
+.mat-mdc-menu-panel .menu__email {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mat-mdc-menu-panel .menu__divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2px 0;
+}
+
+// ------------------------------------------------------------
+// Saved views menu — list + in-menu save form
+// ------------------------------------------------------------
+.mat-mdc-menu-panel.views-menu {
+  min-width: 300px !important;
+  max-width: 340px !important;
+  padding: 0 !important;
+}
+
+.mat-mdc-menu-panel .views-wrap {
+  padding: 6px;
+}
+
+.mat-mdc-menu-panel .views-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.mat-mdc-menu-panel .views-head__count {
+  font-size: 10px;
+  color: var(--muted);
+  background: var(--surface-2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.mat-mdc-menu-panel .views-empty {
+  padding: 16px 12px 18px;
+  text-align: left;
+}
+
+.mat-mdc-menu-panel .views-empty__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.mat-mdc-menu-panel .views-empty__hint {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.mat-mdc-menu-panel .views-list {
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 0 4px;
+}
+
+.mat-mdc-menu-panel .view-row {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  border-radius: 6px;
+  position: relative;
+}
+
+.mat-mdc-menu-panel .view-row:hover {
+  background: var(--surface-2);
+}
+
+.mat-mdc-menu-panel .view-row.active {
+  background: var(--accent-bg);
+}
+
+.mat-mdc-menu-panel .view-row__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.mat-mdc-menu-panel .view-row__name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mat-mdc-menu-panel .view-row.active .view-row__name {
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+.mat-mdc-menu-panel .view-row__meta {
+  font-size: 10px;
+  color: var(--muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mat-mdc-menu-panel .view-row__del {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;    // touch target >=44px (was 26px)
+  min-height: 44px;
+  margin-right: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.mat-mdc-menu-panel .view-row:hover .view-row__del {
+  opacity: 1;
+}
+
+.mat-mdc-menu-panel .view-row__del:hover {
+  background: var(--surface);
+  color: var(--danger);
+}
+
+.mat-mdc-menu-panel .views-save {
+  margin-top: 4px;
+  padding: 10px 12px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.mat-mdc-menu-panel .views-save__label {
+  color: var(--muted);
+  font-size: 10px;
+  margin-bottom: 8px;
+}
+
+.mat-mdc-menu-panel .views-save__row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mat-mdc-menu-panel .views-save__input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;  // touch target (was 32px)
+  padding: 0 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.mat-mdc-menu-panel .views-save__input::placeholder {
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.mat-mdc-menu-panel .views-save__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.mat-mdc-menu-panel .views-save__btn {
+  flex-shrink: 0;
+  height: 44px;  // touch target (was 32px)
+  padding: 0 14px;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bg);
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+
+.mat-mdc-menu-panel .views-save__btn:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.mat-mdc-menu-panel .views-save__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+// ------------------------------------------------------------
+// Date range picker menu — two-panel layout (presets | calendar)
+// ------------------------------------------------------------
+.mat-mdc-menu-panel.drp-menu {
+  min-width: 640px !important;
+  max-width: 680px !important;
+  padding: 0 !important;
+}
+
+.mat-mdc-menu-panel .drp-wrap {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 0;
+}
+
+.mat-mdc-menu-panel .drp-presets {
+  border-right: 1px solid var(--border);
+  padding: 10px 8px 10px 10px;
+  max-height: 440px;
+  overflow-y: auto;
+}
+
+.mat-mdc-menu-panel .drp-presets__head {
+  padding: 4px 8px 10px;
+  color: var(--muted);
+}
+
+.mat-mdc-menu-panel .drp-presets__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.mat-mdc-menu-panel .drp-preset-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
+}
+
+.mat-mdc-menu-panel .drp-preset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.mat-mdc-menu-panel .drp-preset:hover {
+  background: var(--surface-2);
+}
+
+.mat-mdc-menu-panel .drp-preset.is-active {
+  background: var(--accent-bg);
+  color: var(--accent-fg);
+}
+
+.mat-mdc-menu-panel .drp-preset__label {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.mat-mdc-menu-panel .drp-preset__range {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.mat-mdc-menu-panel .drp-preset.is-active .drp-preset__range {
+  color: var(--accent-fg);
+  opacity: 0.75;
+}
+
+// --- Calendar pane ---
+
+.mat-mdc-menu-panel .drp-cal {
+  padding: 14px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mat-mdc-menu-panel .drp-cal__pills {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mat-mdc-menu-panel .drp-pill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-width: 0;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.mat-mdc-menu-panel .drp-pill--active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.mat-mdc-menu-panel .drp-pill .label-micro {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.mat-mdc-menu-panel .drp-pill--active .label-micro {
+  color: var(--accent-fg);
+}
+
+.mat-mdc-menu-panel .drp-pill__value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.mat-mdc-menu-panel .drp-pill--active .drp-pill__value {
+  color: var(--accent-fg);
+}
+
+.mat-mdc-menu-panel .drp-pill__arrow {
+  color: var(--muted);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.mat-mdc-menu-panel .drp-cal__clear {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+
+.mat-mdc-menu-panel .drp-cal__clear:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.mat-mdc-menu-panel .drp-cal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  margin-top: 2px;
+}
+
+.mat-mdc-menu-panel .drp-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, opacity 140ms ease;
+}
+
+.mat-mdc-menu-panel .drp-btn--ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--ink-muted);
+}
+
+.mat-mdc-menu-panel .drp-btn--ghost:hover {
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+
+.mat-mdc-menu-panel .drp-btn--primary {
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--on-ink);
+}
+
+.mat-mdc-menu-panel .drp-btn--primary:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.mat-mdc-menu-panel .drp-btn--primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+// --- MatCalendar theming — map Material tokens to our design tokens ---
+
+.mat-mdc-menu-panel .drp-calendar {
+  --mat-datepicker-calendar-container-background-color: var(--surface);
+  --mat-datepicker-calendar-container-text-color: var(--ink);
+  --mat-datepicker-calendar-date-today-outline-color: var(--accent);
+  --mat-datepicker-calendar-date-selected-state-background-color: var(--accent);
+  --mat-datepicker-calendar-date-selected-state-text-color: #ffffff;
+  --mat-datepicker-calendar-date-hover-state-background-color: var(--accent-bg);
+  --mat-datepicker-calendar-date-focus-state-background-color: var(--accent-bg);
+  --mat-datepicker-calendar-period-button-text-color: var(--ink);
+  --mat-datepicker-calendar-period-button-icon-color: var(--ink);
+  --mat-datepicker-calendar-navigation-button-icon-color: var(--muted);
+  --mat-datepicker-calendar-header-divider-color: var(--border);
+  --mat-datepicker-calendar-header-text-color: var(--muted);
+  --mat-datepicker-calendar-date-text-color: var(--ink);
+  --mat-datepicker-calendar-body-label-text-color: var(--ink);
+  --mat-datepicker-calendar-date-outline-color: transparent;
+}
+
+.mat-mdc-menu-panel .drp-calendar .mat-calendar-body-cell-content {
+  font-family: var(--font-sans) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+}
+
+.mat-mdc-menu-panel .drp-calendar .mat-calendar-body-selected {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border-radius: 6px !important;
+}
+
+.mat-mdc-menu-panel .drp-calendar .mat-calendar-body-today {
+  border: 1px solid var(--accent) !important;
+  border-radius: 6px !important;
+}
+
+.mat-mdc-menu-panel .drp-calendar .mat-calendar-body-today.mat-calendar-body-selected {
+  box-shadow: inset 0 0 0 1px #ffffff !important;
+}
+
+.mat-mdc-menu-panel .drp-calendar .mat-calendar-table-header th {
+  font-family: var(--font-sans) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em !important;
+  color: var(--muted) !important;
+  text-transform: uppercase;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+.mat-mdc-menu-panel .drp-calendar .mat-calendar-table-header-divider {
+  display: none !important;
+}
+
+.mat-mdc-menu-panel .drp-calendar .mat-calendar-body-label {
+  display: none !important;
+}
+
+.mat-mdc-menu-panel .drp-calendar .mat-calendar-period-button {
+  font-family: var(--font-sans) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+}
+
+.mat-mdc-menu-panel .drp-calendar .mat-calendar-previous-button,
+.mat-mdc-menu-panel .drp-calendar .mat-calendar-next-button {
+  color: var(--muted) !important;
+}
+
+.mat-mdc-menu-panel .drp-calendar .mat-calendar-body-disabled > .mat-calendar-body-cell-content {
+  color: var(--border-strong) !important;
+}
+
+// Responsive fallback: on narrow viewports stack presets above calendar
+@media (max-width: 720px) {
+  .mat-mdc-menu-panel.drp-menu {
+    min-width: 320px !important;
+    max-width: 360px !important;
+  }
+  .mat-mdc-menu-panel .drp-wrap {
+    grid-template-columns: 1fr;
+  }
+  .mat-mdc-menu-panel .drp-presets {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 180px;
+  }
 }
 
 .mat-mdc-select-panel {
@@ -547,6 +1216,20 @@ textarea:focus-visible,
 // Checkbox
 .mat-mdc-checkbox {
   font-family: var(--font-sans) !important;
+}
+
+// ------------------------------------------------------------
+// Reduced motion — global opt-out for users who prefer it.
+// One rule covers every @keyframes + transition in the app so
+// individual components don't need their own media queries.
+// ------------------------------------------------------------
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 // ------------------------------------------------------------

@@ -69,7 +69,7 @@ export class DonutChartComponent {
             label: {
               show: true,
               fontSize: 18,
-              fontFamily: '"Fraunces", serif',
+              fontFamily: '"IBM Plex Sans", sans-serif',
               fontWeight: 300,
               color: CHART_COLORS.ink,
               formatter: '{d}%',

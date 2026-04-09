@@ -3,7 +3,7 @@
   <div class="row row-service-cards">
     <div *ngFor="let s of summaries()"
          class="service-card"
-         [class.active]="filters.service() === s.type"
+         [class.active]="filters.service().includes(s.type)"
          (click)="clickServiceCard(s.type)">
       <div class="service-type">{{ s.type }}</div>
       <div class="service-count">{{ s.count | number }}</div>
@@ -44,9 +44,13 @@
 
   <!-- Row 3: Avg Duration by Service + Day of Week -->
   <div class="row row-charts-1-1">
-    <app-bar-chart title="PRM Count by Service Type" [data]="serviceCountBars()" [loading]="loading()"
-                   xLabel="Service" yLabel="Count"></app-bar-chart>
-    <app-bar-chart title="PRM by Day of Week" [data]="dowBars()" [loading]="loading()"
-                   xLabel="Day" yLabel="Count"></app-bar-chart>
+    <app-bar-chart title="Services by Category" subtitle="Volume per PRM service type"
+                   [data]="serviceCountBars()" [loading]="loading()"
+                   xLabel="Service Type" yLabel="Services"
+                   (barClick)="onServiceBarClick($event)"></app-bar-chart>
+    <app-bar-chart title="Weekly Pattern" subtitle="Service volume by day of week"
+                   [data]="dowBars()" [loading]="loading()"
+                   xLabel="Day" yLabel="Services"
+                   (barClick)="onDowClick($event)"></app-bar-chart>
   </div>
 </div>

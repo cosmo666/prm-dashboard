@@ -12,6 +12,11 @@
   gap: 12px;
 }
 
+.row-charts-full {
+  grid-template-columns: 1fr;
+  min-height: 340px;
+}
+
 .row-charts-1-1 {
   grid-template-columns: 1fr 1fr;
   min-height: 300px;

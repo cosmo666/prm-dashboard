@@ -135,195 +135,9 @@ import { SavedViewsStore, SavedView } from '../../../core/store/saved-views.stor
 
     .views-btn__caret { color: var(--muted); flex-shrink: 0; }
 
-    :host ::ng-deep .views-menu {
-      min-width: 280px !important;
-      max-width: 320px !important;
-    }
-
-    :host ::ng-deep .views-menu .mat-mdc-menu-content { padding: 0 !important; }
-
-    :host ::ng-deep .views-wrap { padding: 6px; }
-
-    :host ::ng-deep .views-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 12px 10px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 4px;
-    }
-
-    :host ::ng-deep .views-head__count {
-      font-size: 10px;
-      color: var(--muted);
-      background: var(--surface-2);
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-
-    :host ::ng-deep .views-empty {
-      padding: 16px 12px 18px;
-      text-align: left;
-    }
-
-    :host ::ng-deep .views-empty__title {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--ink);
-      margin-bottom: 4px;
-    }
-
-    :host ::ng-deep .views-empty__hint {
-      font-size: 11px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    :host ::ng-deep .views-list {
-      max-height: 260px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-      padding: 0 0 4px;
-    }
-
-    :host ::ng-deep .view-row {
-      display: flex;
-      align-items: stretch;
-      gap: 4px;
-      border-radius: 6px;
-      position: relative;
-    }
-
-    :host ::ng-deep .view-row:hover { background: var(--surface-2); }
-    :host ::ng-deep .view-row.active { background: var(--accent-bg); }
-
-    :host ::ng-deep .view-row__main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 2px;
-      padding: 8px 10px 8px 12px;
-      background: transparent;
-      border: none;
-      border-radius: 6px;
-      font-family: var(--font-sans);
-      color: var(--ink);
-      cursor: pointer;
-      text-align: left;
-      min-width: 0;
-    }
-
-    :host ::ng-deep .view-row__name {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--ink);
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    :host ::ng-deep .view-row.active .view-row__name {
-      color: var(--accent-fg);
-      font-weight: 600;
-    }
-
-    :host ::ng-deep .view-row__meta {
-      font-size: 10px;
-      color: var(--muted);
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    :host ::ng-deep .view-row__del {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 26px;
-      margin-right: 4px;
-      background: transparent;
-      border: none;
-      border-radius: 4px;
-      color: var(--muted);
-      cursor: pointer;
-      opacity: 0;
-      transition: opacity 160ms ease, background 160ms ease, color 160ms ease;
-    }
-
-    :host ::ng-deep .view-row:hover .view-row__del { opacity: 1; }
-
-    :host ::ng-deep .view-row__del:hover {
-      background: var(--surface);
-      color: var(--danger);
-    }
-
-    :host ::ng-deep .views-save {
-      margin-top: 4px;
-      padding: 10px 12px 8px;
-      border-top: 1px solid var(--border);
-    }
-
-    :host ::ng-deep .views-save__label {
-      color: var(--muted);
-      font-size: 10px;
-      margin-bottom: 8px;
-    }
-
-    :host ::ng-deep .views-save__row {
-      display: flex;
-      gap: 6px;
-    }
-
-    :host ::ng-deep .views-save__input {
-      flex: 1;
-      height: 30px;
-      padding: 0 10px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--ink);
-      transition: border-color 160ms ease, background 160ms ease;
-      min-width: 0;
-    }
-
-    :host ::ng-deep .views-save__input::placeholder { color: var(--muted); }
-
-    :host ::ng-deep .views-save__input:focus {
-      outline: none;
-      border-color: var(--accent);
-      background: var(--surface);
-    }
-
-    :host ::ng-deep .views-save__btn {
-      height: 30px;
-      padding: 0 12px;
-      background: var(--ink);
-      border: 1px solid var(--ink);
-      border-radius: 6px;
-      font-family: var(--font-sans);
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--bg);
-      cursor: pointer;
-      transition: background 160ms ease, border-color 160ms ease, opacity 160ms ease;
-    }
-
-    :host ::ng-deep .views-save__btn:hover:not(:disabled) {
-      background: var(--accent);
-      border-color: var(--accent);
-    }
-
-    :host ::ng-deep .views-save__btn:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-    }
+    // Menu panel styles live in global styles.scss under .mat-mdc-menu-panel.views-menu
+    // because mat-menu portals its content out of the component host, so :host ::ng-deep
+    // selectors don't match the portaled panel.
   `],
 })
 export class SavedViewsMenuComponent {
@@ -357,9 +171,9 @@ export class SavedViewsMenuComponent {
       datePreset: this.filters.datePreset(),
       dateFrom: this.filters.dateFrom(),
       dateTo: this.filters.dateTo(),
-      airline: this.filters.airline(),
-      service: this.filters.service(),
-      handledBy: this.filters.handledBy(),
+      airline: [...this.filters.airline()],
+      service: [...this.filters.service()],
+      handledBy: [...this.filters.handledBy()],
     });
     this.draftName.set('');
   }
@@ -371,16 +185,15 @@ export class SavedViewsMenuComponent {
 
   apply(v: SavedView): void {
     const f = v.filters;
-    // Translate SavedView's camelCase shape into the snake_case the FilterStore
-    // expects via loadFromQueryParams. Also restore date preset explicitly
-    // because loadFromQueryParams only handles dateFrom/dateTo.
+    // Translate SavedView's camelCase shape into the snake_case CSV form the
+    // FilterStore expects via loadFromQueryParams (which re-parses CSV → array).
     this.filters.loadFromQueryParams({
       airport: f.airport ?? '',
       date_from: f.dateFrom ?? '',
       date_to: f.dateTo ?? '',
-      airline: f.airline ?? '',
-      service: f.service ?? '',
-      handled_by: f.handledBy ?? '',
+      airline: (f.airline ?? []).join(','),
+      service: (f.service ?? []).join(','),
+      handled_by: (f.handledBy ?? []).join(','),
     });
     this.filters.setDateRange(
       (f.datePreset as any) || 'custom',
@@ -403,9 +216,9 @@ export class SavedViewsMenuComponent {
       f.datePreset === this.filters.datePreset() &&
       (f.dateFrom ?? '') === this.filters.dateFrom() &&
       (f.dateTo ?? '') === this.filters.dateTo() &&
-      (f.airline ?? '') === this.filters.airline() &&
-      (f.service ?? '') === this.filters.service() &&
-      (f.handledBy ?? '') === this.filters.handledBy()
+      sameSet(f.airline ?? [], this.filters.airline()) &&
+      sameSet(f.service ?? [], this.filters.service()) &&
+      sameSet(f.handledBy ?? [], this.filters.handledBy())
     );
   }
 
@@ -414,9 +227,9 @@ export class SavedViewsMenuComponent {
     const f = v.filters;
     if (f.airport) bits.push(f.airport);
     bits.push(this.labelForPreset(f.datePreset));
-    if (f.airline) bits.push(f.airline);
-    if (f.service) bits.push(f.service);
-    if (f.handledBy) bits.push(f.handledBy);
+    if (f.airline && f.airline.length > 0) bits.push(summarize('Airlines', f.airline));
+    if (f.service && f.service.length > 0) bits.push(summarize('Services', f.service));
+    if (f.handledBy && f.handledBy.length > 0) bits.push(summarize('Handled', f.handledBy));
     return bits.join(' · ');
   }
 
@@ -439,4 +252,21 @@ export class SavedViewsMenuComponent {
     };
     return map[key] ?? key;
   }
+}
+
+/** True when two string arrays hold the same values regardless of order. */
+function sameSet(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) return false;
+  const setB = new Set(b);
+  return a.every((v) => setB.has(v));
+}
+
+/**
+ * Compact label for a multi-value filter in the view description row.
+ * `["AI"]` → `"AI"`, `["AI","BA"]` → `"AI +1"`, `["AI","BA","CX"]` → `"AI +2"`.
+ */
+function summarize(_label: string, values: readonly string[]): string {
+  if (values.length === 0) return '';
+  if (values.length === 1) return values[0];
+  return `${values[0]} +${values.length - 1}`;
 }

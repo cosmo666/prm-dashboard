@@ -157,11 +157,27 @@ export class OverviewComponent {
     if (!name) return;
     const lower = name.toLowerCase();
     if (lower.startsWith('self')) {
-      this.filters.setFilter({ handledBy: 'SELF' });
+      this.filters.setHandledBy(['SELF']);
       this.toast.show('Filtered by handled-by: Self');
     } else if (lower.startsWith('out')) {
-      this.filters.setFilter({ handledBy: 'OUTSOURCED' });
+      this.filters.setHandledBy(['OUTSOURCED']);
       this.toast.show('Filtered by handled-by: Outsourced');
     }
+  }
+
+  onServiceTypeClick(name: string): void {
+    if (!name) return;
+    this.filters.setService([name]);
+    this.toast.show(`Filtered by service: ${name}`);
+  }
+
+  onDurationClick(label: string): void {
+    if (!label) return;
+    this.toast.show(`Duration range: ${label}`);
+  }
+
+  onLocationClick(label: string): void {
+    if (!label) return;
+    this.toast.show(`Location: ${label}`);
   }
 }

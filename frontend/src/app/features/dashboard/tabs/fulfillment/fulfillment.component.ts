@@ -5,7 +5,6 @@ import { EMPTY, forkJoin, switchMap } from 'rxjs';
 import { KpiCardComponent } from '../../components/kpi-card/kpi-card.component';
 import { LineChartComponent, LineSeries } from '../../../../shared/charts/line-chart/line-chart.component';
 import { BarChartComponent, BarDatum } from '../../../../shared/charts/bar-chart/bar-chart.component';
-import { SankeyChartComponent, SankeyNode, SankeyLink } from '../../../../shared/charts/sankey-chart/sankey-chart.component';
 import { CompactNumberPipe } from '../../../../shared/pipes/compact-number.pipe';
 import { PrmDataService } from '../../services/prm-data.service';
 import { FilterStore } from '../../../../core/store/filter.store';
@@ -27,7 +26,7 @@ const BIN_COLORS: Record<string, string> = {
 @Component({
   selector: 'app-fulfillment',
   standalone: true,
-  imports: [CommonModule, KpiCardComponent, LineChartComponent, BarChartComponent, SankeyChartComponent, CompactNumberPipe],
+  imports: [CommonModule, KpiCardComponent, LineChartComponent, BarChartComponent, CompactNumberPipe],
   templateUrl: './fulfillment.component.html',
   styleUrl: './fulfillment.component.scss',
 })
@@ -43,8 +42,6 @@ export class FulfillmentComponent {
   walkupRate = signal<number>(0);
 
   dualAxisSeries = signal<LineSeries[]>([]);
-  sankeyNodes = signal<SankeyNode[]>([]);
-  sankeyLinks = signal<SankeyLink[]>([]);
   timeOfDay = signal<BarDatum[]>([]);
   cumulativeSeries = signal<LineSeries[]>([]);
 
@@ -58,7 +55,6 @@ export class FulfillmentComponent {
         return forkJoin({
           rvp: this.data.requestedVsProvided(),
           trend: this.data.trendsRequestedProvided(),
-          agentType: this.data.byAgentType(),
           hourly: this.data.trendsHourly(),
           daily: this.data.trendsDaily('count'),
         });
@@ -80,12 +76,6 @@ export class FulfillmentComponent {
           { name: 'Provided',  type: 'bar',  data: dates.map((d, i) => [d.slice(-2), provided[i] ?? 0] as [string, number]), color: '#1e88e5' },
           { name: 'Requested', type: 'line', data: dates.map((d, i) => [d.slice(-2), requested[i] ?? 0] as [string, number]), color: '#fb8c00' },
         ]);
-
-        // Sankey from SankeyResponse
-        this.sankeyNodes.set((r.agentType.nodes ?? []).map((n: any) => ({ name: n.name })));
-        this.sankeyLinks.set((r.agentType.links ?? []).map((l: any) => ({
-          source: l.source, target: l.target, value: l.value,
-        })));
 
         // Time of Day (4-hour bins) from HourlyHeatmapResponse
         const hDays: string[] = r.hourly.days ?? [];

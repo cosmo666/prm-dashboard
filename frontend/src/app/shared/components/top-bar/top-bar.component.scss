@@ -67,7 +67,7 @@
   font-style: italic;
   font-size: 18px;
   font-weight: 400;
-  color: #fafaf7;
+  color: var(--on-ink);
 }
 
 .brand__meta {
@@ -189,7 +189,7 @@
   width: 28px;
   height: 28px;
   background: var(--ink);
-  color: #fafaf7;
+  color: var(--on-ink);
   display: flex;
   align-items: center;
   justify-content: center;

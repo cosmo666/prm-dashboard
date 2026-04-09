@@ -148,7 +148,7 @@
 
   &:hover .tile__cta {
     background: var(--ink);
-    color: #fafaf7;
+    color: var(--on-ink);
   }
 
   &:hover .tile__cta svg {
@@ -176,7 +176,7 @@
   align-items: center;
   justify-content: center;
   background: var(--ink);
-  color: #fafaf7;
+  color: var(--on-ink);
   border-radius: 8px;
 }
 

@@ -9,9 +9,9 @@
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Active Agents"
-      [value]="activeAgents()"
+      [value]="activeAgents() | compactNumber"
       accent="teal"
-      [subtext]="'Self · ' + selfAgents() + '  Outsourced · ' + outsourcedAgents()"
+      [subtext]="'Self · ' + selfAgents() + '   Outsourced · ' + outsourcedAgents()"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Avg Services / Agent / Day"
@@ -54,21 +54,25 @@
   <!-- Row 3: Service Types + Duration Distribution + Locations -->
   <div class="row row-charts-1-1-1">
     <app-donut-chart
-      title="Service Types"
-      subtitle="Top 5 by volume"
+      title="Service Type Breakdown"
+      subtitle="Top 5 categories by volume"
       [data]="serviceTypes()"
-      [loading]="loading()"></app-donut-chart>
+      [loading]="loading()"
+      (segmentClick)="onServiceTypeClick($event)"></app-donut-chart>
     <app-bar-chart
-      title="Duration Distribution"
-      subtitle="Minutes per service"
+      title="Service Duration Spread"
+      subtitle="How long services take (minutes)"
       [data]="durationBuckets()"
       [loading]="loading()"
-      xLabel="Duration Range"
-      yLabel="Count"></app-bar-chart>
+      xLabel="Minutes"
+      yLabel="Services"
+      (barClick)="onDurationClick($event)"></app-bar-chart>
     <app-horizontal-bar-chart
-      title="PRM by Location"
+      title="Services by Location"
+      subtitle="Where PRM services are delivered"
       [data]="locations()"
       [loading]="loading()"
-      yLabel="Location"></app-horizontal-bar-chart>
+      yLabel="Location"
+      (barClick)="onLocationClick($event)"></app-horizontal-bar-chart>
   </div>
 </div>

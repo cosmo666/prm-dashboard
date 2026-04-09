@@ -35,3 +35,21 @@ export function credentialsFor(slug: string | null | undefined): readonly DemoUs
   if (!slug) return DEMO_CREDENTIALS['aeroground'];
   return DEMO_CREDENTIALS[slug] ?? DEMO_CREDENTIALS['aeroground'];
 }
+
+/**
+ * Airport (IATA) codes each seeded tenant operates at. Mirrors the admin
+ * user's airport assignments in database/init/04-seed-employees.sql —
+ * update together if the seed changes. Rendered in the login page's
+ * brand panel footer strip so the "Stations" line flips when you switch
+ * tenants via the dev picker.
+ */
+export const DEMO_STATIONS: Readonly<Record<string, readonly string[]>> = {
+  aeroground: ['BLR', 'HYD', 'DEL'],
+  skyserve:   ['BLR', 'BOM', 'MAA'],
+  globalprm:  ['SYD', 'KUL', 'JFK'],
+};
+
+export function stationsFor(slug: string | null | undefined): readonly string[] {
+  if (!slug) return DEMO_STATIONS['aeroground'];
+  return DEMO_STATIONS[slug] ?? DEMO_STATIONS['aeroground'];
+}

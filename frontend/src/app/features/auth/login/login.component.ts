@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { TenantStore } from '../../../core/store/tenant.store';
 import { DevTenantPickerComponent } from '../../../shared/components/dev-tenant-picker/dev-tenant-picker.component';
-import { credentialsFor } from './demo-credentials';
+import { credentialsFor, stationsFor } from './demo-credentials';
 
 @Component({
   selector: 'app-login',
@@ -28,6 +28,7 @@ export class LoginComponent {
 
   tenantInitial = computed(() => (this.tenant.name() || this.tenant.slug() || 'P').charAt(0).toUpperCase());
   demoUsers = computed(() => credentialsFor(this.tenant.slug()));
+  demoStations = computed(() => stationsFor(this.tenant.slug()));
   currentTime = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
 
   // Mouse parallax — shift the background grid by a small amount based on cursor position

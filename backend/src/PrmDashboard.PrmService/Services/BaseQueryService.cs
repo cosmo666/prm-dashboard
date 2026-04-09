@@ -35,15 +35,22 @@ public abstract class BaseQueryService
         if (filters.DateTo.HasValue)
             query = query.Where(r => r.ServiceDate <= filters.DateTo.Value);
 
-        if (!string.IsNullOrEmpty(filters.Airline))
-            query = query.Where(r => r.Airline == filters.Airline);
+        // Multi-value CSV fields — use Contains() when 1+ value is present.
+        // Use the parsed *List accessors (never the raw string) so callers
+        // don't need to worry about splitting and trimming.
+        var airlines = filters.AirlineList;
+        if (airlines is { Length: > 0 })
+            query = query.Where(r => airlines.Contains(r.Airline));
 
-        if (!string.IsNullOrEmpty(filters.Service))
-            query = query.Where(r => r.Service == filters.Service);
+        var services = filters.ServiceList;
+        if (services is { Length: > 0 })
+            query = query.Where(r => services.Contains(r.Service));
 
-        if (!string.IsNullOrEmpty(filters.HandledBy))
-            query = query.Where(r => r.PrmAgentType == filters.HandledBy);
+        var handledBy = filters.HandledByList;
+        if (handledBy is { Length: > 0 })
+            query = query.Where(r => handledBy.Contains(r.PrmAgentType));
 
+        // Single-value exact match fields (no multi-select UI for these yet).
         if (!string.IsNullOrEmpty(filters.Flight))
             query = query.Where(r => r.Flight == filters.Flight);
 

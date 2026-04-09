@@ -23,34 +23,29 @@
       [loading]="loading()"></app-kpi-card>
   </div>
 
-  <!-- Row 2: Dual-axis + Sankey -->
-  <div class="row row-charts-1-1">
+  <!-- Row 2: Daily Provided vs Requested (full width dual-axis) -->
+  <div class="row row-charts-full">
     <app-line-chart
       title="Daily Provided vs Requested"
-      subtitle="Dual axis"
+      subtitle="Pre-requested services vs services actually provided"
       [series]="dualAxisSeries()"
       [loading]="loading()"
       [dualAxis]="true"
       [showAvgLine]="false"></app-line-chart>
-    <app-sankey-chart
-      title="Agent Type → Service → Flight"
-      [nodes]="sankeyNodes()"
-      [links]="sankeyLinks()"
-      [loading]="loading()"></app-sankey-chart>
   </div>
 
   <!-- Row 3: Time of Day + Cumulative pace -->
   <div class="row row-charts-1-1">
     <app-bar-chart
-      title="PRM by Time of Day"
-      subtitle="Hourly buckets"
+      title="Peak Hours"
+      subtitle="When PRM demand is highest (4-hour windows)"
       [data]="timeOfDay()"
       [loading]="loading()"
-      xLabel="Time Slot"
-      yLabel="PRM Count"></app-bar-chart>
+      xLabel="Time Window"
+      yLabel="Services"></app-bar-chart>
     <app-line-chart
-      title="Cumulative PRM Pace"
-      subtitle="Running total"
+      title="Cumulative Progress"
+      subtitle="Running total vs even-pace target"
       [series]="cumulativeSeries()"
       [loading]="loading()"
       [showAvgLine]="false"></app-line-chart>

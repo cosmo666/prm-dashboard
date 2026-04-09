@@ -62,6 +62,17 @@ LAST_NAMES = [
     "Santos", "Brown", "Wilson", "Anderson", "Taylor", "Thomas",
 ]
 
+ROUTES = {
+    "BLR": [("DEL", 20), ("BOM", 18), ("MAA", 12), ("HYD", 10), ("CCU", 8), ("GOI", 6), ("DXB", 5), ("SIN", 5), ("LHR", 4), ("DOH", 3), ("KUL", 3), ("BKK", 3), ("SYD", 3)],
+    "HYD": [("DEL", 20), ("BOM", 18), ("BLR", 14), ("MAA", 10), ("CCU", 8), ("GOI", 5), ("DXB", 5), ("SIN", 5), ("LHR", 4), ("DOH", 3), ("KUL", 3), ("BKK", 2)],
+    "DEL": [("BOM", 20), ("BLR", 16), ("HYD", 12), ("MAA", 10), ("CCU", 8), ("GOI", 6), ("DXB", 5), ("LHR", 5), ("SIN", 4), ("DOH", 4), ("JFK", 3), ("SFO", 3)],
+    "BOM": [("DEL", 20), ("BLR", 16), ("HYD", 12), ("MAA", 10), ("GOI", 8), ("CCU", 6), ("DXB", 5), ("LHR", 5), ("SIN", 4), ("DOH", 3), ("JFK", 3)],
+    "MAA": [("DEL", 18), ("BOM", 16), ("BLR", 14), ("HYD", 10), ("CCU", 8), ("SIN", 6), ("DXB", 5), ("KUL", 5), ("LHR", 4), ("DOH", 3), ("SYD", 3)],
+    "SYD": [("MEL", 20), ("BNE", 15), ("PER", 10), ("SIN", 8), ("HKG", 6), ("LAX", 5), ("DXB", 5), ("AKL", 5), ("NRT", 4), ("DEL", 3), ("BOM", 3)],
+    "KUL": [("SIN", 20), ("BKK", 15), ("JKT", 12), ("HKG", 8), ("DEL", 6), ("BOM", 5), ("SYD", 5), ("NRT", 4), ("DOH", 4), ("LHR", 3), ("DXB", 3)],
+    "JFK": [("LAX", 18), ("SFO", 14), ("ORD", 12), ("LHR", 10), ("DXB", 6), ("CDG", 5), ("DEL", 5), ("BOM", 4), ("SIN", 4), ("NRT", 3), ("HKG", 3)],
+}
+
 AGENT_NAMES = [
     "Agent A1", "Agent A2", "Agent A3", "Agent B1", "Agent B2",
     "Agent C1", "Agent C2", "Agent D1",
@@ -127,6 +138,11 @@ def generate_tenant(tenant, id_counter):
                 start_m = random.randint(0, 59)
                 duration = random.randint(15, 90)
 
+                # Pick a route (departure = local airport, arrival = destination)
+                route_options = ROUTES.get(airport, [("UNK", 1)])
+                arrival = weighted_choice(route_options)
+                departure = airport
+
                 if is_paused:
                     # Split into two segments
                     seg1 = random.randint(5, duration - 5)
@@ -144,7 +160,7 @@ def generate_tenant(tenant, id_counter):
                         make_hhmm(pause_h, pause_m),
                         make_hhmm(end1_h, end1_m),
                         service, seat, location, no_show, airport, airline,
-                        requested, d,
+                        requested, d, departure, arrival,
                     ))
 
                     # Row 2: resumed -> end
@@ -168,7 +184,7 @@ def generate_tenant(tenant, id_counter):
                         None,
                         make_hhmm(end_h, end_m),
                         service, seat, location, no_show, airport, airline,
-                        requested, d,
+                        requested, d, departure, arrival,
                     ))
                 else:
                     end_m = start_m + duration
@@ -183,7 +199,7 @@ def generate_tenant(tenant, id_counter):
                         None,
                         make_hhmm(end_h, end_m),
                         service, seat, location, no_show, airport, airline,
-                        requested, d,
+                        requested, d, departure, arrival,
                     ))
 
         d += timedelta(days=1)
@@ -193,13 +209,13 @@ def generate_tenant(tenant, id_counter):
 
 def _row(sid, flight, flight_num, agent_name, agent_no, pax, agent_type,
          start_time, paused_at, end_time, service, seat, location, no_show,
-         airport, airline, requested, service_date):
+         airport, airline, requested, service_date, departure, arrival):
     pa = str(paused_at) if paused_at is not None else "NULL"
     return (
         f"({sid},'{escape(flight)}',{flight_num},'{escape(agent_name)}',"
         f"'{escape(agent_no)}','{escape(pax)}','{agent_type}',"
         f"{start_time},{pa},{end_time},'{service}','{seat}',NULL,NULL,NULL,"
-        f"'{location}',{no_show},'{airport}',NULL,'{airline}','Employee',NULL,"
+        f"'{location}',{no_show},'{airport}','{arrival}','{airline}','Employee','{departure}',"
         f"{requested},'{service_date.isoformat()}')"
     )
 

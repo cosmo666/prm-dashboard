@@ -80,7 +80,7 @@ export class LineChartComponent {
             position: 'end',
             color: CHART_COLORS.muted,
             fontSize: 10,
-            fontFamily: '"IBM Plex Mono", monospace',
+            fontFamily: '"IBM Plex Sans", sans-serif',
           },
         });
       }
@@ -134,6 +134,15 @@ export class LineChartComponent {
     return {
       ...CHART_BASE,
       grid: { ...CHART_BASE.grid, top: srs.length > 1 ? 36 : 20, right: 40 },
+      tooltip: {
+        ...CHART_BASE.tooltip,
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          crossStyle: { color: CHART_COLORS.border },
+          lineStyle: { color: CHART_COLORS.border, width: 1, type: 'dashed' },
+        },
+      },
       xAxis: {
         ...CHART_CATEGORY_AXIS,
         data: xs,

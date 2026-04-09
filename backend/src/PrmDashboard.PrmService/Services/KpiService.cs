@@ -140,8 +140,11 @@ public class KpiService : BaseQueryService
         int totalRequested = deduped.Sum(r => r.Requested);
         int providedAgainstRequested = Math.Min(totalProvided, totalRequested);
 
-        double fulfillmentRate = totalRequested > 0
-            ? Math.Round((double)totalProvided / totalRequested * 100, 2)
+        // Fulfillment rate = % of provided services that were pre-requested.
+        // Bounded 0..100 because totalRequested <= totalProvided by construction
+        // (Requested is a 0/1 flag on each provided row).
+        double fulfillmentRate = totalProvided > 0
+            ? Math.Round((double)totalRequested / totalProvided * 100, 2)
             : 0;
 
         // Walk-ups are services provided beyond what was requested
@@ -212,9 +215,13 @@ public class KpiService : BaseQueryService
             .Select(g => g.OrderBy(r => r.RowId).First())
             .ToList();
 
+        // Fulfillment rate = share of provided services that were pre-requested.
+        // Each row's `Requested` flag is 0 (walk-up) or 1 (pre-requested) per the
+        // seed data shape; summing after dedup gives the count of pre-requested
+        // services. Ratio is requested / total, bounded 0..100.
         int totalRequested = deduped.Sum(r => r.Requested);
-        double fulfillmentPct = totalRequested > 0
-            ? Math.Round((double)totalPrm / totalRequested * 100, 2)
+        double fulfillmentPct = totalPrm > 0
+            ? Math.Round((double)totalRequested / totalPrm * 100, 2)
             : 0;
 
         return new SummaryMetrics(

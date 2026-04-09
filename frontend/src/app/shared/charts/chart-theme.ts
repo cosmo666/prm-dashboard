@@ -34,7 +34,7 @@ export const CHART_PALETTE = [
 ];
 
 const FONT_SANS = '"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif';
-const FONT_MONO = '"IBM Plex Mono", ui-monospace, monospace';
+const FONT_MONO = '"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif';
 
 /**
  * Base ECharts option fragment applied to every chart for consistent typography,

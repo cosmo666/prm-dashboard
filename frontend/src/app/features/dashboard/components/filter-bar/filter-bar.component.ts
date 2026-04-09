@@ -38,9 +38,19 @@ export class FilterBarComponent implements OnInit {
     });
   }
 
-  setAirline(v: string | null)  { this.filters.setFilter({ airline: v ?? '' }); }
-  setService(v: string | null)  { this.filters.setFilter({ service: v ?? '' }); }
-  setHandledBy(v: string | null) { this.filters.setFilter({ handledBy: v ?? '' }); }
+  setAirline(v: string[] | string | null)   { this.filters.setAirline(v); }
+  setService(v: string[] | string | null)   { this.filters.setService(v); }
+  setHandledBy(v: string[] | string | null) { this.filters.setHandledBy(v); }
+  removeAirline(v: string)   { this.filters.removeAirline(v); }
+  removeService(v: string)   { this.filters.removeService(v); }
+  removeHandledBy(v: string) { this.filters.removeHandledBy(v); }
   clearAll() { this.filters.clearSecondary(); }
   toggleCompare() { this.filters.toggleCompare(); }
+
+  // Display label for the "handled by" value in chips
+  handledByLabel(v: string): string {
+    if (v === 'SELF') return 'Self';
+    if (v === 'OUTSOURCED') return 'Outsourced';
+    return v;
+  }
 }

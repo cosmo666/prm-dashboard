@@ -17,11 +17,11 @@
       <mat-select
         class="fb-select"
         aria-labelledby="fb-airline-label"
-        [ngModel]="filters.airline() || ''"
-        (ngModelChange)="setAirline($event || null)"
+        [multiple]="true"
+        [ngModel]="filters.airline()"
+        (ngModelChange)="setAirline($event)"
         panelClass="fb-panel"
         placeholder="All airlines">
-        <mat-option [value]="''">All airlines</mat-option>
         @for (a of airlines(); track a) {
           <mat-option [value]="a">{{ a }}</mat-option>
         }
@@ -33,11 +33,11 @@
       <mat-select
         class="fb-select"
         aria-labelledby="fb-service-label"
-        [ngModel]="filters.service() || ''"
-        (ngModelChange)="setService($event || null)"
+        [multiple]="true"
+        [ngModel]="filters.service()"
+        (ngModelChange)="setService($event)"
         panelClass="fb-panel"
         placeholder="All services">
-        <mat-option [value]="''">All services</mat-option>
         @for (s of services(); track s) {
           <mat-option [value]="s">{{ s }}</mat-option>
         }
@@ -49,11 +49,11 @@
       <mat-select
         class="fb-select"
         aria-labelledby="fb-handled-label"
-        [ngModel]="filters.handledBy() || ''"
-        (ngModelChange)="setHandledBy($event || null)"
+        [multiple]="true"
+        [ngModel]="filters.handledBy()"
+        (ngModelChange)="setHandledBy($event)"
         panelClass="fb-panel"
         placeholder="Both">
-        <mat-option [value]="''">Both</mat-option>
         <mat-option value="SELF">Self</mat-option>
         <mat-option value="OUTSOURCED">Outsourced</mat-option>
       </mat-select>
@@ -90,31 +90,31 @@
 
   @if (filters.hasAnyFilter()) {
     <div class="filter-bar__chips" role="status" aria-live="polite" aria-label="Active filters">
-      @if (filters.airline()) {
-        <button type="button" class="chip-pill" (click)="setAirline(null)" [attr.aria-label]="'Remove airline filter: ' + filters.airline()" appTooltip="Remove filter">
+      @for (a of filters.airline(); track a) {
+        <button type="button" class="chip-pill" (click)="removeAirline(a)" [attr.aria-label]="'Remove airline filter: ' + a" appTooltip="Remove filter">
           <span class="chip-pill__key">Airline</span>
           <span class="chip-pill__sep">·</span>
-          <span class="chip-pill__val font-data">{{ filters.airline() }}</span>
+          <span class="chip-pill__val font-data">{{ a }}</span>
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
             <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </button>
       }
-      @if (filters.service()) {
-        <button type="button" class="chip-pill" (click)="setService(null)" [attr.aria-label]="'Remove service filter: ' + filters.service()" appTooltip="Remove filter">
+      @for (s of filters.service(); track s) {
+        <button type="button" class="chip-pill" (click)="removeService(s)" [attr.aria-label]="'Remove service filter: ' + s" appTooltip="Remove filter">
           <span class="chip-pill__key">Service</span>
           <span class="chip-pill__sep">·</span>
-          <span class="chip-pill__val font-data">{{ filters.service() }}</span>
+          <span class="chip-pill__val font-data">{{ s }}</span>
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
             <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </button>
       }
-      @if (filters.handledBy()) {
-        <button type="button" class="chip-pill" (click)="setHandledBy(null)" [attr.aria-label]="'Remove handled-by filter: ' + filters.handledBy()" appTooltip="Remove filter">
+      @for (h of filters.handledBy(); track h) {
+        <button type="button" class="chip-pill" (click)="removeHandledBy(h)" [attr.aria-label]="'Remove handled-by filter: ' + handledByLabel(h)" appTooltip="Remove filter">
           <span class="chip-pill__key">Handled</span>
           <span class="chip-pill__sep">·</span>
-          <span class="chip-pill__val font-data">{{ filters.handledBy() }}</span>
+          <span class="chip-pill__val font-data">{{ handledByLabel(h) }}</span>
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
             <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>

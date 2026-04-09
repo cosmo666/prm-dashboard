@@ -6,6 +6,7 @@ import { BarChartComponent, BarDatum } from '../../../../shared/charts/bar-chart
 import { LineChartComponent, LineSeries } from '../../../../shared/charts/line-chart/line-chart.component';
 import { PrmDataService } from '../../services/prm-data.service';
 import { FilterStore } from '../../../../core/store/filter.store';
+import { ToastService } from '../../../../core/toast/toast.service';
 
 export const SERVICE_TYPES = ['WCHR','WCHC','MAAS','WCHS','DPNA','UMNR','BLND','MEDA','WCMP'] as const;
 export type ServiceType = typeof SERVICE_TYPES[number];
@@ -22,6 +23,7 @@ export interface MatrixRow { month: string; counts: Record<ServiceType, number>;
 })
 export class ServiceBreakupComponent {
   private data = inject(PrmDataService);
+  private toast = inject(ToastService);
   filters = inject(FilterStore);
 
   loading = signal(true);
@@ -116,8 +118,26 @@ export class ServiceBreakupComponent {
   }
 
   clickServiceCard(t: ServiceType) {
+    // Toggle this service in/out of the multi-select service filter.
+    // Drill-down on the service-breakup tab lets you focus a single service
+    // or clear the filter if already focused.
     const current = this.filters.service();
-    this.filters.setFilter({ service: current === t ? '' : t });
+    if (current.length === 1 && current[0] === t) {
+      this.filters.setService([]);
+    } else {
+      this.filters.setService([t]);
+    }
+  }
+
+  onServiceBarClick(label: string): void {
+    if (!label) return;
+    this.filters.setService([label]);
+    this.toast.show(`Filtered by service: ${label}`);
+  }
+
+  onDowClick(label: string): void {
+    if (!label) return;
+    this.toast.show(`Day of week: ${label}`);
   }
 
   isMaxInColumn(t: ServiceType, value: number): boolean {

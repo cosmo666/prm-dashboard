@@ -59,14 +59,14 @@
   }
 
   .service-count {
-    font-family: var(--font-serif);
-    font-variation-settings: 'opsz' 144;
+    font-family: var(--font-sans);
     font-size: 26px;
-    font-weight: 300;
+    font-weight: 600;
     color: var(--ink);
     line-height: 1;
     margin-top: 2px;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
   }
 
   .service-pct {

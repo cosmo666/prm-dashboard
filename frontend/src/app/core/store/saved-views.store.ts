@@ -13,9 +13,13 @@ export interface SavedView {
     datePreset: string;
     dateFrom: string;
     dateTo: string;
-    airline?: string;
-    service?: string;
-    handledBy?: string;
+    // Multi-value filters — stored as arrays (e.g. ["AI", "BA"]).
+    // Older saved views may contain a plain string here; `loadFromStorage()`
+    // coerces them on read so existing views keep working after the
+    // single-select → multi-select migration.
+    airline?: string[];
+    service?: string[];
+    handledBy?: string[];
   };
 }
 
@@ -70,10 +74,35 @@ export class SavedViewsStore {
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return [];
-      return parsed.filter((v) => v && typeof v.id === 'string' && typeof v.name === 'string');
+      return parsed
+        .filter((v) => v && typeof v.id === 'string' && typeof v.name === 'string')
+        .map((v) => this.migrateLegacyFilters(v));
     } catch {
       return [];
     }
+  }
+
+  /**
+   * Coerce legacy single-string filter values into arrays so the multi-select
+   * pipeline can consume them uniformly. Runs once per load; freshly saved
+   * views already use the array shape.
+   */
+  private migrateLegacyFilters(v: SavedView): SavedView {
+    const f: any = v.filters ?? {};
+    const toArray = (x: unknown): string[] => {
+      if (Array.isArray(x)) return x.filter((s) => typeof s === 'string' && s.length > 0);
+      if (typeof x === 'string' && x.length > 0) return [x];
+      return [];
+    };
+    return {
+      ...v,
+      filters: {
+        ...f,
+        airline: toArray(f.airline),
+        service: toArray(f.service),
+        handledBy: toArray(f.handledBy),
+      },
+    };
   }
 
   private uuid(): string {

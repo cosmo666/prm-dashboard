@@ -1,16 +1,25 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 /**
- * Formats a number in compact notation with SI-like suffixes.
+ * Formats a number with thousand separators for dashboard display.
+ * Pipe name kept as `compactNumber` for backwards compatibility with
+ * existing template bindings, but the behavior is now full-number
+ * formatting — e.g. `1712` renders as `"1,712"`, not `"1.7k"`.
+ *
+ * Rationale: operational dashboards benefit from exact figures so
+ * operators can distinguish 1,712 from 1,689 — compact notation
+ * (`1.7k`) hides small but meaningful differences across airports.
  *
  * Examples:
- *   1234       -> "1.23k"
- *   15234      -> "15.2k"
- *   1500000    -> "1.5M"
- *   999        -> "999"
- *   null/''    -> "—"
+ *   1712          -> "1,712"
+ *   15234         -> "15,234"
+ *   1500000       -> "1,500,000"
+ *   999           -> "999"
+ *   1712.56       -> "1,712.56"  (decimals preserved up to 2 places)
+ *   null / ''     -> "—"
  *
- * Usage: `{{ value | compactNumber }}` or `{{ value | compactNumber:2 }}`
+ * Usage: `{{ value | compactNumber }}`
+ *        `{{ value | compactNumber:0 }}` — force integer display
  */
 @Pipe({
   name: 'compactNumber',
@@ -18,39 +27,19 @@ import { Pipe, PipeTransform } from '@angular/core';
   pure: true,
 })
 export class CompactNumberPipe implements PipeTransform {
-  transform(value: number | string | null | undefined, maxFractionDigits: number = 1): string {
+  transform(
+    value: number | string | null | undefined,
+    maxFractionDigits: number = 2,
+  ): string {
     if (value === null || value === undefined || value === '') return '—';
     const n = typeof value === 'number' ? value : Number(value);
     if (!Number.isFinite(n)) return '—';
 
-    const abs = Math.abs(n);
-    const sign = n < 0 ? '-' : '';
-
-    if (abs < 1000) {
-      // Plain integer display for small values
-      return sign + this.stripTrailingZero(abs.toFixed(Number.isInteger(abs) ? 0 : maxFractionDigits));
-    }
-
-    const units = [
-      { limit: 1e12, suffix: 'T' },
-      { limit: 1e9,  suffix: 'B' },
-      { limit: 1e6,  suffix: 'M' },
-      { limit: 1e3,  suffix: 'k' },
-    ];
-
-    for (const u of units) {
-      if (abs >= u.limit) {
-        const scaled = abs / u.limit;
-        return sign + this.stripTrailingZero(scaled.toFixed(maxFractionDigits)) + u.suffix;
-      }
-    }
-
-    return sign + abs.toString();
-  }
-
-  private stripTrailingZero(s: string): string {
-    // "1.20" -> "1.2", "5.0" -> "5"
-    if (!s.includes('.')) return s;
-    return s.replace(/\.?0+$/, '');
+    const isInt = Number.isInteger(n);
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: isInt ? 0 : maxFractionDigits,
+      useGrouping: true,
+    }).format(n);
   }
 }

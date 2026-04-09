@@ -3,19 +3,19 @@
   <div class="row row-charts-1-1">
     <app-bar-chart
       title="Top 10 Airlines"
-      subtitle="By PRM volume"
+      subtitle="Highest PRM service demand by carrier"
       [data]="topAirlines()"
       [loading]="loading()"
       xLabel="Airline"
-      yLabel="PRM Count"
+      yLabel="Services"
       (barClick)="onAirlineClick($event)"></app-bar-chart>
     <app-bar-chart
       title="Top 10 Flights"
-      subtitle="By PRM volume"
+      subtitle="Individual flights with most PRM requests"
       [data]="topFlights()"
       [loading]="loading()"
       xLabel="Flight"
-      yLabel="PRM Count"
+      yLabel="Services"
       (barClick)="onFlightClick($event)"></app-bar-chart>
   </div>
 
@@ -101,18 +101,20 @@
   <!-- Row 3: Top routes + No-show rate -->
   <div class="row row-charts-1-1">
     <app-horizontal-bar-chart
-      title="Top 10 Routes"
-      subtitle="Departure → Arrival"
+      title="Busiest Routes"
+      subtitle="Top routes by PRM service volume"
       [data]="topRoutes()"
       [loading]="loading()"
-      xLabel="Count"
-      yLabel="Route"></app-horizontal-bar-chart>
+      xLabel="Services"
+      yLabel="Route"
+      (barClick)="onRouteClick($event)"></app-horizontal-bar-chart>
     <app-bar-chart
-      title="No-Show Rate by Airline"
-      subtitle="Percentage"
+      title="No-Show Rate"
+      subtitle="Passengers who booked PRM but didn't show up (%)"
       [data]="noShows()"
       [loading]="loading()"
       xLabel="Airline"
-      yLabel="No-Show %"></app-bar-chart>
+      yLabel="Rate %"
+      (barClick)="onNoShowAirlineClick($event)"></app-bar-chart>
   </div>
 </div>
