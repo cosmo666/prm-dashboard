@@ -30,9 +30,14 @@ export class BarChartComponent {
   yLabel = input<string>('');
   horizontal = input<boolean>(false);
   barClick = output<string>();
+  series2 = input<BarDatum[]>([]);
+  seriesName = input<string>('');
+  series2Name = input<string>('');
+  series2Color = input<string>('#fb8c00');
 
   chartOptions = computed<EChartsOption>(() => {
     const d = this.data();
+    const d2 = this.series2();
     const names = d.map((x) => x.label);
     const values = d.map((x) => ({
       value: x.value,
@@ -42,31 +47,57 @@ export class BarChartComponent {
     const categoryAxis = {
       ...CHART_CATEGORY_AXIS,
       data: names,
-      axisLabel: { ...CHART_CATEGORY_AXIS.axisLabel, rotate: this.horizontal() ? 0 : 28 },
+      axisLabel: { ...CHART_CATEGORY_AXIS.axisLabel, rotate: 0 },
     };
     const valueAxis = { ...CHART_VALUE_AXIS };
+
+    const isGrouped = d2.length > 0;
+
+    const chartSeries: any[] = [
+      {
+        name: this.seriesName() || undefined,
+        type: 'bar',
+        data: values,
+        barMaxWidth: isGrouped ? 20 : 32,
+        itemStyle: {
+          color: CHART_COLORS.accent,
+          borderRadius: this.horizontal() ? [0, 3, 3, 0] : [3, 3, 0, 0],
+        },
+        emphasis: {
+          itemStyle: { color: CHART_COLORS.accentHover },
+        },
+        animationDuration: 400,
+        animationEasing: 'cubicOut',
+      },
+    ];
+
+    if (isGrouped) {
+      chartSeries.push({
+        name: this.series2Name() || undefined,
+        type: 'bar',
+        data: d2.map((x) => ({
+          value: x.value,
+          itemStyle: x.color ? { color: x.color } : undefined,
+        })),
+        barMaxWidth: 20,
+        itemStyle: {
+          color: this.series2Color(),
+          borderRadius: this.horizontal() ? [0, 3, 3, 0] : [3, 3, 0, 0],
+        },
+        emphasis: {
+          itemStyle: { color: this.series2Color() },
+        },
+        animationDuration: 400,
+        animationEasing: 'cubicOut',
+      });
+    }
 
     return {
       ...CHART_BASE,
       grid: { ...CHART_BASE.grid, bottom: this.horizontal() ? 32 : 56 },
       xAxis: this.horizontal() ? valueAxis : categoryAxis,
       yAxis: this.horizontal() ? categoryAxis : valueAxis,
-      series: [
-        {
-          type: 'bar',
-          data: values,
-          barMaxWidth: 32,
-          itemStyle: {
-            color: CHART_COLORS.accent,
-            borderRadius: this.horizontal() ? [0, 3, 3, 0] : [3, 3, 0, 0],
-          },
-          emphasis: {
-            itemStyle: { color: CHART_COLORS.accentHover },
-          },
-          animationDuration: 400,
-          animationEasing: 'cubicOut',
-        },
-      ],
+      series: chartSeries,
     } as EChartsOption;
   });
 }
