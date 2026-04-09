@@ -28,3 +28,8 @@ public record PauseAnalysisResponse(
     double AvgPauseDurationMinutes,
     List<BreakdownItem> ByServiceType
 );
+
+public record DurationByAgentTypeResponse(
+    List<string> ServiceTypes,
+    List<double> Self,
+    List<double> Outsourced);

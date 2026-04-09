@@ -26,3 +26,9 @@ public record BreakdownResponse(List<BreakdownItem> Items);
 public record RouteItem(string Departure, string Arrival, int Count, double Percentage);
 
 public record RouteBreakdownResponse(List<RouteItem> Items);
+
+public record AgentServiceMatrixResponse(
+    List<string> Agents,
+    List<string> AgentNames,
+    List<string> ServiceTypes,
+    List<List<int>> Values);
