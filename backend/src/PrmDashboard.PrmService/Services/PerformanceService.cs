@@ -192,6 +192,51 @@ public class PerformanceService : BaseQueryService
     }
 
     /// <summary>
+    /// Avg duration grouped by prm_agent_type (SELF/OUTSOURCED) per service type.
+    /// </summary>
+    public async Task<DurationByAgentTypeResponse> GetDurationByAgentTypeAsync(
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
+    {
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
+        var query = ApplyFilters(db, filters);
+        var rows = await query.ToListAsync(ct);
+
+        var perService = rows
+            .GroupBy(r => r.Id)
+            .Select(g =>
+            {
+                var first = g.OrderBy(r => r.RowId).First();
+                var duration = g.Sum(r =>
+                    TimeHelpers.CalculateActiveMinutes(r.StartTime, r.PausedAt, r.EndTime));
+                return new { first.PrmAgentType, first.Service, Duration = duration };
+            })
+            .ToList();
+
+        var serviceTypes = perService
+            .Select(r => r.Service)
+            .Distinct()
+            .OrderBy(s => s)
+            .ToList();
+
+        var selfAvg = serviceTypes.Select(s =>
+        {
+            var items = perService.Where(r => r.Service == s && r.PrmAgentType == "SELF").ToList();
+            return items.Count > 0 ? Math.Round(items.Average(r => r.Duration), 1) : 0.0;
+        }).ToList();
+
+        var outsourcedAvg = serviceTypes.Select(s =>
+        {
+            var items = perService.Where(r => r.Service == s && r.PrmAgentType == "OUTSOURCED").ToList();
+            return items.Count > 0 ? Math.Round(items.Average(r => r.Duration), 1) : 0.0;
+        }).ToList();
+
+        _logger.LogInformation("Duration by agent type for {Slug}/{Airport}: {Types} service types",
+            tenantSlug, filters.Airport, serviceTypes.Count);
+
+        return new DurationByAgentTypeResponse(serviceTypes, selfAvg, outsourcedAvg);
+    }
+
+    /// <summary>
     /// Computes duration per distinct service id (sum of active minutes per id).
     /// </summary>
     private async Task<List<double>> ComputeDurationsAsync(

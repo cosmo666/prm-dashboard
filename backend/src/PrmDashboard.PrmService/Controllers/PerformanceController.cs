@@ -48,4 +48,12 @@ public class PerformanceController : PrmControllerBase
         var result = await _performanceService.GetPauseAnalysisAsync(slug, filters, ct);
         return Ok(result);
     }
+
+    [HttpGet("duration-by-agent-type")]
+    public async Task<IActionResult> GetDurationByAgentType([FromQuery] PrmFilterParams filters, CancellationToken ct)
+    {
+        var slug = GetTenantSlug();
+        var result = await _performanceService.GetDurationByAgentTypeAsync(slug, filters, ct);
+        return Ok(result);
+    }
 }
