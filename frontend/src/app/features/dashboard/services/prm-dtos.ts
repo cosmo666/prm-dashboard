@@ -127,6 +127,13 @@ export interface RouteBreakdownResponse {
   items: RouteItem[];
 }
 
+export interface AgentServiceMatrixResponse {
+  agents: string[];
+  agentNames: string[];
+  serviceTypes: string[];
+  values: number[][];
+}
+
 // ---------- Performance ----------
 export interface DurationStatsResponse {
   min: number;
@@ -166,6 +173,12 @@ export interface PauseAnalysisResponse {
   pauseRate: number;
   avgPauseDurationMinutes: number;
   byServiceType: BreakdownItem[];
+}
+
+export interface DurationByAgentTypeResponse {
+  serviceTypes: string[];
+  self: number[];
+  outsourced: number[];
 }
 
 // ---------- Records ----------

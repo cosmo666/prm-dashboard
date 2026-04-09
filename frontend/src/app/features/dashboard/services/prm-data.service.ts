@@ -16,10 +16,12 @@ import {
   SankeyResponse,
   BreakdownResponse,
   RouteBreakdownResponse,
+  AgentServiceMatrixResponse,
   DurationStatsResponse,
   DurationDistributionResponse,
   NoShowResponse,
   PauseAnalysisResponse,
+  DurationByAgentTypeResponse,
   PaginatedResponse,
   PrmRecordDto,
   FilterOptionsResponse,
@@ -115,6 +117,14 @@ export class PrmDataService {
   }
   pauseAnalysis(): Observable<PauseAnalysisResponse> {
     return this.api.get<PauseAnalysisResponse>('/prm/performance/pause-analysis', this.params());
+  }
+
+  // Insights
+  agentServiceMatrix(limit = 10): Observable<AgentServiceMatrixResponse> {
+    return this.api.get<AgentServiceMatrixResponse>('/prm/breakdowns/agent-service-matrix', this.params({ limit }));
+  }
+  durationByAgentType(): Observable<DurationByAgentTypeResponse> {
+    return this.api.get<DurationByAgentTypeResponse>('/prm/performance/duration-by-agent-type', this.params());
   }
 
   // Filters & records
