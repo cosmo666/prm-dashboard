@@ -8,17 +8,19 @@ import { OverviewComponent } from './tabs/overview/overview.component';
 import { Top10Component } from './tabs/top10/top10.component';
 import { ServiceBreakupComponent } from './tabs/service-breakup/service-breakup.component';
 import { FulfillmentComponent } from './tabs/fulfillment/fulfillment.component';
+import { InsightsComponent } from './tabs/insights/insights.component';
 import { FilterStore } from '../../core/store/filter.store';
 import { NavigationStore } from '../../core/store/navigation.store';
 import { resolvePreset } from './utils/date-presets';
 
-const TAB_NAMES = ['Overview', 'Top 10', 'Service Breakup', 'Fulfillment'];
+const TAB_NAMES = ['Overview', 'Top 10', 'Service Breakup', 'Fulfillment', 'Insights'];
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, MatTabsModule, TopBarComponent, FilterBarComponent,
-            OverviewComponent, Top10Component, ServiceBreakupComponent, FulfillmentComponent],
+            OverviewComponent, Top10Component, ServiceBreakupComponent, FulfillmentComponent,
+            InsightsComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
@@ -34,10 +36,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // Human-readable summary of active secondary filters, e.g.
   // "Filtered by airline · IX" or "3 filters applied · IX / WCHR / SELF"
   filterSummary = computed(() => {
-    const active: string[] = [];
-    if (this.filters.airline()) active.push(this.filters.airline());
-    if (this.filters.service()) active.push(this.filters.service());
-    if (this.filters.handledBy()) active.push(this.filters.handledBy());
+    const active: string[] = [
+      ...this.filters.airline(),
+      ...this.filters.service(),
+      ...this.filters.handledBy(),
+    ];
     if (active.length === 0) return '';
     if (active.length === 1) return `Filtered by ${active[0]}`;
     return `${active.length} filters applied · ${active.join(' / ')}`;
