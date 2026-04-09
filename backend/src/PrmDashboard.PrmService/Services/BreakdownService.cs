@@ -220,4 +220,53 @@ public class BreakdownService : BaseQueryService
 
         return new RouteBreakdownResponse(items);
     }
+
+    /// <summary>
+    /// Agent × Service Type matrix — top 10 agents by volume, count per service type.
+    /// </summary>
+    public async Task<AgentServiceMatrixResponse> GetAgentServiceMatrixAsync(
+        string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
+    {
+        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
+        var query = ApplyFilters(db, filters);
+
+        var rows = await query.ToListAsync(ct);
+        var deduped = rows
+            .GroupBy(r => r.Id)
+            .Select(g => g.OrderBy(r => r.RowId).First())
+            .ToList();
+
+        var topAgents = deduped
+            .Where(r => !string.IsNullOrEmpty(r.AgentNo))
+            .GroupBy(r => r.AgentNo!)
+            .OrderByDescending(g => g.Count())
+            .Take(limit)
+            .Select(g => new { AgentNo = g.Key, Name = g.First().AgentName ?? g.Key })
+            .ToList();
+
+        var serviceTypes = deduped
+            .Select(r => r.Service)
+            .Distinct()
+            .OrderBy(s => s)
+            .ToList();
+
+        var agentSet = topAgents.Select(a => a.AgentNo).ToHashSet();
+        var counts = deduped
+            .Where(r => r.AgentNo != null && agentSet.Contains(r.AgentNo))
+            .GroupBy(r => new { r.AgentNo, r.Service })
+            .ToDictionary(g => (g.Key.AgentNo!, g.Key.Service), g => g.Count());
+
+        var values = topAgents.Select(a =>
+            serviceTypes.Select(s => counts.GetValueOrDefault((a.AgentNo, s), 0)).ToList()
+        ).ToList();
+
+        _logger.LogInformation("Agent-service matrix for {Slug}/{Airport}: {Agents} agents x {Types} types",
+            tenantSlug, filters.Airport, topAgents.Count, serviceTypes.Count);
+
+        return new AgentServiceMatrixResponse(
+            topAgents.Select(a => a.AgentNo).ToList(),
+            topAgents.Select(a => a.Name).ToList(),
+            serviceTypes,
+            values);
+    }
 }

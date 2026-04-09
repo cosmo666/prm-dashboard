@@ -57,4 +57,13 @@ public class BreakdownsController : PrmControllerBase
         var result = await _breakdownService.GetByRouteAsync(slug, filters, limit, ct);
         return Ok(result);
     }
+
+    [HttpGet("agent-service-matrix")]
+    public async Task<IActionResult> GetAgentServiceMatrix(
+        [FromQuery] PrmFilterParams filters, [FromQuery] int limit = 10, CancellationToken ct = default)
+    {
+        var slug = GetTenantSlug();
+        var result = await _breakdownService.GetAgentServiceMatrixAsync(slug, filters, limit, ct);
+        return Ok(result);
+    }
 }
