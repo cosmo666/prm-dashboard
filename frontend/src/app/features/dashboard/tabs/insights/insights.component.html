@@ -1,0 +1,87 @@
+<div class="insights-content">
+  <!-- Row 1: 4 KPI cards -->
+  <div class="row row-kpis">
+    <app-kpi-card
+      label="Pause Rate"
+      [value]="((pauseRate() | number:'1.1-1') ?? '') + '%'"
+      accent="amber"
+      [loading]="loading()"></app-kpi-card>
+    <app-kpi-card
+      label="Outsourced Services"
+      [value]="((outsourcedPct() | number:'1.1-1') ?? '') + '%'"
+      accent="plum"
+      [loading]="loading()"></app-kpi-card>
+    <app-kpi-card
+      label="Avg Services per Agent"
+      [value]="(avgPerAgent() | number:'1.1-1') ?? ''"
+      accent="blue"
+      [loading]="loading()"></app-kpi-card>
+    <app-kpi-card
+      label="No-Show Rate"
+      [value]="((noShowRate() | number:'1.1-1') ?? '') + '%'"
+      accent="teal"
+      [loading]="loading()"></app-kpi-card>
+  </div>
+
+  <!-- Section 1: Agent Performance -->
+  <div class="section-label">Agent Performance</div>
+  <div class="row row-charts-6-4">
+    <app-horizontal-bar-chart
+      title="Agent Workload"
+      [data]="agentWorkload()"
+      [loading]="loading()"
+      xLabel="Services"
+      yLabel="Agent"
+      (barClick)="onAgentClick($event)"></app-horizontal-bar-chart>
+    <app-heatmap-chart
+      title="Agent Specialization"
+      subtitle="Which agents handle which service types"
+      [cells]="matrixCells()"
+      [xLabels]="matrixXLabels()"
+      [yLabels]="matrixYLabels()"
+      [loading]="loading()"></app-heatmap-chart>
+  </div>
+
+  <!-- Section 2: Operational Patterns -->
+  <div class="section-label">Operational Patterns</div>
+  <div class="row row-charts-6-4">
+    <app-heatmap-chart
+      title="Hourly Demand"
+      subtitle="When PRM services peak by day and hour"
+      [cells]="hourlyHeatCells()"
+      [xLabels]="hourlyXLabels()"
+      [yLabels]="hourlyYLabels()"
+      [loading]="loading()"></app-heatmap-chart>
+    <app-bar-chart
+      title="Self vs Outsourced Duration"
+      subtitle="Average service time by handling type (minutes)"
+      [data]="durationSelfBars()"
+      [series2]="durationOutBars()"
+      seriesName="Self"
+      series2Name="Outsourced"
+      series2Color="#fb8c00"
+      [loading]="loading()"
+      xLabel="Service Type"
+      yLabel="Avg Minutes"></app-bar-chart>
+  </div>
+
+  <!-- Section 3: Strategic Trends -->
+  <div class="section-label">Strategic Trends</div>
+  <div class="row row-charts-6-4">
+    <app-line-chart
+      title="Monthly Volume"
+      subtitle="Service count trend over time"
+      [series]="monthlyTrendSeries()"
+      [loading]="loading()"
+      [showAvgLine]="true"
+      (pointClick)="onMonthClick($event)"></app-line-chart>
+    <app-bar-chart
+      title="No-Show Rate by Airline"
+      subtitle="Passengers who booked PRM but didn't show up (%)"
+      [data]="noShowBars()"
+      [loading]="loading()"
+      xLabel="Airline"
+      yLabel="Rate %"
+      (barClick)="onNoShowAirlineClick($event)"></app-bar-chart>
+  </div>
+</div>

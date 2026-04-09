@@ -1,0 +1,31 @@
+.insights-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.row { display: grid; gap: 16px; }
+
+.row-kpis {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.row-charts-6-4 {
+  grid-template-columns: 3fr 2fr;
+  min-height: 320px;
+}
+
+.section-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 8px;
+}
+
+@media (max-width: 1200px) {
+  .row-kpis { grid-template-columns: repeat(2, 1fr); }
+  .row-charts-6-4 { grid-template-columns: 1fr; }
+}
