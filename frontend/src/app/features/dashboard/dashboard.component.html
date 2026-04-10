@@ -4,7 +4,10 @@
   <!-- Page header: serif title + date range summary -->
   <header class="page-head">
     <div class="page-head__left">
-      <div class="label-micro">PRM Analytics</div>
+      <div class="eyebrow">
+        <span class="eyebrow__rule"></span>
+        <span class="eyebrow__text">PRM Analytics</span>
+      </div>
       <h1 class="page-head__title">
         Passenger <em>Services</em>
       </h1>
@@ -17,14 +20,14 @@
     </div>
     <div class="page-head__right">
       <div class="meta">
-        <div class="label-micro">Period</div>
+        <div class="meta__label">Period</div>
         <div class="meta__value font-data">
-          {{ filters.dateFrom() }} → {{ filters.dateTo() }}
+          {{ filters.dateFrom() }} <span class="meta__sep">—</span> {{ filters.dateTo() }}
         </div>
       </div>
       <div class="meta__divider"></div>
       <div class="meta">
-        <div class="label-micro">Preset</div>
+        <div class="meta__label">Preset</div>
         <div class="meta__value font-data">{{ filters.datePreset() }}</div>
       </div>
     </div>

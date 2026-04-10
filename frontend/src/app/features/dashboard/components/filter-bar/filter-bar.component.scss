@@ -4,13 +4,13 @@
 
 :host {
   display: block;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
 .filter-bar {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 
 .filter-bar__head {
@@ -68,48 +68,6 @@
   flex: 0 0 auto;
 }
 
-.filter-field--compare {
-  min-width: 0;
-  flex: 0 0 auto;
-}
-
-.compare-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: var(--muted);
-  cursor: pointer;
-  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
-
-  &:hover {
-    border-color: var(--border-strong);
-    color: var(--ink);
-  }
-
-  svg {
-    opacity: 0.85;
-  }
-}
-
-.compare-pill--active {
-  background: var(--accent-bg);
-  border-color: var(--accent);
-  color: var(--accent-fg);
-
-  &:hover {
-    color: var(--accent-fg);
-    border-color: var(--accent);
-  }
-}
 
 .filter-field--views {
   min-width: 0;

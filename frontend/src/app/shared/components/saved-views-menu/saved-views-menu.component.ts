@@ -100,14 +100,14 @@ import { SavedViewsStore, SavedView } from '../../../core/store/saved-views.stor
     .views-btn {
       display: flex;
       align-items: center;
-      gap: 8px;
-      height: 36px;
-      padding: 0 12px;
+      gap: 10px;
+      height: 44px;
+      padding: 0 14px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 8px;
       font-family: var(--font-sans);
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
       color: var(--ink);
       cursor: pointer;

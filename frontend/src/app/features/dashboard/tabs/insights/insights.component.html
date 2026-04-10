@@ -3,21 +3,25 @@
   <div class="row row-kpis">
     <app-kpi-card
       label="Pause Rate"
+      tooltip="Percentage of services that were paused mid-way and resumed later. High pause rates may indicate workflow interruptions or resource conflicts."
       [value]="((pauseRate() | number:'1.1-1') ?? '') + '%'"
       accent="amber"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Outsourced Services"
+      tooltip="Share of PRM services handled by contracted (outsourced) agents vs in-house staff. Higher outsourcing may indicate staffing gaps."
       [value]="((outsourcedPct() | number:'1.1-1') ?? '') + '%'"
       accent="plum"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Avg Services per Agent"
+      tooltip="Total services divided by total active agents. Indicates average workload per agent in the selected period."
       [value]="(avgPerAgent() | number:'1.1-1') ?? ''"
       accent="blue"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="No-Show Rate"
+      tooltip="Percentage of passengers who booked PRM assistance but did not show up for the service. Impacts resource planning and staffing efficiency."
       [value]="((noShowRate() | number:'1.1-1') ?? '') + '%'"
       accent="teal"
       [loading]="loading()"></app-kpi-card>

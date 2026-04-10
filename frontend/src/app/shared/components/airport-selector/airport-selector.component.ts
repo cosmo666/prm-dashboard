@@ -167,6 +167,7 @@ import { FilterStore } from '../../../core/store/filter.store';
       font-family: var(--font-sans) !important;
     }
 
+
     :host ::ng-deep .ap-menu__item.is-active {
       background: var(--accent-bg) !important;
     }

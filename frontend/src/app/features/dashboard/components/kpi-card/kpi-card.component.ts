@@ -1,12 +1,14 @@
 import { Component, input, computed } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
+import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 
 @Component({
   selector: 'app-kpi-card',
   standalone: true,
-  imports: [CommonModule, DecimalPipe],
+  imports: [CommonModule, DecimalPipe, TooltipDirective],
   template: `
-    <article class="kpi" [class.kpi--loading]="loading()">
+    <article class="kpi" [class.kpi--loading]="loading()"
+             [appTooltip]="tooltip()" [tooltipPosition]="'bottom'">
       <header class="kpi__head">
         <span class="kpi__label">{{ label() }}</span>
         @if (resolvedAccent() && !loading()) {
@@ -50,14 +52,14 @@ import { CommonModule, DecimalPipe } from '@angular/common';
 
     .kpi {
       height: 100%;
-      padding: 20px 22px 18px;
+      padding: 16px 16px 14px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 10px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 12px;
+      gap: 8px;
       position: relative;
       overflow: hidden;
       transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
@@ -67,6 +69,12 @@ import { CommonModule, DecimalPipe } from '@angular/common';
       border-color: var(--border-strong);
       transform: translateY(-1px);
       box-shadow: 0 4px 14px rgba(12, 12, 12, 0.04);
+    }
+
+    .kpi:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-color: var(--accent);
     }
 
     .kpi__head {
@@ -97,7 +105,7 @@ import { CommonModule, DecimalPipe } from '@angular/common';
     .accent--blue   { background: var(--accent); }
     .accent--teal   { background: var(--success); }
     .accent--amber  { background: var(--warning); }
-    .accent--plum   { background: #7c3aed; }    // no token for purple yet — intentional
+    .accent--plum   { background: var(--accent-plum, #7c3aed); }
     .accent--green  { background: var(--success); }
 
     // Dashboard-style numeric display — IBM Plex Sans, semibold, tabular figures.
@@ -105,15 +113,24 @@ import { CommonModule, DecimalPipe } from '@angular/common';
     // harder to scan in dense operational dashboards.
     .kpi__value {
       font-family: var(--font-sans);
-      font-size: 32px;
+      font-size: 28px;
       line-height: 1.1;
       font-weight: 600;
       color: var(--ink);
       letter-spacing: -0.02em;
       font-variant-numeric: tabular-nums;
       font-feature-settings: 'tnum' 1, 'zero' 1;
-      margin: 4px 0;
+      margin: 2px 0;
       animation: kpiValueEnter 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .kpi { transition: none; }
+      .kpi:hover { transform: none; }
+      .kpi__value,
+      .delta,
+      .kpi__skeleton-value,
+      .kpi__skeleton-foot { animation: none !important; }
     }
 
     @keyframes kpiValueEnter {
@@ -211,6 +228,7 @@ export class KpiCardComponent {
   delta = input<number | null>(null);
   subtext = input<string>('');
   loading = input<boolean>(false);
+  tooltip = input<string>('');
   // accent color — maps to a small dot in the header
   accent = input<'blue' | 'teal' | 'amber' | 'plum' | 'green' | null>(null);
 

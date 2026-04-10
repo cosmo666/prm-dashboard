@@ -304,20 +304,26 @@ textarea:focus-visible,
 .app-tooltip {
   position: absolute;
   z-index: 9999;
-  padding: 5px 10px;
+  display: block;
+  box-sizing: border-box;
+  padding: 8px 12px;
   background: var(--ink);
   color: var(--bg);
   font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 500;
+  line-height: 1.45;
   letter-spacing: 0.01em;
-  border-radius: 5px;
+  border-radius: 6px;
   pointer-events: none;
-  white-space: nowrap;
+  white-space: normal !important;
+  word-break: normal;
+  overflow-wrap: break-word;
   opacity: 0;
   transform: translateY(2px);
   transition: opacity 140ms ease, transform 140ms ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  width: max-content;
   max-width: 280px;
 }
 
@@ -435,10 +441,35 @@ textarea:focus-visible,
 }
 
 .mat-mdc-menu-panel .ap-menu__item,
-.mat-mdc-menu-panel .devpick-menu__item {
+.mat-mdc-menu-panel .devpick-menu__item,
+.mat-mdc-menu-panel .menu__signout {
   display: flex !important;
   align-items: center !important;
   gap: 12px !important;
+}
+
+// Material MDC wraps mat-menu-item content in an inner span
+// (.mat-mdc-menu-item-text / .mdc-list-item__primary-text) which is block-level
+// by default — flatten it so our icon/text/checkmark sit inline.
+.mat-mdc-menu-panel .mat-mdc-menu-item .mat-mdc-menu-item-text,
+.mat-mdc-menu-panel .mat-mdc-menu-item .mdc-list-item__primary-text {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.mat-mdc-menu-panel .menu__signout-icon {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.mat-mdc-menu-panel .menu__signout-label {
+  font-size: 13px;
+  color: var(--ink);
 }
 
 .mat-mdc-menu-panel .ap-menu__code,

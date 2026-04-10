@@ -45,7 +45,6 @@ export class FilterBarComponent implements OnInit {
   removeService(v: string)   { this.filters.removeService(v); }
   removeHandledBy(v: string) { this.filters.removeHandledBy(v); }
   clearAll() { this.filters.clearSecondary(); }
-  toggleCompare() { this.filters.toggleCompare(); }
 
   // Display label for the "handled by" value in chips
   handledByLabel(v: string): string {

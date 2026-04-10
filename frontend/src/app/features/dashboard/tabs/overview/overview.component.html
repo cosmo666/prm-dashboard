@@ -3,29 +3,34 @@
   <div class="row row-kpis">
     <app-kpi-card
       label="Total PRM Services"
+      tooltip="Total unique PRM services delivered in the selected period. Each service counts once even if paused and resumed."
       [value]="totalPrm() | compactNumber"
       accent="blue"
       [delta]="totalDelta()"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Active Agents"
+      tooltip="Number of distinct agents who handled at least one PRM service. Split shows in-house (Self) vs contracted (Outsourced) agents."
       [value]="activeAgents() | compactNumber"
       accent="teal"
       [subtext]="'Self · ' + selfAgents() + '   Outsourced · ' + outsourcedAgents()"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Avg Services / Agent / Day"
+      tooltip="Average number of PRM services each agent handles per working day. Higher means better utilization; too high may indicate overload."
       [value]="(avgPerAgent() | number:'1.1-1') ?? ''"
       accent="amber"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Avg Duration (min)"
+      tooltip="Average time in minutes to complete a PRM service, from start to end. Excludes paused time for services that were interrupted."
       [value]="(avgDuration() | number:'1.0-0') ?? ''"
       accent="plum"
       [delta]="durationDelta()"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Fulfillment Rate"
+      tooltip="Percentage of pre-requested PRM services that were actually fulfilled. 100% means every booked request was served."
       [value]="((fulfillmentRate() | number:'1.1-1') ?? '') + '%'"
       accent="green"
       [loading]="loading()"></app-kpi-card>
@@ -35,11 +40,11 @@
   <div class="row row-charts-2-1">
     <app-line-chart
       title="Daily PRM Trend"
-      [subtitle]="filters.compareMode() ? 'Current vs previous period' : 'Count of unique services per day'"
+      subtitle="Count of unique services per day"
       [series]="dailyTrendSeries()"
       [loading]="loading()"
       [annotations]="annotations"
-      [showAvgLine]="!filters.compareMode()"
+      [showAvgLine]="true"
       (pointClick)="onDailyPointClick($event)"
       class="col-2"></app-line-chart>
     <app-donut-chart

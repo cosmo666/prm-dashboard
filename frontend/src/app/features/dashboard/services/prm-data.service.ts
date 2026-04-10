@@ -35,8 +35,6 @@ export class PrmDataService {
   private params(extra: Record<string, string | number | null | undefined> = {}): Record<string, string | undefined> {
     const base = this.filters.queryParams();
     const result: Record<string, string | undefined> = { ...base };
-    // compare=1 is a UI-only flag for URL sync — never sent to backend
-    delete result['compare'];
     for (const [key, value] of Object.entries(extra)) {
       result[key] = value != null ? String(value) : undefined;
     }

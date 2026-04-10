@@ -21,7 +21,6 @@ export interface FilterState {
   // Single-value filters (no multi-select UI today)
   flight: string;
   agentNo: string;
-  compareMode: boolean;
 }
 
 const initialState: FilterState = {
@@ -34,7 +33,6 @@ const initialState: FilterState = {
   handledBy: [],
   flight: '',
   agentNo: '',
-  compareMode: false,
 };
 
 /**
@@ -64,8 +62,6 @@ export const FilterStore = signalStore(
 
       if (state.flight()) params['flight'] = state.flight();
       if (state.agentNo()) params['agent_no'] = state.agentNo();
-
-      if (state.compareMode()) params['compare'] = '1';
 
       return params;
     }),
@@ -108,9 +104,6 @@ export const FilterStore = signalStore(
     clearSecondary(): void {
       patchState(store, { airline: [], service: [], handledBy: [], flight: '', agentNo: '' });
     },
-    toggleCompare(): void {
-      patchState(store, { compareMode: !store.compareMode() });
-    },
     loadFromQueryParams(params: Record<string, string>): void {
       patchState(store, {
         airport: params['airport'] || '',
@@ -121,7 +114,6 @@ export const FilterStore = signalStore(
         handledBy: parseCsv(params['handled_by']),
         flight: params['flight'] || '',
         agentNo: params['agent_no'] || '',
-        compareMode: params['compare'] === '1',
       });
     },
     reset(): void {

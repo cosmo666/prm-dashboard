@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, forkJoin, of, switchMap } from 'rxjs';
+import { EMPTY, forkJoin, switchMap } from 'rxjs';
 import { KpiCardComponent } from '../../components/kpi-card/kpi-card.component';
 import { BarChartComponent, BarDatum } from '../../../../shared/charts/bar-chart/bar-chart.component';
 import { DonutChartComponent, DonutDatum } from '../../../../shared/charts/donut-chart/donut-chart.component';
@@ -12,16 +12,6 @@ import { PrmDataService } from '../../services/prm-data.service';
 import { FilterStore } from '../../../../core/store/filter.store';
 import { ToastService } from '../../../../core/toast/toast.service';
 import { DEMO_ANNOTATIONS } from '../../utils/annotations';
-
-function prevRange(from: string, to: string): { from: string; to: string } {
-  const f = new Date(from);
-  const t = new Date(to);
-  const days = Math.round((t.getTime() - f.getTime()) / 86400000);
-  const prevTo = new Date(f.getTime() - 86400000);
-  const prevFrom = new Date(prevTo.getTime() - days * 86400000);
-  const iso = (d: Date) => d.toISOString().slice(0, 10);
-  return { from: iso(prevFrom), to: iso(prevTo) };
-}
 
 @Component({
   selector: 'app-overview',
@@ -64,17 +54,10 @@ export class OverviewComponent {
           return EMPTY;
         }
         this.loading.set(true);
-        const compare = this.filters.compareMode();
-        const from = this.filters.dateFrom();
-        const to = this.filters.dateTo();
-        const prev = compare && from && to ? prevRange(from, to) : null;
         return forkJoin({
           kpis: this.data.kpisSummary(),
           handling: this.data.handlingDistribution(),
           trend: this.data.trendsDaily('count'),
-          prevTrend: prev
-            ? this.data.trendsDailyRange(prev.from, prev.to, 'count')
-            : of(null),
           services: this.data.topServices(),
           duration: this.data.durationDistribution(),
           locations: this.data.byLocation(),
@@ -99,27 +82,10 @@ export class OverviewComponent {
         // Daily trend → LineSeries[] keyed on full yyyy-mm-dd dates (for annotation matching)
         const dates: string[] = r.trend.dates ?? [];
         const vals: number[] = r.trend.values ?? [];
-        const currentSeries: LineSeries = {
-          name: 'Current',
+        this.dailyTrendSeries.set([{
+          name: 'Services',
           data: dates.map((d: string, i: number): [string, number] => [d, vals[i] ?? 0]),
-        };
-        const series: LineSeries[] = [currentSeries];
-        if (r.prevTrend) {
-          const prevVals: number[] = r.prevTrend.values ?? [];
-          // Align previous series to the current x-axis (day index), so both sit side-by-side
-          // on the same axis. We use the current-period date as the x label but map by position.
-          const alignedPrev: Array<[string, number]> = dates.map((d: string, i: number): [string, number] => [
-            d,
-            prevVals[i] ?? 0,
-          ]);
-          series.push({
-            name: 'Previous period',
-            data: alignedPrev,
-            dashed: true,
-            color: '#94a3b8',
-          });
-        }
-        this.dailyTrendSeries.set(series);
+        }]);
 
         // Handling distribution: labels[] + values[] → DonutDatum[]
         const hLabels: string[] = r.handling.labels ?? [];
