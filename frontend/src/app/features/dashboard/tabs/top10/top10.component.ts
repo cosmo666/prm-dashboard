@@ -7,6 +7,7 @@ import { HorizontalBarChartComponent } from '../../../../shared/charts/horizonta
 import { PrmDataService } from '../../services/prm-data.service';
 import { FilterStore } from '../../../../core/store/filter.store';
 import { ToastService } from '../../../../core/toast/toast.service';
+import { TooltipDirective } from '../../../../shared/directives/tooltip.directive';
 
 export interface AgentRow {
   rank: number;
@@ -40,7 +41,7 @@ const CARRIER_COLORS: Record<string, string> = {
 @Component({
   selector: 'app-top10',
   standalone: true,
-  imports: [CommonModule, BarChartComponent, HorizontalBarChartComponent],
+  imports: [CommonModule, BarChartComponent, HorizontalBarChartComponent, TooltipDirective],
   templateUrl: './top10.component.html',
   styleUrl: './top10.component.scss',
 })

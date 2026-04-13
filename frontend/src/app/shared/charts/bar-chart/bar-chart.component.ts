@@ -70,20 +70,29 @@ export class BarChartComponent {
     const valueName = horizontal ? this.xLabel() : this.yLabel();
     const nameTextStyle = { color: CHART_COLORS.muted, fontSize: 11, fontWeight: 600 as const };
 
+    // Horizontal bar (category = y-axis): name at the END so it sits above the
+    // chart and never overlaps long category labels like "Checkin Counter".
+    // Vertical bar (category = x-axis): name centered BELOW tick labels so it
+    // doesn't collide with the rightmost bar label.
     const categoryAxis = {
       ...CHART_CATEGORY_AXIS,
       data: names,
       name: categoryName || undefined,
-      nameLocation: 'middle' as const,
-      nameGap: horizontal ? 64 : 32,
-      nameTextStyle,
+      nameLocation: horizontal ? ('end' as const) : ('middle' as const),
+      nameGap: horizontal ? 12 : 38,
+      nameTextStyle: horizontal
+        ? { ...nameTextStyle, align: 'left' as const, padding: [0, 0, 0, -4] as [number, number, number, number] }
+        : nameTextStyle,
       axisLabel: { ...CHART_CATEGORY_AXIS.axisLabel, rotate: 0 },
     };
+    // Value-axis name is centered along the axis; on vertical bars we rotate
+    // it 90° so it reads along the y-axis without stealing horizontal space.
     const valueAxis = {
       ...CHART_VALUE_AXIS,
       name: valueName || undefined,
       nameLocation: 'middle' as const,
-      nameGap: horizontal ? 28 : 52,
+      nameGap: horizontal ? 36 : 58,
+      nameRotate: horizontal ? 0 : 90,
       nameTextStyle,
       axisLabel: {
         ...CHART_VALUE_AXIS.axisLabel,
@@ -161,9 +170,10 @@ export class BarChartComponent {
       legend: showLegend ? CHART_BASE.legend : { show: false },
       grid: {
         ...CHART_BASE.grid,
-        top: showLegend ? 32 : CHART_BASE.grid.top,
-        bottom: horizontal ? (categoryName ? 44 : 32) : (valueName || categoryName ? 64 : 56),
-        left: horizontal ? (valueName ? 64 : CHART_BASE.grid.left) : (valueName ? 64 : CHART_BASE.grid.left),
+        top: showLegend ? 40 : (horizontal && categoryName ? 32 : CHART_BASE.grid.top),
+        bottom: horizontal ? (valueName ? 48 : 32) : (categoryName ? 64 : 40),
+        left: horizontal ? CHART_BASE.grid.left : (valueName ? 56 : CHART_BASE.grid.left),
+        right: CHART_BASE.grid.right,
       },
       xAxis: horizontal ? valueAxis : categoryAxis,
       yAxis: horizontal ? categoryAxis : valueAxis,

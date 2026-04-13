@@ -60,7 +60,9 @@
         <div class="cell cell--num" role="columnheader">Avg PRM/Day</div>
         <div class="cell cell--most-serviced" role="columnheader">Most Serviced</div>
         <div class="cell cell--code" role="columnheader">Airline</div>
-        <div class="cell cell--num" role="columnheader">Days</div>
+        <div class="cell cell--num" role="columnheader"
+             [appTooltip]="'Distinct days this agent handled at least one PRM service in the selected period. Cadence label: \u2265 20 = daily, 10\u201319 = frequent, 5\u20139 = regular, 1\u20134 = occasional.'"
+             tooltipPosition="left">Active Days</div>
       </div>
 
       @if (loading()) {

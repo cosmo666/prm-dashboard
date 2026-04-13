@@ -45,13 +45,17 @@
       subtitle="When PRM demand is highest (4-hour windows)"
       [data]="timeOfDay()"
       [loading]="loading()"
-      xLabel="Time Window"
-      yLabel="Services"></app-bar-chart>
+      xLabel="Time window (24h)"
+      yLabel="PRM services (count)"
+      unit="services"></app-bar-chart>
     <app-line-chart
       title="Cumulative Progress"
-      subtitle="Running total vs even-pace target"
+      subtitle="Running total of PRM services vs an even-pace target"
       [series]="cumulativeSeries()"
       [loading]="loading()"
-      [showAvgLine]="false"></app-line-chart>
+      [showAvgLine]="false"
+      xLabel="Date"
+      yLabel="Cumulative PRM services"
+      unit="services"></app-line-chart>
   </div>
 </div>

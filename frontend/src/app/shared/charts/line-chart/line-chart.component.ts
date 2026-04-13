@@ -36,7 +36,32 @@ export class LineChartComponent {
   dualAxis = input<boolean>(false);
   stacked = input<boolean>(false);
   annotations = input<ChartAnnotation[]>([]);
+  xLabel = input<string>('');
+  yLabel = input<string>('');
+  yLabelRight = input<string>('');
+  unit = input<string>('');
+  unitRight = input<string>('');
   pointClick = output<string>();
+
+  private formatNumber(v: number | null | undefined): string {
+    if (v == null || Number.isNaN(v)) return '—';
+    return Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  private formatTickFor(unit: string) {
+    return (v: number) => {
+      const num = this.formatNumber(v);
+      return unit === '%' ? `${num}%` : num;
+    };
+  }
+
+  private formatValueFor(unit: string) {
+    return (v: any) => {
+      const num = this.formatNumber(Number(v));
+      if (!unit) return num;
+      return unit === '%' ? `${num}%` : `${num} ${unit}`;
+    };
+  }
 
   isEmpty = computed(() => this.series().every((s) => s.data.length === 0));
 
@@ -131,12 +156,26 @@ export class LineChartComponent {
       };
     });
 
+    const nameTextStyle = { color: CHART_COLORS.muted, fontSize: 11, fontWeight: 600 as const };
+    const xName = this.xLabel();
+    const yName = this.yLabel();
+    const yNameRight = this.yLabelRight();
+    const unit = this.unit();
+    const unitRight = this.unitRight();
+
     return {
       ...CHART_BASE,
-      grid: { ...CHART_BASE.grid, top: srs.length > 1 ? 36 : 20, right: 40 },
+      grid: {
+        ...CHART_BASE.grid,
+        top: srs.length > 1 ? 40 : 24,
+        right: yNameRight ? 60 : 40,
+        bottom: xName ? 56 : CHART_BASE.grid.bottom,
+        left: yName ? 60 : CHART_BASE.grid.left,
+      },
       tooltip: {
         ...CHART_BASE.tooltip,
         trigger: 'axis',
+        valueFormatter: this.formatValueFor(unit),
         axisPointer: {
           type: 'cross',
           crossStyle: { color: CHART_COLORS.border },
@@ -147,13 +186,44 @@ export class LineChartComponent {
         ...CHART_CATEGORY_AXIS,
         data: xs,
         boundaryGap: srs.some((s) => s.type === 'bar'),
+        name: xName || undefined,
+        nameLocation: 'middle' as const,
+        nameGap: 36,
+        nameTextStyle,
       },
       yAxis: this.dualAxis()
         ? [
-            { ...CHART_VALUE_AXIS, position: 'left' },
-            { ...CHART_VALUE_AXIS, position: 'right', splitLine: { show: false } },
+            {
+              ...CHART_VALUE_AXIS,
+              position: 'left',
+              name: yName || undefined,
+              nameLocation: 'middle' as const,
+              nameGap: 48,
+              nameRotate: 90,
+              nameTextStyle,
+              axisLabel: { ...CHART_VALUE_AXIS.axisLabel, formatter: this.formatTickFor(unit) },
+            },
+            {
+              ...CHART_VALUE_AXIS,
+              position: 'right',
+              splitLine: { show: false },
+              name: yNameRight || undefined,
+              nameLocation: 'middle' as const,
+              nameGap: 48,
+              nameRotate: 90,
+              nameTextStyle,
+              axisLabel: { ...CHART_VALUE_AXIS.axisLabel, formatter: this.formatTickFor(unitRight) },
+            },
           ]
-        : CHART_VALUE_AXIS,
+        : {
+            ...CHART_VALUE_AXIS,
+            name: yName || undefined,
+            nameLocation: 'middle' as const,
+            nameGap: 48,
+            nameRotate: 90,
+            nameTextStyle,
+            axisLabel: { ...CHART_VALUE_AXIS.axisLabel, formatter: this.formatTickFor(unit) },
+          },
       series: chartSeries,
     } as EChartsOption;
   });
