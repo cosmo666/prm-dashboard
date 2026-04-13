@@ -7,16 +7,18 @@ import { BarChartComponent, BarDatum } from '../bar-chart/bar-chart.component';
   standalone: true,
   imports: [CommonModule, BarChartComponent],
   template: `
-    <app-bar-chart [title]="title()" [data]="data()" [loading]="loading()" [horizontal]="true"
-                   [xLabel]="xLabel()" [yLabel]="yLabel()"
+    <app-bar-chart [title]="title()" [subtitle]="subtitle()" [data]="data()" [loading]="loading()" [horizontal]="true"
+                   [xLabel]="xLabel()" [yLabel]="yLabel()" [unit]="unit()"
                    (barClick)="barClick.emit($event)"></app-bar-chart>
   `,
 })
 export class HorizontalBarChartComponent {
-  title   = input<string>('');
-  data    = input.required<BarDatum[]>();
-  loading = input<boolean>(false);
-  xLabel  = input<string>('Count');
-  yLabel  = input<string>('');
+  title    = input<string>('');
+  subtitle = input<string>('');
+  data     = input.required<BarDatum[]>();
+  loading  = input<boolean>(false);
+  xLabel   = input<string>('Count');
+  yLabel   = input<string>('');
+  unit     = input<string>('');
   barClick = output<string>();
 }

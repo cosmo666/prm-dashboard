@@ -38,7 +38,7 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
               </svg>
               <span class="font-data" aria-hidden="true">{{ (delta() ?? 0) | number:'1.1-1' }}%</span>
             </div>
-            <span class="delta__period" aria-hidden="true">vs prev</span>
+            <span class="delta__period" aria-hidden="true">{{ deltaLabel() || 'vs prev' }}</span>
           }
           @if (subtext()) {
             <div class="subtext">{{ subtext() }}</div>
@@ -226,6 +226,7 @@ export class KpiCardComponent {
   label = input.required<string>();
   value = input<string | number>(0);
   delta = input<number | null>(null);
+  deltaLabel = input<string>('');
   subtext = input<string>('');
   loading = input<boolean>(false);
   tooltip = input<string>('');

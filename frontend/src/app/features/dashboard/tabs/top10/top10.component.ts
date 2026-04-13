@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, forkJoin, switchMap } from 'rxjs';
+import { combineLatest, EMPTY, forkJoin, switchMap } from 'rxjs';
 import { BarChartComponent, BarDatum } from '../../../../shared/charts/bar-chart/bar-chart.component';
 import { HorizontalBarChartComponent } from '../../../../shared/charts/horizontal-bar-chart/horizontal-bar-chart.component';
 import { PrmDataService } from '../../services/prm-data.service';
@@ -14,10 +14,14 @@ export interface AgentRow {
   name: string;
   count: number;
   avgDuration: number;
+  avgPerDay: number;
   topService: string;
+  topServiceCount: number;
   topAirline: string;
   daysActive: number;
 }
+
+export const TOP_X_OPTIONS = [5, 10, 15, 20] as const;
 
 // Muted, operational carrier colors — not vivid
 const CARRIER_COLORS: Record<string, string> = {
@@ -46,8 +50,11 @@ export class Top10Component {
   filters = inject(FilterStore);
 
   loading = signal(true);
+  topX = signal<number>(10);
+  readonly topXOptions = TOP_X_OPTIONS;
   topAirlines = signal<BarDatum[]>([]);
   topFlights = signal<BarDatum[]>([]);
+  topFlightsRequested = signal<BarDatum[]>([]);
   topAgents = signal<AgentRow[]>([]);
   topRoutes = signal<BarDatum[]>([]);
   noShows = signal<BarDatum[]>([]);
@@ -56,16 +63,19 @@ export class Top10Component {
   skeletonAgents = Array.from({ length: 8 }, (_, i) => i);
 
   constructor() {
-    toObservable(this.filters.queryParams).pipe(
-      switchMap(() => {
+    combineLatest([
+      toObservable(this.filters.queryParams),
+      toObservable(this.topX),
+    ]).pipe(
+      switchMap(([, limit]) => {
         if (!this.filters.airport() || !this.filters.dateFrom()) {
           return EMPTY;
         }
         this.loading.set(true);
         return forkJoin({
-          airlines: this.data.topAirlines(10),
-          flights: this.data.topFlights(10),
-          agents: this.data.topAgents(10),
+          airlines: this.data.topAirlines(limit),
+          flights: this.data.topFlights(limit),
+          agents: this.data.topAgents(limit),
           routes: this.data.byRoute(),
           noShows: this.data.noShows(),
         });
@@ -80,15 +90,21 @@ export class Top10Component {
         })));
         this.topFlights.set((r.flights.items ?? []).map((f: any) => {
           const airline = f.label?.substring(0, 2) ?? '';
-          return { label: f.label, value: f.count, color: CARRIER_COLORS[airline] ?? '#475569' };
+          return { label: f.label, value: f.servicedCount ?? 0, color: CARRIER_COLORS[airline] ?? '#475569' };
         }));
-        this.topAgents.set((r.agents.items ?? []).slice(0, 10).map((a: any, i: number) => ({
+        this.topFlightsRequested.set((r.flights.items ?? []).map((f: any) => ({
+          label: f.label,
+          value: f.requestedCount ?? 0,
+        })));
+        this.topAgents.set((r.agents.items ?? []).map((a: any, i: number) => ({
           rank: a.rank ?? i + 1,
           agentNo: a.agentNo ?? '',
           name: a.agentName ?? '',
           count: a.prmCount ?? 0,
           avgDuration: a.avgDurationMinutes ?? 0,
+          avgPerDay: a.avgPerDay ?? 0,
           topService: a.topService ?? '—',
+          topServiceCount: a.topServiceCount ?? 0,
           topAirline: a.topAirline ?? '—',
           daysActive: a.daysActive ?? 0,
         })));
@@ -105,6 +121,10 @@ export class Top10Component {
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  setTopX(n: number): void {
+    if (this.topX() !== n) this.topX.set(n);
   }
 
   rankClass(rank: number): string {

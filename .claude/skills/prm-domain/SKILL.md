@@ -231,7 +231,6 @@ All 4 tabs share the same filter set: airport, date range, airline, service, han
 
 ## References
 
-- Full data model: `docs/superpowers/specs/2026-04-08-prm-dashboard-design.md` §3
 - SQL schema: `database/init/02-tenant-schema.sql` + `backend/src/PrmDashboard.TenantService/Schema/Migrations/001_create_prm_services.sql`
 - Entity model: `backend/src/PrmDashboard.Shared/Models/PrmServiceRecord.cs`
 - Time helpers: `backend/src/PrmDashboard.Shared/Extensions/TimeHelpers.cs`

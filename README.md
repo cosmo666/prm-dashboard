@@ -397,10 +397,18 @@ Then walk the [E2E checklist](docs/e2e-checklist.md) for manual verification.
 
 ## Docs
 
-- [Design spec](docs/superpowers/specs/2026-04-08-prm-dashboard-design.md) -- full data model, API design, frontend architecture
-- [Implementation plan](docs/superpowers/plans/2026-04-08-prm-dashboard-plan.md) -- 21 tasks across 9 phases
 - [E2E checklist](docs/e2e-checklist.md) -- manual verification scenarios
 - [CLAUDE.md](CLAUDE.md) -- project instructions for Claude Code
+
+## Recent Changes
+
+### 2026-04-13 — Dashboard UI polish
+
+- **Chart axis labels + units** — `app-bar-chart` and `app-horizontal-bar-chart` now render axis titles from `xLabel`/`yLabel` inputs and format tick/tooltip values via a new `unit` input (e.g. `unit="services"`, `unit="%"`, `unit="min"`). Numbers are thousand-separated; ticks stay compact while tooltips show the full unit. Applied across Top 10 and Overview bar charts.
+- **Agents leaderboard ("Top 10 Agents" table)** —
+  - `Avg/Day` renamed to **Avg PRM/Day** for clarity.
+  - `Service` column replaced by **Most Serviced**, which now shows *top-service count / total PRM count* alongside the service chip (e.g. `245 / 300 WCHR` = 245 of this agent's 300 services were WCHR).
+  - Backend `AgentRankingItem` DTO gained `TopServiceCount` and `AvgPerDay` fields; `FlightRankingItem` was added with `ServicedCount` / `RequestedCount` so the Top 10 Flights chart can overlay requested vs serviced. Requires a rebuild of the PRM service (`docker compose up -d --build prm`).
 
 ## License
 

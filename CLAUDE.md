@@ -4,7 +4,7 @@ Project instructions for Claude Code working in this repo. Inherits from `dev-ai
 
 ## What this project is
 
-Multi-tenant PRM (Passenger with Reduced Mobility) analytics POC for airport ground-handling operations. See [README.md](README.md) and [docs/superpowers/specs/2026-04-08-prm-dashboard-design.md](docs/superpowers/specs/2026-04-08-prm-dashboard-design.md).
+Multi-tenant PRM (Passenger with Reduced Mobility) analytics POC for airport ground-handling operations. See [README.md](README.md).
   
 ## Tech stack (authoritative)
 
@@ -59,9 +59,7 @@ database/
     04-seed-employees.sql                  # (Phase 6) Seed 12 employees + airport assignments
     05-seed-prm-data.sql                   # (Phase 6) Generated via Python script, ~15k rows total
 docs/
-  superpowers/
-    specs/2026-04-08-prm-dashboard-design.md
-    plans/2026-04-08-prm-dashboard-plan.md
+  e2e-checklist.md                         # Manual verification scenarios
 docker-compose.yml
 .env.example
 ```
@@ -235,4 +233,4 @@ When adding a new tenant, the flow is:
 
 **POC is feature-complete.** All 21 tasks across 9 phases implemented and reviewed.
 
-Last updated: 2026-04-08 (all phases complete)
+Last updated: 2026-04-13 (dashboard UI polish: chart axis labels + units, agents table "Most Serviced" column)

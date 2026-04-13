@@ -51,7 +51,7 @@ public class RankingService : BaseQueryService
     /// <summary>
     /// Top flights by distinct service count.
     /// </summary>
-    public async Task<RankingsResponse> GetTopFlightsAsync(
+    public async Task<FlightRankingsResponse> GetTopFlightsAsync(
         string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
     {
         await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
@@ -64,21 +64,29 @@ public class RankingService : BaseQueryService
             .Select(g => g.OrderBy(r => r.RowId).First())
             .ToList();
 
-        int total = deduped.Count;
+        // NoShowFlag == "N" marks a no-show (passenger requested, didn't show up).
+        // Serviced = requested minus no-shows.
+        int totalServiced = deduped.Count(r => r.NoShowFlag != "N");
         var items = deduped
             .GroupBy(r => r.Flight)
-            .Select(g => new RankingItem(
-                g.Key,
-                g.Count(),
-                total > 0 ? Math.Round((double)g.Count() / total * 100, 2) : 0))
-            .OrderByDescending(x => x.Count)
+            .Select(g =>
+            {
+                int requested = g.Count();
+                int serviced = g.Count(r => r.NoShowFlag != "N");
+                return new FlightRankingItem(
+                    g.Key,
+                    serviced,
+                    requested,
+                    totalServiced > 0 ? Math.Round((double)serviced / totalServiced * 100, 2) : 0);
+            })
+            .OrderByDescending(x => x.ServicedCount)
             .Take(limit)
             .ToList();
 
         _logger.LogInformation("Top flights for {Slug}/{Airport}: {Count} items",
             tenantSlug, filters.Airport, items.Count);
 
-        return new RankingsResponse(items);
+        return new FlightRankingsResponse(items);
     }
 
     /// <summary>
@@ -117,11 +125,12 @@ public class RankingService : BaseQueryService
 
             // Top service and airline by frequency (deduped by id)
             var dedupedRows = g.GroupBy(r => r.Id).Select(sg => sg.First()).ToList();
-            string topService = dedupedRows
+            var topServiceGroup = dedupedRows
                 .GroupBy(r => r.Service)
                 .OrderByDescending(sg => sg.Count())
-                .Select(sg => sg.Key)
-                .FirstOrDefault() ?? "";
+                .FirstOrDefault();
+            string topService = topServiceGroup?.Key ?? "";
+            int topServiceCount = topServiceGroup?.Count() ?? 0;
             string topAirline = dedupedRows
                 .GroupBy(r => r.Airline)
                 .OrderByDescending(sg => sg.Count())
@@ -131,13 +140,14 @@ public class RankingService : BaseQueryService
             int daysActive = g.Select(r => r.ServiceDate).Distinct().Count();
             string agentName = g.Select(r => r.AgentName).FirstOrDefault(n => !string.IsNullOrEmpty(n)) ?? "";
 
-            return new { AgentNo = g.Key, AgentName = agentName, PrmCount = prmCount, AvgDuration = avgDuration, TopService = topService, TopAirline = topAirline, DaysActive = daysActive };
+            double avgPerDay = daysActive > 0 ? Math.Round((double)prmCount / daysActive, 2) : 0;
+            return new { AgentNo = g.Key, AgentName = agentName, PrmCount = prmCount, AvgDuration = avgDuration, TopService = topService, TopServiceCount = topServiceCount, TopAirline = topAirline, DaysActive = daysActive, AvgPerDay = avgPerDay };
         })
         .OrderByDescending(x => x.PrmCount)
         .Take(limit)
         .Select((x, i) => new AgentRankingItem(
             i + 1, x.AgentNo, x.AgentName, x.PrmCount,
-            x.AvgDuration, x.TopService, x.TopAirline, x.DaysActive))
+            x.AvgDuration, x.TopService, x.TopServiceCount, x.TopAirline, x.DaysActive, x.AvgPerDay))
         .ToList();
 
         _logger.LogInformation("Agent rankings for {Slug}/{Airport}: {Count} agents",

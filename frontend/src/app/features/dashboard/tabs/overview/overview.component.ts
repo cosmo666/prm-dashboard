@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, forkJoin, switchMap } from 'rxjs';
@@ -26,6 +26,22 @@ export class OverviewComponent {
   filters = inject(FilterStore);
 
   readonly annotations = DEMO_ANNOTATIONS;
+
+  /** Human-readable label for the comparison period, e.g. "vs Jan 29 – Feb 28" */
+  prevPeriodLabel = computed(() => {
+    const from = this.filters.dateFrom();
+    const to = this.filters.dateTo();
+    if (!from || !to) return '';
+    const d1 = new Date(from);
+    const d2 = new Date(to);
+    const days = Math.round((d2.getTime() - d1.getTime()) / 86400000) + 1;
+    const prevEnd = new Date(d1);
+    prevEnd.setDate(prevEnd.getDate() - 1);
+    const prevStart = new Date(prevEnd);
+    prevStart.setDate(prevStart.getDate() - days + 1);
+    const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `vs ${fmt(prevStart)} – ${fmt(prevEnd)}`;
+  });
 
   loading = signal(true);
 

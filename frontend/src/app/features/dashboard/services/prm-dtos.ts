@@ -66,12 +66,25 @@ export interface AgentRankingItem {
   prmCount: number;
   avgDurationMinutes: number;
   topService: string;
+  topServiceCount: number;
   topAirline: string;
   daysActive: number;
+  avgPerDay: number;
+}
+
+export interface FlightRankingItem {
+  label: string;
+  servicedCount: number;
+  requestedCount: number;
+  percentage: number;
 }
 
 export interface RankingsResponse {
   items: RankingItem[];
+}
+
+export interface FlightRankingsResponse {
+  items: FlightRankingItem[];
 }
 
 export interface AgentRankingsResponse {

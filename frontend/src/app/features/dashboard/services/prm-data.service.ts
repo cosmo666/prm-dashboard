@@ -11,6 +11,7 @@ import {
   HourlyHeatmapResponse,
   RequestedVsProvidedTrendResponse,
   RankingsResponse,
+  FlightRankingsResponse,
   AgentRankingsResponse,
   ServiceTypeMatrixResponse,
   SankeyResponse,
@@ -76,8 +77,8 @@ export class PrmDataService {
   topAirlines(limit = 10): Observable<RankingsResponse> {
     return this.api.get<RankingsResponse>('/prm/rankings/airlines', this.params({ limit }));
   }
-  topFlights(limit = 10): Observable<RankingsResponse> {
-    return this.api.get<RankingsResponse>('/prm/rankings/flights', this.params({ limit }));
+  topFlights(limit = 10): Observable<FlightRankingsResponse> {
+    return this.api.get<FlightRankingsResponse>('/prm/rankings/flights', this.params({ limit }));
   }
   topAgents(limit = 10): Observable<AgentRankingsResponse> {
     return this.api.get<AgentRankingsResponse>('/prm/rankings/agents', this.params({ limit }));

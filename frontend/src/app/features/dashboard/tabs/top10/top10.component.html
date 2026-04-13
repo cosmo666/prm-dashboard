@@ -1,21 +1,39 @@
 <div class="top10-content">
+  <!-- Top-X selector -->
+  <div class="topx-bar" role="group" aria-label="Number of items to show">
+    <span class="topx-bar__label label-micro">Show top</span>
+    @for (n of topXOptions; track n) {
+      <button
+        type="button"
+        class="topx-chip"
+        [class.topx-chip--active]="topX() === n"
+        [attr.aria-pressed]="topX() === n"
+        (click)="setTopX(n)">{{ n }}</button>
+    }
+  </div>
+
   <!-- Row 1: Top airlines + Top flights -->
   <div class="row row-charts-1-1">
     <app-bar-chart
-      title="Top 10 Airlines"
+      [title]="'Top ' + topX() + ' Airlines'"
       subtitle="Highest PRM service demand by carrier"
       [data]="topAirlines()"
       [loading]="loading()"
-      xLabel="Airline"
-      yLabel="Services"
+      xLabel="Airline (IATA code)"
+      yLabel="PRM services (count)"
+      unit="services"
       (barClick)="onAirlineClick($event)"></app-bar-chart>
     <app-bar-chart
-      title="Top 10 Flights"
-      subtitle="Individual flights with most PRM requests"
+      [title]="'Top ' + topX() + ' Flights'"
+      subtitle="Serviced PRM count per flight, with requested overlay"
       [data]="topFlights()"
       [loading]="loading()"
-      xLabel="Flight"
-      yLabel="Services"
+      seriesName="Serviced"
+      [lineSeries]="topFlightsRequested()"
+      lineSeriesName="Requested"
+      xLabel="Flight number"
+      yLabel="PRM services (count)"
+      unit="services"
       (barClick)="onFlightClick($event)"></app-bar-chart>
   </div>
 
@@ -24,7 +42,7 @@
     <header class="agents-card__head">
       <div class="agents-card__title-wrap">
         <span class="label-micro">Personnel</span>
-        <h3 class="agents-card__title">Top 10 Agents</h3>
+        <h3 class="agents-card__title">Top {{ topX() }} Agents</h3>
       </div>
       <div class="agents-card__meta">
         <div class="label-micro">Ranked by</div>
@@ -32,14 +50,15 @@
       </div>
     </header>
 
-    <div class="agents-table" role="table" aria-label="Top 10 agents by PRM count">
+    <div class="agents-table" role="table" [attr.aria-label]="'Top ' + topX() + ' agents by PRM count'">
       <!-- Header row -->
       <div class="agents-row agents-row--head" role="row">
         <div class="cell cell--rank" role="columnheader">Rank</div>
         <div class="cell cell--agent" role="columnheader">Agent</div>
         <div class="cell cell--num" role="columnheader">PRM</div>
         <div class="cell cell--num" role="columnheader">Avg Min</div>
-        <div class="cell cell--code" role="columnheader">Service</div>
+        <div class="cell cell--num" role="columnheader">Avg PRM/Day</div>
+        <div class="cell cell--most-serviced" role="columnheader">Most Serviced</div>
         <div class="cell cell--code" role="columnheader">Airline</div>
         <div class="cell cell--num" role="columnheader">Days</div>
       </div>
@@ -54,7 +73,8 @@
             </div>
             <div class="cell cell--num" role="cell"><div class="skeleton-block" style="width: 32px; height: 16px; margin-left: auto;"></div></div>
             <div class="cell cell--num" role="cell"><div class="skeleton-block" style="width: 40px; height: 18px; margin-left: auto;"></div></div>
-            <div class="cell cell--code" role="cell"><div class="skeleton-block" style="width: 28px; height: 14px;"></div></div>
+            <div class="cell cell--num" role="cell"><div class="skeleton-block" style="width: 34px; height: 16px; margin-left: auto;"></div></div>
+            <div class="cell cell--most-serviced" role="cell"><div class="skeleton-block" style="width: 72px; height: 14px;"></div></div>
             <div class="cell cell--code" role="cell"><div class="skeleton-block" style="width: 24px; height: 14px;"></div></div>
             <div class="cell cell--num" role="cell"><div class="skeleton-block" style="width: 20px; height: 14px; margin-left: auto;"></div></div>
           </div>
@@ -79,10 +99,16 @@
             </div>
             <div class="cell cell--num" role="cell">
               <span class="duration-badge font-data" [class]="durationClass(agent.avgDuration)">
-                {{ agent.avgDuration | number:'1.0-0' }}
+                {{ agent.avgDuration | number:'1.0-0' }}<span class="duration-unit">min</span>
               </span>
             </div>
-            <div class="cell cell--code" role="cell">
+            <div class="cell cell--num" role="cell">
+              <span class="per-day-value font-data">{{ agent.avgPerDay | number:'1.1-1' }}<span class="per-day-unit">/day</span></span>
+            </div>
+            <div class="cell cell--most-serviced" role="cell">
+              <span class="most-serviced-value font-data">
+                <span class="most-serviced-count">{{ agent.topServiceCount | number }}</span><span class="most-serviced-sep">/</span><span class="most-serviced-total">{{ agent.count | number }}</span>
+              </span>
               <span class="code-chip font-data">{{ agent.topService }}</span>
             </div>
             <div class="cell cell--code" role="cell">
@@ -105,16 +131,18 @@
       subtitle="Top routes by PRM service volume"
       [data]="topRoutes()"
       [loading]="loading()"
-      xLabel="Services"
-      yLabel="Route"
+      xLabel="PRM services (count)"
+      yLabel="Route (departure → arrival)"
+      unit="services"
       (barClick)="onRouteClick($event)"></app-horizontal-bar-chart>
     <app-bar-chart
       title="No-Show Rate"
-      subtitle="Passengers who booked PRM but didn't show up (%)"
+      subtitle="Passengers who booked PRM but didn't show up"
       [data]="noShows()"
       [loading]="loading()"
-      xLabel="Airline"
-      yLabel="Rate %"
+      xLabel="Airline (IATA code)"
+      yLabel="No-show rate (%)"
+      unit="%"
       (barClick)="onNoShowAirlineClick($event)"></app-bar-chart>
   </div>
 </div>

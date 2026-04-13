@@ -7,6 +7,7 @@
       [value]="totalPrm() | compactNumber"
       accent="blue"
       [delta]="totalDelta()"
+      [deltaLabel]="prevPeriodLabel()"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Active Agents"
@@ -27,6 +28,7 @@
       [value]="(avgDuration() | number:'1.0-0') ?? ''"
       accent="plum"
       [delta]="durationDelta()"
+      [deltaLabel]="prevPeriodLabel()"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Fulfillment Rate"
@@ -66,18 +68,21 @@
       (segmentClick)="onServiceTypeClick($event)"></app-donut-chart>
     <app-bar-chart
       title="Service Duration Spread"
-      subtitle="How long services take (minutes)"
+      subtitle="How long services take"
       [data]="durationBuckets()"
       [loading]="loading()"
-      xLabel="Minutes"
-      yLabel="Services"
+      xLabel="Duration bucket (minutes)"
+      yLabel="PRM services (count)"
+      unit="services"
       (barClick)="onDurationClick($event)"></app-bar-chart>
     <app-horizontal-bar-chart
       title="Services by Location"
       subtitle="Where PRM services are delivered"
       [data]="locations()"
       [loading]="loading()"
+      xLabel="PRM services (count)"
       yLabel="Location"
+      unit="services"
       (barClick)="onLocationClick($event)"></app-horizontal-bar-chart>
   </div>
 </div>

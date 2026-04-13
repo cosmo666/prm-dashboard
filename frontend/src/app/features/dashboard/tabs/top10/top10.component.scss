@@ -16,6 +16,46 @@
 }
 
 // ------------------------------------------------------------
+// Top-X selector
+// ------------------------------------------------------------
+.topx-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 0 2px;
+}
+
+.topx-bar__label {
+  margin-right: 4px;
+}
+
+.topx-chip {
+  appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--font-data, inherit);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 160ms ease;
+  min-width: 32px;
+}
+
+.topx-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+
+.topx-chip--active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+}
+
+// ------------------------------------------------------------
 // Agents card — editorial table
 // ------------------------------------------------------------
 .agents-card {
@@ -74,7 +114,7 @@
 
 .agents-row {
   display: grid;
-  grid-template-columns: 52px minmax(160px, 2fr) 80px 80px 80px 80px 70px;
+  grid-template-columns: 52px minmax(160px, 2fr) 68px 80px 94px 148px 76px 70px;
   align-items: center;
   padding: 8px 20px;
   border-bottom: 1px solid var(--border);
@@ -151,6 +191,34 @@
   text-align: left;
 }
 
+.cell--most-serviced {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.most-serviced-value {
+  font-size: 12px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.most-serviced-count {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.most-serviced-sep {
+  color: var(--muted);
+  margin: 0 1px;
+}
+
+.most-serviced-total {
+  color: var(--ink-muted);
+}
+
 // Days-active cell: value + editorial cadence label
 .cell--days {
   display: flex;
@@ -166,10 +234,12 @@
   line-height: 1.1;
 }
 
-.days-unit {
+.days-unit,
+.duration-unit,
+.per-day-unit {
   font-size: 10px;
   color: var(--muted);
-  margin-left: 1px;
+  margin-left: 2px;
 }
 
 .days-label {
@@ -292,7 +362,7 @@
 // Responsive
 @media (max-width: 1200px) {
   .agents-row {
-    grid-template-columns: 44px minmax(140px, 2fr) 70px 70px 70px 70px 60px;
+    grid-template-columns: 44px minmax(130px, 2fr) 60px 70px 80px 130px 66px 60px;
     padding: 6px 16px;
   }
   .agents-card__head {
@@ -303,11 +373,14 @@
 @media (max-width: 1024px) {
   .row-charts-1-1 { grid-template-columns: 1fr; }
   .agents-row {
-    grid-template-columns: 50px 1fr 70px 80px;
+    grid-template-columns: 50px 1fr 60px 60px;
     font-size: 12px;
   }
-  .cell--code,
-  .cell--num:nth-child(7) {
+  // Hide Avg Min (4), Avg/Day (5), Service (6), Airline (7); keep Rank, Agent, PRM, Days.
+  .cell:nth-child(4),
+  .cell:nth-child(5),
+  .cell:nth-child(6),
+  .cell:nth-child(7) {
     display: none;
   }
   .rank-num { font-size: 22px; }
