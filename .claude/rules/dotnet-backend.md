@@ -72,7 +72,7 @@ Rules:
 - **Access token** — 15 minutes, signed HS256 with secret from `Jwt:Secret` config
 - **Refresh token** — 7 days, stored as raw token in `refresh_tokens` table (POC compromise — production should hash via SHA-256), delivered as httpOnly + Secure + SameSite=Strict cookie scoped to `/api/auth`
 - **JWT claims** — `sub` (employee id), `tenant_id`, `tenant_slug`, `name`, `airports` (list)
-- **Airport RBAC** — PRM Service middleware validates `?airport=X` against JWT `airports` claim; 403 on mismatch
+- **Airport RBAC** — PRM Service middleware parses `?airport=…` (accepts one code or a CSV like `DEL,BOM`) and validates **every** requested airport against the JWT `airports` claim; 403 on any mismatch. In query logic use `PrmFilterParams.AirportList` (not the raw `Airport` string) — same contract as `AirlineList`/`ServiceList`/`HandledByList`; `BaseQueryService.ApplyFilters` handles the single vs. multi-airport branch
 
 ## Configuration
 

@@ -10,9 +10,10 @@ namespace PrmDashboard.Shared.DTOs;
 ///     an explicit [FromQuery(Name = ...)] because ASP.NET Core's default model
 ///     binder does NOT strip underscores (so `handled_by` would silently not
 ///     bind to `HandledBy`).
-///   * `Airline`, `Service`, `HandledBy` accept a comma-delimited list of values
-///     (e.g. `?airline=AI,BA` or a single value). Use <see cref="AirlineList"/>
-///     etc. in query logic to get the parsed array — DO NOT split manually.
+///   * `Airport`, `Airline`, `Service`, `HandledBy` accept a comma-delimited list
+///     of values (e.g. `?airport=DEL,BOM` or `?airline=AI,BA`). Use <see cref="AirportList"/>
+///     / <see cref="AirlineList"/> etc. in query logic to get the parsed array
+///     — DO NOT split manually.
 /// </summary>
 public class PrmFilterParams
 {
@@ -46,6 +47,7 @@ public class PrmFilterParams
     // empty-filtered array. Returns null when the underlying field is unset
     // so callers can cheaply test `is { Length: > 0 }`.
 
+    public string[]? AirportList => SplitCsv(Airport);
     public string[]? AirlineList => SplitCsv(Airline);
     public string[]? ServiceList => SplitCsv(Service);
     public string[]? HandledByList => SplitCsv(HandledBy);

@@ -69,7 +69,7 @@ export class Top10Component {
       toObservable(this.topX),
     ]).pipe(
       switchMap(([, limit]) => {
-        if (!this.filters.airport() || !this.filters.dateFrom()) {
+        if (this.filters.airport().length === 0 || !this.filters.dateFrom()) {
           return EMPTY;
         }
         this.loading.set(true);

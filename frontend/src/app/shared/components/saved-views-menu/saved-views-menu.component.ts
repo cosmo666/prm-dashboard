@@ -167,7 +167,7 @@ export class SavedViewsMenuComponent {
     e.preventDefault();
     if (!this.canSave()) return;
     this.store.save(this.draftName(), {
-      airport: this.filters.airport(),
+      airport: [...this.filters.airport()],
       datePreset: this.filters.datePreset(),
       dateFrom: this.filters.dateFrom(),
       dateTo: this.filters.dateTo(),
@@ -188,7 +188,7 @@ export class SavedViewsMenuComponent {
     // Translate SavedView's camelCase shape into the snake_case CSV form the
     // FilterStore expects via loadFromQueryParams (which re-parses CSV → array).
     this.filters.loadFromQueryParams({
-      airport: f.airport ?? '',
+      airport: (f.airport ?? []).join(','),
       date_from: f.dateFrom ?? '',
       date_to: f.dateTo ?? '',
       airline: (f.airline ?? []).join(','),
@@ -212,7 +212,7 @@ export class SavedViewsMenuComponent {
   isActive(v: SavedView): boolean {
     const f = v.filters;
     return (
-      (f.airport ?? '') === this.filters.airport() &&
+      sameSet(f.airport ?? [], this.filters.airport()) &&
       f.datePreset === this.filters.datePreset() &&
       (f.dateFrom ?? '') === this.filters.dateFrom() &&
       (f.dateTo ?? '') === this.filters.dateTo() &&
@@ -225,7 +225,7 @@ export class SavedViewsMenuComponent {
   describe(v: SavedView): string {
     const bits: string[] = [];
     const f = v.filters;
-    if (f.airport) bits.push(f.airport);
+    if (f.airport && f.airport.length > 0) bits.push(summarize('Airports', f.airport));
     bits.push(this.labelForPreset(f.datePreset));
     if (f.airline && f.airline.length > 0) bits.push(summarize('Airlines', f.airline));
     if (f.service && f.service.length > 0) bits.push(summarize('Services', f.service));

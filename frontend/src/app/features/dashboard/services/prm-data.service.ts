@@ -128,7 +128,7 @@ export class PrmDataService {
 
   // Filters & records
   filterOptions(): Observable<FilterOptionsResponse> {
-    return this.api.get<FilterOptionsResponse>('/prm/filters/options', { airport: this.filters.airport() });
+    return this.api.get<FilterOptionsResponse>('/prm/filters/options', { airport: this.filters.airport().join(',') });
   }
   records(page: number, size: number): Observable<PaginatedResponse<PrmRecordDto>> {
     return this.api.get<PaginatedResponse<PrmRecordDto>>('/prm/records', this.params({ page, size }));

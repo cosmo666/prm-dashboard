@@ -76,8 +76,15 @@ public class RecordService : BaseQueryService
     {
         await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
 
-        var rows = await db.PrmServices.AsNoTracking()
-            .Where(r => r.Id == prmId && r.LocName == airport)
+        // Airport may be a CSV (e.g. "DEL,BOM"); a single PRM record lives at
+        // one airport, so we just need any of the requested airports to match.
+        var airports = airport.Split(
+            ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        var baseQuery = db.PrmServices.AsNoTracking().Where(r => r.Id == prmId);
+        var rows = await (airports.Length > 0
+                ? baseQuery.Where(r => airports.Contains(r.LocName))
+                : baseQuery.Where(r => r.LocName == airport))
             .OrderBy(r => r.RowId)
             .ToListAsync(ct);
 

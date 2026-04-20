@@ -53,6 +53,24 @@ public class AirportAccessMiddleware
             return;
         }
 
+        // Multi-airport: airport param may be a CSV (e.g. "DEL,BOM"). Every
+        // requested airport must be present in the user's JWT airports claim.
+        var requestedAirports = airportParam.Split(
+            ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (requestedAirports.Length == 0)
+        {
+            context.Response.StatusCode = 400;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                title = "Bad Request",
+                status = 400,
+                detail = "The 'airport' query parameter is required."
+            }));
+            return;
+        }
+
         var airportsClaim = context.User.FindFirstValue("airports");
         if (string.IsNullOrEmpty(airportsClaim))
         {
@@ -70,10 +88,13 @@ public class AirportAccessMiddleware
         }
 
         var allowedAirports = airportsClaim.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (!allowedAirports.Contains(airportParam.Trim(), StringComparer.OrdinalIgnoreCase))
+        var denied = requestedAirports
+            .Where(a => !allowedAirports.Contains(a, StringComparer.OrdinalIgnoreCase))
+            .ToArray();
+        if (denied.Length > 0)
         {
-            _logger.LogWarning("User {Sub} attempted access to airport {Airport} but allowed airports are [{Allowed}]",
-                context.User.FindFirstValue(ClaimTypes.NameIdentifier), airportParam, airportsClaim);
+            _logger.LogWarning("User {Sub} attempted access to airports [{Denied}] but allowed airports are [{Allowed}]",
+                context.User.FindFirstValue(ClaimTypes.NameIdentifier), string.Join(",", denied), airportsClaim);
             context.Response.StatusCode = 403;
             context.Response.ContentType = "application/problem+json";
             await context.Response.WriteAsync(JsonSerializer.Serialize(new
@@ -81,7 +102,7 @@ public class AirportAccessMiddleware
                 type = "https://tools.ietf.org/html/rfc9110#section-15.5.4",
                 title = "Forbidden",
                 status = 403,
-                detail = $"Access denied for airport '{airportParam}'."
+                detail = $"Access denied for airport(s) '{string.Join(",", denied)}'."
             }));
             return;
         }

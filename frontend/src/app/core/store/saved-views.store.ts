@@ -9,14 +9,14 @@ export interface SavedView {
   name: string;
   createdAt: number;
   filters: {
-    airport?: string;
-    datePreset: string;
-    dateFrom: string;
-    dateTo: string;
-    // Multi-value filters — stored as arrays (e.g. ["AI", "BA"]).
+    // Multi-value filters — stored as arrays (e.g. ["DEL", "BOM"], ["AI", "BA"]).
     // Older saved views may contain a plain string here; `loadFromStorage()`
     // coerces them on read so existing views keep working after the
     // single-select → multi-select migration.
+    airport?: string[];
+    datePreset: string;
+    dateFrom: string;
+    dateTo: string;
     airline?: string[];
     service?: string[];
     handledBy?: string[];
@@ -98,6 +98,7 @@ export class SavedViewsStore {
       ...v,
       filters: {
         ...f,
+        airport: toArray(f.airport),
         airline: toArray(f.airline),
         service: toArray(f.service),
         handledBy: toArray(f.handledBy),

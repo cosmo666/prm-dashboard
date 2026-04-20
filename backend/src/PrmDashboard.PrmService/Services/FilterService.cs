@@ -15,8 +15,9 @@ public class FilterService : BaseQueryService
     }
 
     /// <summary>
-    /// Returns distinct filter option values for the given airport.
-    /// Used to populate dropdown menus in the dashboard filter bar.
+    /// Returns distinct filter option values for the given airport(s).
+    /// Accepts a single airport code or a CSV (e.g. "DEL,BOM") so the dashboard
+    /// can populate dropdowns when the user picks multiple airports together.
     /// </summary>
     public async Task<FilterOptionsResponse> GetOptionsAsync(
         string tenantSlug,
@@ -25,8 +26,12 @@ public class FilterService : BaseQueryService
     {
         await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
 
-        var query = db.PrmServices.AsNoTracking()
-            .Where(r => r.LocName == airport);
+        var airports = airport.Split(
+            ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        var query = airports.Length > 0
+            ? db.PrmServices.AsNoTracking().Where(r => airports.Contains(r.LocName))
+            : db.PrmServices.AsNoTracking().Where(r => r.LocName == airport);
 
         var airlines = await query
             .Select(r => r.Airline)

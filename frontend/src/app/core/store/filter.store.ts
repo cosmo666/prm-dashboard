@@ -9,12 +9,13 @@ export type DatePreset =
   | 'custom';
 
 export interface FilterState {
-  airport: string;
+  // Multi-select filters — serialized to URL as comma-delimited strings
+  // (e.g. `airport=DEL,BOM` or `airline=AI,BA`). Empty array means
+  // "no filter / all values".
+  airport: string[];
   datePreset: DatePreset;
   dateFrom: string;
   dateTo: string;
-  // Multi-select filters — serialized to URL as comma-delimited strings
-  // (e.g. `airline=AI,BA`). Empty array means "no filter / all values".
   airline: string[];
   service: string[];
   handledBy: string[];
@@ -24,7 +25,7 @@ export interface FilterState {
 }
 
 const initialState: FilterState = {
-  airport: '',
+  airport: [],
   datePreset: 'mtd',
   dateFrom: '',
   dateTo: '',
@@ -51,7 +52,7 @@ export const FilterStore = signalStore(
     queryParams: computed(() => {
       const params: Record<string, string> = {};
 
-      if (state.airport()) params['airport'] = state.airport();
+      if (state.airport().length > 0) params['airport'] = state.airport().join(',');
       if (state.dateFrom()) params['date_from'] = state.dateFrom();
       if (state.dateTo()) params['date_to'] = state.dateTo();
 
@@ -74,8 +75,18 @@ export const FilterStore = signalStore(
     ),
   })),
   withMethods((store) => ({
-    setAirport(airport: string): void {
-      patchState(store, { airport });
+    setAirport(value: string[] | string | null): void {
+      patchState(store, { airport: normalize(value) });
+    },
+    toggleAirport(code: string): void {
+      const current = store.airport();
+      const next = current.includes(code)
+        ? current.filter((c) => c !== code)
+        : [...current, code];
+      patchState(store, { airport: next });
+    },
+    removeAirport(value: string): void {
+      patchState(store, { airport: store.airport().filter((v) => v !== value) });
     },
     setDateRange(preset: DatePreset, from: string, to: string): void {
       patchState(store, { datePreset: preset, dateFrom: from, dateTo: to });
@@ -106,7 +117,7 @@ export const FilterStore = signalStore(
     },
     loadFromQueryParams(params: Record<string, string>): void {
       patchState(store, {
-        airport: params['airport'] || '',
+        airport: parseCsv(params['airport']),
         dateFrom: params['date_from'] || '',
         dateTo: params['date_to'] || '',
         airline: parseCsv(params['airline']),

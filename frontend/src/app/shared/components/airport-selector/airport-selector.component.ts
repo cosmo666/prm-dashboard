@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
 import { AuthStore } from '../../../core/store/auth.store';
@@ -14,7 +14,7 @@ import { FilterStore } from '../../../core/store/filter.store';
       [matMenuTriggerFor]="airportMenu"
       [disabled]="airports().length <= 1"
       type="button"
-      [attr.aria-label]="'Airport: ' + (activeAirport()?.name ?? 'none')">
+      [attr.aria-label]="'Airports: ' + labelText()">
       <div class="ap__icon">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
@@ -22,12 +22,12 @@ import { FilterStore } from '../../../core/store/filter.store';
       </div>
 
       <div class="ap__body">
-        <div class="ap__code font-data">{{ activeAirport()?.code ?? '—' }}</div>
-        <div class="ap__name">{{ activeAirport()?.name ?? 'No airport' }}</div>
+        <div class="ap__code font-data">{{ codeText() }}</div>
+        <div class="ap__name">{{ nameText() }}</div>
       </div>
 
       <div class="ap__count" *ngIf="airports().length > 1">
-        <span class="font-data">{{ airports().length }}</span>
+        <span class="font-data">{{ selected().length }} / {{ airports().length }}</span>
       </div>
 
       <svg *ngIf="airports().length > 1" class="ap__caret" width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -36,24 +36,32 @@ import { FilterStore } from '../../../core/store/filter.store';
     </button>
 
     <mat-menu #airportMenu="matMenu" xPosition="before" class="ap-menu">
-      <div class="ap-menu__wrap">
+      <div class="ap-menu__wrap" (click)="$event.stopPropagation()">
         <div class="ap-menu__head">
-          <div class="label-micro">Select station</div>
+          <div class="label-micro">Select stations</div>
+          <button
+            type="button"
+            class="ap-menu__all"
+            (click)="toggleAll($event)">
+            {{ allSelected() ? 'Clear all' : 'Select all' }}
+          </button>
         </div>
         @for (a of airports(); track a.code) {
           <button
             mat-menu-item
             type="button"
             class="ap-menu__item"
-            [class.is-active]="a.code === filters.airport()"
-            (click)="onSelect(a.code)">
+            [class.is-active]="isSelected(a.code)"
+            (click)="onToggle(a.code, $event)">
+            <span class="ap-menu__check-box" [class.is-checked]="isSelected(a.code)" aria-hidden="true">
+              @if (isSelected(a.code)) {
+                <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                  <path d="M2 7l3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              }
+            </span>
             <div class="ap-menu__code font-data">{{ a.code }}</div>
             <div class="ap-menu__name">{{ a.name }}</div>
-            @if (a.code === filters.airport()) {
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" class="ap-menu__check">
-                <path d="M2 7l3 3 7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            }
           </button>
         }
       </div>
@@ -107,6 +115,10 @@ import { FilterStore } from '../../../core/store/filter.store';
       font-weight: 600;
       color: var(--ink);
       letter-spacing: 0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
     }
 
     .ap__name {
@@ -115,7 +127,7 @@ import { FilterStore } from '../../../core/store/filter.store';
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 180px;
+      max-width: 200px;
       margin-top: 4px;
       padding-top: 4px;
       border-top: 1px solid var(--border);
@@ -150,9 +162,31 @@ import { FilterStore } from '../../../core/store/filter.store';
     }
 
     :host ::ng-deep .ap-menu__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       padding: 8px 12px 10px;
       border-bottom: 1px solid var(--border);
       margin-bottom: 4px;
+      gap: 12px;
+    }
+
+    :host ::ng-deep .ap-menu__all {
+      background: transparent;
+      border: none;
+      padding: 2px 6px;
+      font-family: var(--font-sans);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent-fg, var(--ink));
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    :host ::ng-deep .ap-menu__all:hover {
+      background: var(--surface-2);
     }
 
     :host ::ng-deep .ap-menu__item {
@@ -177,6 +211,25 @@ import { FilterStore } from '../../../core/store/filter.store';
       color: var(--accent-fg) !important;
     }
 
+    :host ::ng-deep .ap-menu__check-box {
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--accent-fg, var(--ink));
+      background: var(--surface);
+      transition: background 150ms ease, border-color 150ms ease;
+    }
+
+    :host ::ng-deep .ap-menu__check-box.is-checked {
+      background: var(--accent-bg);
+      border-color: var(--accent-fg, var(--ink));
+    }
+
     :host ::ng-deep .ap-menu__code {
       font-family: var(--font-mono) !important;
       font-size: 13px !important;
@@ -193,11 +246,6 @@ import { FilterStore } from '../../../core/store/filter.store';
       overflow: hidden !important;
       text-overflow: ellipsis !important;
     }
-
-    :host ::ng-deep .ap-menu__check {
-      color: var(--accent-fg) !important;
-      flex-shrink: 0;
-    }
   `],
 })
 export class AirportSelectorComponent {
@@ -205,22 +253,68 @@ export class AirportSelectorComponent {
   filters = inject(FilterStore);
 
   airports = computed(() => this.auth.employee()?.airports ?? []);
-  activeAirport = computed<{ code: string; name: string } | undefined>(() => {
-    const code = this.filters.airport();
-    return this.airports().find((a) => a.code === code) ?? this.airports()[0];
+  selected = computed(() => this.filters.airport());
+
+  allSelected = computed(() =>
+    this.airports().length > 0 && this.selected().length === this.airports().length,
+  );
+
+  codeText = computed(() => {
+    const codes = this.selected();
+    if (codes.length === 0) return '—';
+    if (codes.length === 1) return codes[0];
+    if (this.allSelected()) return 'All stations';
+    return codes.join(', ');
   });
 
+  nameText = computed(() => {
+    const codes = this.selected();
+    const list = this.airports();
+    if (codes.length === 0) return 'No airport';
+    if (codes.length === 1) {
+      return list.find((a) => a.code === codes[0])?.name ?? codes[0];
+    }
+    return `${codes.length} stations selected`;
+  });
+
+  labelText = computed(() => this.selected().join(', ') || 'none');
+
   constructor() {
+    // On first load, default to the first airport so the dashboard has data.
+    // Reload from URL will replace this via loadFromQueryParams.
     effect(() => {
       const list = this.airports();
-      if (list.length > 0 && !this.filters.airport()) {
-        this.filters.setAirport(list[0].code);
+      if (list.length > 0 && this.filters.airport().length === 0) {
+        this.filters.setAirport([list[0].code]);
       }
     }, { allowSignalWrites: true });
   }
 
-  onSelect(code: string): void {
-    this.filters.setAirport(code);
+  isSelected(code: string): boolean {
+    return this.selected().includes(code);
+  }
+
+  onToggle(code: string, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    const current = this.selected();
+    // Prevent de-selecting the last remaining airport — a dashboard with no
+    // airport selected would render empty and look broken.
+    if (current.length === 1 && current[0] === code) return;
+    this.filters.toggleAirport(code);
+    this.filters.clearSecondary();
+  }
+
+  toggleAll(event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (this.allSelected()) {
+      // Fall back to the first airport rather than clearing completely.
+      const first = this.airports()[0]?.code;
+      this.filters.setAirport(first ? [first] : []);
+    } else {
+      this.filters.setAirport(this.airports().map((a) => a.code));
+    }
     this.filters.clearSecondary();
   }
 }

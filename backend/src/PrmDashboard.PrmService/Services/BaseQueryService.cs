@@ -26,8 +26,12 @@ public abstract class BaseQueryService
         TenantDbContext db,
         PrmFilterParams filters)
     {
-        var query = db.PrmServices.AsNoTracking()
-            .Where(r => r.LocName == filters.Airport);
+        // Airport: CSV (`DEL,BOM`) or single (`DEL`). Middleware has already
+        // verified every airport is permitted for the authenticated user.
+        var airports = filters.AirportList;
+        var query = airports is { Length: > 0 }
+            ? db.PrmServices.AsNoTracking().Where(r => airports.Contains(r.LocName))
+            : db.PrmServices.AsNoTracking().Where(r => r.LocName == filters.Airport);
 
         if (filters.DateFrom.HasValue)
             query = query.Where(r => r.ServiceDate >= filters.DateFrom.Value);

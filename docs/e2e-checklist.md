@@ -14,6 +14,7 @@ Each scenario must pass before marking the POC complete.
 - [ ] Login as aeroground/john → dropdown shows BLR, HYD only (no DEL)
 - [ ] Login as aeroground/ravi → dropdown shows DEL only (disabled dropdown)
 - [ ] In DevTools, force-modify airport query param to 'BLR' while logged in as ravi → expect 403 from PRM Service
+- [ ] While logged in as aeroground/john, modify airport query param to 'BLR,DEL' → expect 403 (DEL is outside the claim, even though BLR is allowed)
 - [ ] Login as skyserve/deepak → shows MAA only, cannot see other airports
 
 ## Auth Flow
@@ -64,6 +65,19 @@ Each scenario must pass before marking the POC complete.
 - [ ] All date presets produce correct date ranges
 - [ ] Clear All resets secondary filters
 - [ ] Filter chips appear and are removable
+
+## Multi-airport selection
+
+- [ ] Airport selector button is disabled for users with only one airport (e.g. aeroground/ravi on DEL)
+- [ ] Users with 2+ airports see a checkbox menu with Select all / Clear all
+- [ ] Selecting a second airport updates every chart and KPI without a page reload
+- [ ] URL reflects the selection as CSV, e.g. `?airport=BLR,HYD`
+- [ ] Reloading the page restores the multi-airport selection from the URL
+- [ ] "Select all" populates every airport in the user's claim; header shows "All stations" + `N/N`
+- [ ] "Clear all" falls back to the first airport — the dashboard never renders with zero airports selected
+- [ ] Un-checking the only remaining airport is a no-op (you cannot empty the selection via checkbox)
+- [ ] Saved views persist the airport array and re-apply it (including multi-airport selections)
+- [ ] Changing airport selection clears secondary filters (airline/service/handled_by)
 
 ## Edge Cases
 - [ ] Select a date range with no data → charts show "No data matches current filters" empty state

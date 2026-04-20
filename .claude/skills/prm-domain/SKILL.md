@@ -55,7 +55,7 @@ A person who provides PRM services. Tracked by `agent_no` (stable ID across the 
 
 ### Airport
 
-Identified by 3-letter IATA code (`BLR`, `HYD`, `DEL`, `BOM`, `MAA`, `SYD`, `KUL`, `JFK`, etc.). Each employee in the system is assigned to one or more airports via `employee_airports`. Dashboard queries always filter by a single airport.
+Identified by 3-letter IATA code (`BLR`, `HYD`, `DEL`, `BOM`, `MAA`, `SYD`, `KUL`, `JFK`, etc.). Each employee is assigned to one or more airports via `employee_airports`. Dashboard queries filter by **one or more** airports — the UI exposes a checkbox multi-select and the API accepts `?airport=DEL,BOM` (comma-separated, same convention as the other multi-value filters).
 
 ## The pause/resume model — critical for dedup
 
@@ -97,6 +97,8 @@ double minutes = (hhmm / 100) * 60 + (hhmm % 100);
 **Gotcha:** Do NOT write range queries like `WHERE start_time > 800 AND start_time < 1700` without understanding that this is HHMM encoding, not minutes. That range excludes services starting at 0830 (830) because 830 > 800 is true but 830 is 08:30, not 13:50.
 
 ## Common calculations
+
+> The snippets below use `WHERE loc_name = :airport` to keep them readable. For multi-airport filtering swap in `WHERE loc_name IN (:airports)` — the API accepts CSV on `?airport` and `BaseQueryService.ApplyFilters` picks the right branch.
 
 ### Total PRM services for a date range
 
@@ -227,7 +229,7 @@ This is hardcoded in the frontend for visual consistency. No server-side logic a
 | **Service Breakup** | "What's the mix of service types?" | 9-way service split, monthly matrix, duration per type, day-of-week pattern |
 | **Fulfillment** | "Are we meeting demand?" | Requested vs provided, Agent Type → Service → Flight sankey, time-of-day, cumulative pace |
 
-All 4 tabs share the same filter set: airport, date range, airline, service, handled_by (SELF/OUTSOURCED).
+All tabs share the same filter set: airports (multi-select), date range, airline, service, handled_by (SELF/OUTSOURCED).
 
 ## References
 

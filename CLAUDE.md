@@ -105,7 +105,8 @@ docker compose exec mysql mysql -uroot -prootpassword -e "SHOW DATABASES;"
 | 2026-04-08 | Multi-tenant with master DB + per-tenant DBs | True data isolation; each tenant can live on a different MySQL instance |
 | 2026-04-08 | Tenant resolved via subdomain → slug → `X-Tenant-Slug` header | Industry-standard SaaS pattern; gateway owns the slug extraction |
 | 2026-04-08 | JWT in memory + httpOnly refresh cookie (15 min / 7 day) | XSS-resistant access tokens, CSRF-resistant refresh |
-| 2026-04-08 | Airport-level RBAC enforced on PRM Service middleware | Validates `?airport=X` against JWT `airports` claim; 403 on mismatch |
+| 2026-04-08 | Airport-level RBAC enforced on PRM Service middleware | Validates `?airport=…` against JWT `airports` claim; 403 on any mismatch |
+| 2026-04-20 | Airport filter accepts comma-separated values (`?airport=DEL,BOM`) | Same wire convention as `airline`/`service`/`handled_by`; `PrmFilterParams.AirportList` parses, `BaseQueryService.ApplyFilters` switches to `IN` when multiple airports are present; frontend `FilterStore.airport: string[]` + multi-select airport selector |
 | 2026-04-08 | Dedup via `COUNT(DISTINCT id)` in `prm_services` | Pause/resume creates multiple rows with the same `id`; each service counts once |
 | 2026-04-08 | Duration = sum of active segments per id (SQL-level) | Correctly handles paused/resumed services |
 | 2026-04-08 | AES-256 at rest for tenant DB credentials in master DB | Credentials are high-value targets; encryption is cheap |
@@ -153,50 +154,23 @@ docker compose exec mysql mysql -uroot -prootpassword -e "SHOW DATABASES;"
 - `architecture.md` — system architecture, component responsibilities, data flow (PRM-specific)
 - `dotnet-backend.md` — .NET 8 conventions, EF Core patterns, multi-tenant access, JWT auth, MySqlConnector, anti-patterns
 - `angular-frontend.md` — Angular 17 standalone-component conventions, NgRx Signal Store, ECharts wrappers, RBAC patterns
-- `agents.md` — when to delegate to which subagent
-- `coding-style.md`, `development-workflow.md`, `git-workflow.md`, `security.md`, `testing.md`, `performance.md` — language-agnostic engineering principles
-- `memory-decisions.md` — dated technical decisions log (PRM entries from 2026-04-08)
-- `memory-sessions.md` — running session log (newest at top)
-- `memory-profile.md`, `memory-preferences.md`, `memory-private.md` — user/personal context
-- `auto-sync.md` — rule that CLAUDE.md stays in sync with actual code structure
 
 **Skills** (`.claude/skills/`):
 
 - `prm-domain/` — PRM domain knowledge: IATA SSR codes (WCHR/WCHC/MAAS/etc.), HHMM time encoding, pause/resume dedup pattern, common SQL aggregations, time-of-day patterns, airline region color coding. **Use this whenever writing dashboard queries, charts, or any code that touches `prm_services` data.**
 
-**Hooks** (`.claude/hooks/`):
-
-- `check-sync.sh` — post-task hook that detects drift between `.claude/` files and `CLAUDE.md` (warns if a rule/skill/agent/hook exists but isn't mentioned here)
-- `stop-reflect.sh` — post-task reflection hook
-
-**Agents** (`.claude/agents/`):
-
-- `planner` — breaks features into implementation steps with file changes. Use for "plan", "implement", "add feature", "build"
-- `architect` — makes system design decisions with documented tradeoffs. Use for "design", "architecture", "how should I structure"
-- `code-reviewer` — reviews code quality, security, maintainability. Use after implementing a feature, before committing
-
 ## How Claude should use this infrastructure
 
 **Before any new feature work:**
 
-1. Read the relevant rule files (`dotnet-backend.md` or `angular-frontend.md` based on the layer)
+1. Read the relevant rule file (`dotnet-backend.md` or `angular-frontend.md`) for the layer you're touching
 2. Invoke the `prm-domain` skill if the work touches PRM data, queries, charts, or dashboards
-3. Check `memory-decisions.md` to understand prior architectural choices and avoid contradicting them
-
-**Before delegating a task:**
-
-- See `.claude/rules/agents.md` for which subagent to use
-- For executing the implementation plan task-by-task, use `superpowers:subagent-driven-development`
+3. Skim the **Architecture decisions** table above to avoid contradicting prior choices
 
 **When making a non-trivial decision:**
 
-- Add a dated entry to `memory-decisions.md` with the rationale
-- If the decision affects rule files (e.g., changes a coding convention), update the relevant rule file too
-
-**After completing substantive work:**
-
-- Add a one-line entry to `memory-sessions.md` (newest at top)
-- The `check-sync.sh` hook will warn if you added a new rule/skill/agent/hook without mentioning it here
+- Add a dated row to the **Architecture decisions** table above with the rationale
+- If the decision affects a rule file (e.g., changes a coding convention), update the relevant rule too
 
 ## Multi-tenant onboarding
 
@@ -233,4 +207,4 @@ When adding a new tenant, the flow is:
 
 **POC is feature-complete.** All 21 tasks across 9 phases implemented and reviewed.
 
-Last updated: 2026-04-13 (dashboard UI polish: chart axis labels + units, agents table "Most Serviced" column)
+Last updated: 2026-04-20 (multi-airport filter: `?airport=DEL,BOM` end-to-end; dashboard airport selector is now a checkbox multi-select with Select-all / Clear-all)

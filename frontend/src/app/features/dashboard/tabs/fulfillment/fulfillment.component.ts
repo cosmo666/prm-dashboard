@@ -48,7 +48,7 @@ export class FulfillmentComponent {
   constructor() {
     toObservable(this.filters.queryParams).pipe(
       switchMap(() => {
-        if (!this.filters.airport() || !this.filters.dateFrom()) {
+        if (this.filters.airport().length === 0 || !this.filters.dateFrom()) {
           return EMPTY;
         }
         this.loading.set(true);

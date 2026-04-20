@@ -152,6 +152,15 @@ If you need a chart type that isn't wrapped yet, ADD a new wrapper in `shared/ch
 - **Route guards** — protected routes via `authGuard`; no unauthenticated access
 - **Hide, don't disable, forbidden UI** — if a user can't interact with something, don't show it at all (disabled buttons are information leakage)
 
+## Airport filter (multi-select)
+
+- **Shape:** `FilterStore.airport` is a `string[]` — users can pick one or many airports from the JWT-scoped list
+- **URL / wire:** serialised as a single comma-delimited `airport` query param (`?airport=DEL,BOM`), identical to how `airline`, `service`, `handled_by` are serialised
+- **Methods:** `setAirport(value)` accepts `string | string[] | null`; `toggleAirport(code)` and `removeAirport(code)` are the common mutators — don't patch the array directly
+- **Empty check:** use `filters.airport().length === 0`, **not** `!filters.airport()` — the array is always truthy
+- **Invariant:** never let the user de-select the last airport — the `AirportSelector` guards against it so the dashboard always has data to render
+- **RBAC:** every airport sent to the API must be in `AuthStore.employee()!.airports`; the backend middleware enforces this and rejects with 403 if any value is outside the claim
+
 ## Linting & build
 
 - **ESLint** with `@angular-eslint` plugins + `@typescript-eslint`
@@ -189,6 +198,6 @@ npm run lint                               # ng lint
 The frontend runs for any tenant — never hardcode tenant slugs, airport codes, or service types beyond the 9 IATA SSR codes (see `prm-domain` skill):
 
 - **Tenant slug** — extracted from `window.location.hostname` in `TenantResolver`, stored in `TenantStore`
-- **Airports** — always read from `AuthStore.employee()!.airports` (comes from JWT claim)
+- **Airports** — always read from `AuthStore.employee()!.airports` (comes from JWT claim); the active selection lives in `FilterStore.airport: string[]` (multi-select — see "Airport filter" above)
 - **Airlines/services in filters** — fetched dynamically from `/api/prm/filters/options`
 - **Tenant branding** — logo and primary color applied from `TenantStore` — CSS custom properties are the cleanest way to theme
