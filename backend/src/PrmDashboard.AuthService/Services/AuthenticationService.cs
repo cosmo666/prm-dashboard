@@ -111,13 +111,13 @@ public class AuthenticationService
         return Task.FromResult(new RefreshTokenIssued(token, expiresAt));
     }
 
-    public async Task<(string? accessToken, RefreshTokenIssued? newRefreshToken)> RefreshAsync(
+    public async Task<(string? accessToken, string? newRefreshToken, DateTime? newExpiresAt)> RefreshAsync(
         string token, CancellationToken ct = default)
     {
         if (!_tokens.TryConsume(token, out var consumed))
         {
             _logger.LogWarning("Refresh failed: token not found, already consumed, or expired");
-            return (null, null);
+            return (null, null, null);
         }
 
         await using var session = await _duck.AcquireAsync(ct);
@@ -125,14 +125,14 @@ public class AuthenticationService
         if (employee is null)
         {
             _logger.LogWarning("Refresh failed: employee {EmployeeId} no longer exists or is inactive", consumed.EmployeeId);
-            return (null, null);
+            return (null, null, null);
         }
 
         // Materialized employee.Airports + TenantId already populated; pass directly
         var accessToken = _jwt.GenerateAccessToken(employee, consumed.TenantSlug);
         var issued = await CreateRefreshTokenAsync(consumed.EmployeeId, consumed.TenantSlug, ct);
 
-        return (accessToken, issued);
+        return (accessToken, issued.Token, issued.ExpiresAt);
     }
 
     public Task RevokeRefreshTokenAsync(string token, CancellationToken ct = default)

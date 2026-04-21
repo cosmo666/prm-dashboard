@@ -52,11 +52,11 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(token))
             return Problem(detail: "No refresh token", statusCode: 401, title: "Unauthorized");
 
-        var (accessToken, newRefreshToken) = await _authService.RefreshAsync(token, ct);
-        if (accessToken is null || newRefreshToken is null)
+        var (accessToken, newRefreshToken, newExpiresAt) = await _authService.RefreshAsync(token, ct);
+        if (accessToken == null || newRefreshToken == null || newExpiresAt == null)
             return Problem(detail: "Invalid or expired refresh token", statusCode: 401, title: "Unauthorized");
 
-        SetRefreshTokenCookie(newRefreshToken.Token, newRefreshToken.ExpiresAt);
+        SetRefreshTokenCookie(newRefreshToken, newExpiresAt.Value);
         return Ok(new RefreshResponse(accessToken));
     }
 
