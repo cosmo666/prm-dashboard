@@ -2,10 +2,9 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using PrmDashboard.AuthService.Data;
 using PrmDashboard.AuthService.Services;
+using PrmDashboard.Shared.Data;
 using PrmDashboard.Shared.Logging;
 using PrmDashboard.Shared.Middleware;
 using Serilog;
@@ -22,9 +21,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var connStr = builder.Configuration.GetConnectionString("MasterDb")
-    ?? throw new InvalidOperationException("ConnectionStrings:MasterDb is required");
-
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("Jwt:Secret is required");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]
@@ -32,8 +28,26 @@ var jwtIssuer = builder.Configuration["Jwt:Issuer"]
 var jwtAudience = builder.Configuration["Jwt:Audience"]
     ?? throw new InvalidOperationException("Jwt:Audience is required");
 
-builder.Services.AddDbContext<MasterDbContext>(opt =>
-    opt.UseMySql(connStr, new MySqlServerVersion(new Version(8, 0, 36))));
+// Phase 3a foundation: DuckDB + Parquet data path
+builder.Services.Configure<DataPathOptions>(o =>
+{
+    o.Root = Environment.GetEnvironmentVariable("PRM_DATA_PATH")
+             ?? builder.Configuration["DataPath"]
+             ?? throw new InvalidOperationException(
+                 "Data path required: set PRM_DATA_PATH env var or DataPath in appsettings.");
+
+    o.PoolSize = builder.Configuration.GetValue<int?>("DataPath:PoolSize")
+                 ?? DataPathOptions.DefaultPoolSize;
+
+    if (o.PoolSize < DataPathOptions.MinPoolSize || o.PoolSize > DataPathOptions.MaxPoolSize)
+        throw new InvalidOperationException(
+            $"DataPath:PoolSize out of range [{DataPathOptions.MinPoolSize}, {DataPathOptions.MaxPoolSize}]: {o.PoolSize}");
+});
+
+builder.Services.AddHostedService<DataPathValidator>();
+builder.Services.AddSingleton<IDuckDbContext, DuckDbContext>();
+builder.Services.AddSingleton<TenantParquetPaths>();
+builder.Services.AddSingleton<InMemoryRefreshTokenStore>();
 
 // JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
