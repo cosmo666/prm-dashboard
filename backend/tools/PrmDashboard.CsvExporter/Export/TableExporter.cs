@@ -25,16 +25,16 @@ public static class TableExporter
         await conn.OpenAsync(ct);
 
         // 1. Source row count — wrap user SQL so the same filters apply.
-        int sourceCount;
+        long sourceCount;
         await using (var countCmd = conn.CreateCommand())
         {
             countCmd.CommandText = $"SELECT COUNT(*) FROM ({selectSql}) AS sub";
             var o = await countCmd.ExecuteScalarAsync(ct);
-            sourceCount = Convert.ToInt32(o);
+            sourceCount = Convert.ToInt64(o);
         }
 
         // 2. Stream SELECT into CSV
-        int rowsWritten = 0;
+        long rowsWritten = 0;
         await using (var selectCmd = conn.CreateCommand())
         {
             selectCmd.CommandText = selectSql;

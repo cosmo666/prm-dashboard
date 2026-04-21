@@ -7,6 +7,6 @@ namespace PrmDashboard.CsvExporter.Export;
 public sealed record TableExportResult(
     string Label,
     string OutputPath,
-    int RowsWritten,
-    int SourceCount,
+    long RowsWritten,
+    long SourceCount,
     bool Matches);
