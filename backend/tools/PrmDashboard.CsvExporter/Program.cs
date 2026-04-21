@@ -37,13 +37,26 @@ static async Task<int> RunAsync(string[] args)
     Console.WriteLine($"Master DB: {RedactPassword(masterConn)}");
     Console.WriteLine();
 
+    using var cts = new CancellationTokenSource();
+    Console.CancelKeyPress += (_, e) =>
+    {
+        // First Ctrl-C: cancel gracefully. Second Ctrl-C: let the runtime terminate the process.
+        if (!cts.IsCancellationRequested)
+        {
+            e.Cancel = true;
+            Console.Error.WriteLine();
+            Console.Error.WriteLine("Cancellation requested — finishing current operation. Press Ctrl-C again to force-quit.");
+            cts.Cancel();
+        }
+    };
+
     var allResults = new List<TableExportResult>();
 
     Console.WriteLine("Exporting master tables...");
-    allResults.AddRange(await MasterExporter.ExportAllAsync(masterConn, outDir));
+    allResults.AddRange(await MasterExporter.ExportAllAsync(masterConn, outDir, cts.Token));
 
     Console.WriteLine("Exporting per-tenant prm_services...");
-    allResults.AddRange(await TenantDbExporter.ExportAllAsync(masterConn, outDir, tenantHostOverride));
+    allResults.AddRange(await TenantDbExporter.ExportAllAsync(masterConn, outDir, tenantHostOverride, cts.Token));
 
     Console.WriteLine();
     Console.WriteLine("=== Summary ===");
