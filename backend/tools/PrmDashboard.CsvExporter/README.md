@@ -6,13 +6,13 @@ Dumps the entire MySQL contents — master tables plus each active tenant's `prm
 
 ## Usage
 
-Start MySQL (or point at an existing instance), then:
+Start MySQL (or point at an existing instance), then run from the repo root:
 
 ```bash
-# From repo root
-cd backend
-dotnet run --project tools/PrmDashboard.CsvExporter -- --out ../data
+dotnet run --project backend/tools/PrmDashboard.CsvExporter -- --out ./data
 ```
+
+Show all options with `--help` / `-h`.
 
 Resolution order for the master connection string:
 
@@ -21,6 +21,8 @@ Resolution order for the master connection string:
 3. `appsettings.json` — `ConnectionStrings:MasterDb`
 
 ## Output layout
+
+One directory per active tenant slug (from `tenants WHERE is_active = 1` in the master DB), plus a `master/` directory. The POC seed creates three tenants; your environment may differ:
 
 ```text
 data/
@@ -60,7 +62,11 @@ master.employees                 12       12  OK        /abs/data/master/employe
 aeroground.prm_services        4821     4821  OK        /abs/data/aeroground/prm_services.csv
 ```
 
-Exits non-zero if any row-count mismatches; success on all-OK.
+Exit codes:
+
+- `0` — all row counts match source
+- `1` — one or more tables had a row-count mismatch
+- `2` — master connection string not provided (no `--master`, no `MASTER_CONNECTION_STRING`, no `appsettings.json`)
 
 ## What is **not** exported
 
@@ -68,6 +74,16 @@ Per the phase 1 spec (lines 40–49 of the design doc):
 
 - `refresh_tokens` — obsolete; AuthService moves to in-memory store in phase 3
 - `schema_migrations` tracker rows — no migration framework in the new model
+
+## Sensitivity
+
+`data/master/tenants.csv` contains the raw `db_host`, `db_port`, `db_name`, `db_user`, and `db_password` columns from the master DB — the full connection credentials for every active tenant DB. Treat the entire `data/` directory with the same sensitivity as the master MySQL itself:
+
+- Do not commit it (already gitignored — see `.gitignore`).
+- Do not share or upload it to external tools without redacting credentials.
+- The console output redacts `Password=****` in its banner; the CSV does not.
+
+Phase 3 of the migration drops these columns from the runtime model — at that point tenant resolution becomes purely slug→folder mapping and credentials no longer live anywhere in `data/`.
 
 ## Safe to re-run
 
