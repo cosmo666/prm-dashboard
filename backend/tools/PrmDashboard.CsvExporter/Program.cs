@@ -13,6 +13,7 @@ static async Task<int> RunAsync(string[] args)
 
     var outDir = Path.GetFullPath(GetOption(args, "--out") ?? "./data");
     var masterFromArg = GetOption(args, "--master");
+    var tenantHostOverride = GetOption(args, "--tenant-host");
 
     var config = new ConfigurationBuilder()
         .SetBasePath(AppContext.BaseDirectory)
@@ -42,7 +43,7 @@ static async Task<int> RunAsync(string[] args)
     allResults.AddRange(await MasterExporter.ExportAllAsync(masterConn, outDir));
 
     Console.WriteLine("Exporting per-tenant prm_services...");
-    allResults.AddRange(await TenantDbExporter.ExportAllAsync(masterConn, outDir));
+    allResults.AddRange(await TenantDbExporter.ExportAllAsync(masterConn, outDir, tenantHostOverride));
 
     Console.WriteLine();
     Console.WriteLine("=== Summary ===");
@@ -74,9 +75,10 @@ static void PrintHelp()
     Console.WriteLine("  dotnet run --project backend/tools/PrmDashboard.CsvExporter -- [options]");
     Console.WriteLine();
     Console.WriteLine("Options:");
-    Console.WriteLine("  --out <dir>      Output directory (default: ./data)");
-    Console.WriteLine("  --master <str>   Master DB connection string (overrides env + appsettings.json)");
-    Console.WriteLine("  -h, --help       Show this help");
+    Console.WriteLine("  --out <dir>           Output directory (default: ./data)");
+    Console.WriteLine("  --master <str>        Master DB connection string (overrides env + appsettings.json)");
+    Console.WriteLine("  --tenant-host <host>  Override db_host for per-tenant connection strings (e.g., \"localhost\" when running outside the docker network; master DB still uses --master / env / appsettings)");
+    Console.WriteLine("  -h, --help            Show this help");
     Console.WriteLine();
     Console.WriteLine("Connection string resolution order:");
     Console.WriteLine("  1. --master CLI arg");

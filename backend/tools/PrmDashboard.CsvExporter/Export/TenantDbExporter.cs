@@ -20,9 +20,10 @@ public static class TenantDbExporter
     public static async Task<IReadOnlyList<TableExportResult>> ExportAllAsync(
         string masterConnectionString,
         string outDir,
+        string? tenantHostOverride = null,
         CancellationToken ct = default)
     {
-        var tenants = await LoadActiveTenantsAsync(masterConnectionString, ct);
+        var tenants = await LoadActiveTenantsAsync(masterConnectionString, tenantHostOverride, ct);
 
         var results = new List<TableExportResult>();
         foreach (var t in tenants)
@@ -42,6 +43,7 @@ public static class TenantDbExporter
 
     private static async Task<IReadOnlyList<ActiveTenant>> LoadActiveTenantsAsync(
         string masterConnectionString,
+        string? tenantHostOverride,
         CancellationToken ct)
     {
         const string sql = """
@@ -66,7 +68,8 @@ public static class TenantDbExporter
             var db = reader.GetString(3);
             var user = reader.GetString(4);
             var pwd = reader.GetString(5);
-            list.Add(new ActiveTenant(slug, $"Server={host};Port={port};Database={db};User={user};Password={pwd}"));
+            var effectiveHost = tenantHostOverride ?? host;
+            list.Add(new ActiveTenant(slug, $"Server={effectiveHost};Port={port};Database={db};User={user};Password={pwd}"));
         }
         return list;
     }

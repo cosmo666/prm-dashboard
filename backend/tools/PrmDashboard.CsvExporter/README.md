@@ -20,6 +20,19 @@ Resolution order for the master connection string:
 2. `MASTER_CONNECTION_STRING` env var
 3. `appsettings.json` — `ConnectionStrings:MasterDb`
 
+### Running outside the docker network
+
+When the tool runs from the host (not inside the docker compose network), the `db_host` column stored in `tenants` will be the docker-internal hostname (`mysql`) which won't resolve from the host. Pass `--tenant-host <hostname>` to override the host used for per-tenant connection strings:
+
+```bash
+dotnet run --project backend/tools/PrmDashboard.CsvExporter -- \
+  --master "Server=localhost;Port=3306;Database=prm_master;User=root;Password=rootpassword" \
+  --tenant-host localhost \
+  --out ./data
+```
+
+Port, database, user, and password still come from the master DB — only `db_host` is overridden. When running inside the docker network (e.g., via `docker compose run`), omit the flag.
+
 ## Output layout
 
 One directory per active tenant slug (from `tenants WHERE is_active = 1` in the master DB), plus a `master/` directory. The POC seed creates three tenants; your environment may differ:
