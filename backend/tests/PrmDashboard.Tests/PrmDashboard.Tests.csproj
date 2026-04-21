@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\src\PrmDashboard.AuthService\PrmDashboard.AuthService.csproj" />
     <ProjectReference Include="..\..\src\PrmDashboard.PrmService\PrmDashboard.PrmService.csproj" />
     <ProjectReference Include="..\..\src\PrmDashboard.TenantService\PrmDashboard.TenantService.csproj" />
+    <ProjectReference Include="..\..\tools\PrmDashboard.CsvExporter\PrmDashboard.CsvExporter.csproj" />
   </ItemGroup>
 
 </Project>
