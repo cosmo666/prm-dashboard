@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
             return Problem(detail: "Invalid credentials", statusCode: 401, title: "Unauthorized");
 
         // Create refresh token and set as httpOnly cookie
-        var refreshToken = await _authService.CreateRefreshTokenAsync(result.Employee.Id, ct);
+        var refreshToken = await _authService.CreateRefreshTokenAsync(result.Employee.Id, tenantSlug, ct);
         SetRefreshTokenCookie(refreshToken.Token, refreshToken.ExpiresAt);
 
         return Ok(result);
@@ -53,7 +53,7 @@ public class AuthController : ControllerBase
             return Problem(detail: "No refresh token", statusCode: 401, title: "Unauthorized");
 
         var (accessToken, newRefreshToken) = await _authService.RefreshAsync(token, ct);
-        if (accessToken == null || newRefreshToken == null)
+        if (accessToken is null || newRefreshToken is null)
             return Problem(detail: "Invalid or expired refresh token", statusCode: 401, title: "Unauthorized");
 
         SetRefreshTokenCookie(newRefreshToken.Token, newRefreshToken.ExpiresAt);
