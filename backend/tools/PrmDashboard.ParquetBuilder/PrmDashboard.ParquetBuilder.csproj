@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DuckDB.NET.Bindings.Full" Version="1.5.0" />
     <PackageReference Include="DuckDB.NET.Data" Version="1.5.0" />
   </ItemGroup>
 
