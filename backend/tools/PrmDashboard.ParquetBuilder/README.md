@@ -74,10 +74,9 @@ Exit codes:
 
 ## Safe to re-run
 
-Yes. Existing `*.parquet` files are deleted before each conversion, then rewritten. Source CSVs are never modified.
+Yes. Existing `*.parquet` files are deleted before each conversion, then rewritten. Source CSVs are never modified. Press `Ctrl-C` during a run to request graceful cancellation (the current file finishes; remaining files are skipped). A second `Ctrl-C` force-quits.
 
 ## What the tool does NOT do
 
 - Does not modify source CSVs. The CSV set remains the human-readable source of truth; Parquet is the query format.
-- Does not convert `.csv` files under the directory tree whose extension is uppercase (`.CSV`). Filesystems that preserve case won't match; we assume phase 1's lowercase output.
 - Does not clean up stale Parquet files whose source CSV has been removed. If you delete a tenant mid-migration, you'll need to remove its `data/{slug}/` directory yourself — phase 4 of the overall migration guides that cleanup.
