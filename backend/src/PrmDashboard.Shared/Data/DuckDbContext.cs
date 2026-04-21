@@ -54,6 +54,9 @@ public sealed class DuckDbContext : IDuckDbContext
     {
         public override DuckDBConnection Create() => new DuckDBConnection("DataSource=:memory:");
 
+        // Unconditional return is safe for in-memory DuckDB: there's no network to fail,
+        // and AcquireAsync checks ConnectionState.Open + calls OpenAsync on broken/closed
+        // connections, so a potentially-broken connection in the pool is self-healing.
         public override bool Return(DuckDBConnection obj) => true;
     }
 }

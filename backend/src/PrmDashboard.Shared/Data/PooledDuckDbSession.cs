@@ -13,7 +13,7 @@ public sealed class PooledDuckDbSession : IAsyncDisposable
 {
     public DuckDBConnection Connection { get; }
     private readonly ObjectPool<DuckDBConnection> _pool;
-    private bool _disposed;
+    private int _disposed;
 
     internal PooledDuckDbSession(DuckDBConnection connection, ObjectPool<DuckDBConnection> pool)
     {
@@ -23,8 +23,11 @@ public sealed class PooledDuckDbSession : IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
-        if (_disposed) return ValueTask.CompletedTask;
-        _disposed = true;
+        // Interlocked.Exchange returns 0 on the first dispose (then sets to 1);
+        // concurrent/subsequent calls see 1 and skip the Return. Prevents a race
+        // where two DisposeAsync calls both return the same connection to the pool.
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            return ValueTask.CompletedTask;
         _pool.Return(Connection);
         return ValueTask.CompletedTask;
     }
