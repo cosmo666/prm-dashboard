@@ -8,8 +8,10 @@ public static class FileDiscovery
 {
     /// <summary>
     /// Returns all <c>*.csv</c> files under <paramref name="root"/>, recursively.
-    /// Case-insensitive match on the extension. Returns absolute or relative paths
-    /// depending on what <paramref name="root"/> was.
+    /// Extension matching follows the filesystem (case-insensitive on Windows/NTFS;
+    /// case-sensitive on typical Linux filesystems — the phase-1 exporter always
+    /// writes lowercase, so the distinction rarely matters in practice).
+    /// Enumeration is lazy; exceptions surface on iteration.
     /// </summary>
     public static IEnumerable<string> FindCsvFiles(string root) =>
         Directory.EnumerateFiles(root, "*.csv", SearchOption.AllDirectories);
