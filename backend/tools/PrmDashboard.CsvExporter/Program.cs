@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using PrmDashboard.CsvExporter.Export;
 
@@ -113,12 +114,14 @@ static bool HasFlag(string[] args, string name) => Array.IndexOf(args, name) >= 
 static string? FirstNonEmpty(params string?[] values)
     => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
-static string RedactPassword(string connString)
-{
-    // Replace anything after "Password=" up to the next ';' with "****"
-    var idx = connString.IndexOf("Password=", StringComparison.OrdinalIgnoreCase);
-    if (idx < 0) return connString;
-    var end = connString.IndexOf(';', idx);
-    var replacement = "Password=****";
-    return end < 0 ? connString[..idx] + replacement : connString[..idx] + replacement + connString[end..];
-}
+static string RedactPassword(string connString) =>
+    // Value alternatives, in order:
+    //   "…""…"  ADO.NET double-quoted value with "" as the literal-quote escape
+    //   '…''…'  ADO.NET single-quoted value with '' as the literal-quote escape
+    //   …;      unquoted value ends at the next ';' or end-of-string
+    // <prefix> preserves the user's original casing/whitespace of the key.
+    Regex.Replace(
+        connString,
+        @"(?<prefix>\bPassword\s*=\s*)(?:""(?:""""|[^""])*""|'(?:''|[^'])*'|[^;]*)",
+        "${prefix}****",
+        RegexOptions.IgnoreCase);
