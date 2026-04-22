@@ -101,7 +101,7 @@ public class RecordService : BaseQueryService
             "Records for {Slug}/{Airport}: page {Page}/{TotalPages}, {Count} items",
             tenantSlug, filters.Airport, page, totalPages, items.Count);
 
-        return new PaginatedResponse<PrmRecordDto>(items, (int)total, page, pageSize, totalPages);
+        return new PaginatedResponse<PrmRecordDto>(items, Convert.ToInt32(total), page, pageSize, totalPages);
     }
 
     public async Task<List<PrmSegmentDto>> GetSegmentsAsync(

@@ -92,10 +92,10 @@ public class TrendService : BaseQueryService
                 ) t WHERE rn = 1
             )
             SELECT ((CAST(strftime(service_date, '%w') AS INTEGER) + 6) % 7) AS dow,
-                   CAST(start_time / 100 AS INTEGER) AS hr,
+                   (start_time // 100) AS hr,
                    COUNT(*) AS cnt
             FROM deduped
-            WHERE start_time / 100 BETWEEN 0 AND 23
+            WHERE (start_time // 100) BETWEEN 0 AND 23
             GROUP BY dow, hr";
         foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
 
