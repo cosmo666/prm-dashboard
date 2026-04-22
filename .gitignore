@@ -62,11 +62,17 @@ lerna-debug.log*
 .env
 .env.local
 .env.*.local
-.env.example
+# NOTE: .env.example IS tracked (it's the template for .env). Do not add it here.
 *.pem
 *.key
 secrets.json
 appsettings.Local.json
+
+# ============================================================
+# Scratch files (build logs, temporary output)
+# ============================================================
+build-output*.txt
+*.tmp
 
 # ============================================================
 # IDE / editor
