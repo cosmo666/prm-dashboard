@@ -50,6 +50,29 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// DuckDB + Parquet data path (Phase 3d-1 migration — replaces TenantService HTTP path).
+// The HttpClient+TenantDbContextFactory below will be removed in Task 12 once all services migrate.
+builder.Services.Configure<PrmDashboard.Shared.Data.DataPathOptions>(o =>
+{
+    o.Root = Environment.GetEnvironmentVariable("PRM_DATA_PATH")
+             ?? builder.Configuration["DataPath"]
+             ?? throw new InvalidOperationException(
+                 "Data path required: set PRM_DATA_PATH env var or DataPath in appsettings.");
+
+    o.PoolSize = builder.Configuration.GetValue<int?>("DataPath:PoolSize")
+                 ?? PrmDashboard.Shared.Data.DataPathOptions.DefaultPoolSize;
+
+    if (o.PoolSize < PrmDashboard.Shared.Data.DataPathOptions.MinPoolSize
+        || o.PoolSize > PrmDashboard.Shared.Data.DataPathOptions.MaxPoolSize)
+        throw new InvalidOperationException(
+            $"DataPath:PoolSize out of range [{PrmDashboard.Shared.Data.DataPathOptions.MinPoolSize}, "
+            + $"{PrmDashboard.Shared.Data.DataPathOptions.MaxPoolSize}]: {o.PoolSize}");
+});
+
+builder.Services.AddHostedService<PrmDashboard.Shared.Data.DataPathValidator>();
+builder.Services.AddSingleton<PrmDashboard.Shared.Data.IDuckDbContext, PrmDashboard.Shared.Data.DuckDbContext>();
+builder.Services.AddSingleton<PrmDashboard.Shared.Data.TenantParquetPaths>();
+
 // Memory cache for tenant connection caching
 builder.Services.AddMemoryCache();
 
