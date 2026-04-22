@@ -19,4 +19,8 @@
     <ProjectReference Include="..\PrmDashboard.Shared\PrmDashboard.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="PrmDashboard.Tests" />
+  </ItemGroup>
+
 </Project>
