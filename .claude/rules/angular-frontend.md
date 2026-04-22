@@ -13,7 +13,7 @@
 
 ## Project structure
 
-```
+```text
 frontend/src/app/
 ├── core/                                  # Singletons: initialized once per app
 │   ├── auth/
@@ -29,7 +29,10 @@ frontend/src/app/
 │   │   ├── auth.store.ts                  # Employee, access token, airports
 │   │   ├── tenant.store.ts                # Tenant slug, name, logo, primary color
 │   │   ├── filter.store.ts                # Dashboard filters, URL-synced
-│   │   └── navigation.store.ts            # Active dashboard tab name for breadcrumb
+│   │   ├── navigation.store.ts            # Active dashboard tab name for breadcrumb
+│   │   └── saved-views.store.ts           # Persisted filter snapshots (localStorage-hydrated plain signal)
+│   ├── toast/
+│   │   └── toast.service.ts               # Transient notification signals consumed by <app-toast-container>
 │   └── theme/
 │       └── theme.service.ts               # Light/dark toggle + prefers-color-scheme
 │
@@ -37,35 +40,41 @@ frontend/src/app/
 │   ├── auth/login/                        # Split-layout login page (mouse-parallax dark panel)
 │   ├── home/                              # Dashboard tile picker
 │   ├── not-found/                         # Editorial 404 — "Flight diverted" page
-│   └── dashboard/                         # 4-tab PRM dashboard
+│   └── dashboard/                         # 5-tab PRM dashboard
 │       ├── dashboard.component.ts
 │       ├── components/
 │       │   ├── filter-bar/                # Airline, service, handled_by, date range
 │       │   ├── date-range-picker/         # 16 presets (Today, Last 7 Days, MTD, Q1-Q4, etc.)
 │       │   └── kpi-card/                  # Gradient card with label, value, delta, icon
 │       ├── services/
-│       │   └── prm-data.service.ts        # Wraps all 19 /api/prm endpoints
+│       │   └── prm-data.service.ts        # Wraps all 25 /api/prm endpoints
 │       ├── utils/
-│       │   └── date-presets.ts            # resolvePreset(), PRESET_DEFS
+│       │   ├── date-presets.ts            # resolvePreset(), PRESET_DEFS
+│       │   └── annotations.ts             # DEMO_ANNOTATIONS for line-chart overlays
 │       └── tabs/
 │           ├── overview/
 │           ├── top10/
 │           ├── service-breakup/
-│           └── fulfillment/
+│           ├── fulfillment/
+│           └── insights/                  # Experimental insights tab
 │
 └── shared/
     ├── charts/                            # ECharts wrapper components
     │   ├── base-chart.component.ts        # Loading state, empty state, common layout
     │   ├── bar-chart/
     │   ├── donut-chart/
-    │   ├── line-chart/                    # Supports dualAxis, stacked, area
+    │   ├── line-chart/                    # Supports dualAxis, stacked, area; annotations via ChartAnnotation
     │   ├── horizontal-bar-chart/
     │   ├── sankey-chart/
     │   └── heatmap-chart/
     ├── components/
     │   ├── top-bar/                       # Logo, tenant name, breadcrumb, airport selector, theme toggle
     │   ├── airport-selector/              # RBAC-filtered dropdown bound to FilterStore
-    │   └── progress-bar/                  # 2px global top progress bar bound to ProgressService
+    │   ├── progress-bar/                  # 2px global top progress bar bound to ProgressService
+    │   ├── saved-views-menu/              # Saved-view picker in the top bar (reads SavedViewsStore)
+    │   ├── command-palette/               # Ctrl/Cmd-K palette: tab nav, saved views, date presets
+    │   ├── toast-container/               # Renders the ToastService queue
+    │   └── dev-tenant-picker/             # Dev-only tenant-switch UI (hidden in production)
     ├── directives/
     │   └── tooltip.directive.ts           # [appTooltip] — replaces matTooltip, body-portal, viewport-clamped
     └── pipes/
