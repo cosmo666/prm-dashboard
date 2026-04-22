@@ -56,7 +56,7 @@ public class RankingService : SqlBaseQueryService
                    SUM(CASE WHEN d.no_show_flag != 'N' OR d.no_show_flag IS NULL THEN 1 ELSE 0 END)::INT AS serviced,
                    COUNT(*)::INT AS requested,
                    CASE WHEN (SELECT total_serviced FROM totals) > 0
-                        THEN ROUND(100.0 * SUM(CASE WHEN d.no_show_flag != 'N' OR d.no_show_flag IS NULL THEN 1 ELSE 0 END)::INT
+                        THEN ROUND(100.0 * SUM(CASE WHEN d.no_show_flag != 'N' OR d.no_show_flag IS NULL THEN 1 ELSE 0 END)
                                        / (SELECT total_serviced FROM totals), 2)
                         ELSE 0.0 END AS pct
             FROM deduped d
@@ -81,6 +81,33 @@ public class RankingService : SqlBaseQueryService
         return new FlightRankingsResponse(items);
     }
 
+    /// <summary>
+    /// Per-agent rankings with aggregated metrics (prm count, average duration,
+    /// top service/airline, active days, avg-per-day).
+    /// </summary>
+    /// <remarks>
+    /// SQL chain:
+    /// <list type="number">
+    /// <item>filtered — rows passing <c>BuildWhereClause</c> plus non-empty agent_no.</item>
+    /// <item>deduped — groups by (agent_no, id) to collapse pause/resume rows per
+    /// service, summing the active minutes into <c>duration</c>. Picks <c>min(row_id)</c>
+    /// as the canonical row pointer.</item>
+    /// <item>canonical — joins deduped back to filtered on <c>min_row_id = row_id</c>
+    /// to retrieve the canonical row's attributes (airline, service, service_date,
+    /// agent_name).</item>
+    /// <item>per_agent — aggregates canonical per agent: count, average duration,
+    /// distinct days active, stable agent_name via <c>ANY_VALUE</c>.</item>
+    /// <item>top_service / top_airline — uses <c>ROW_NUMBER</c> OVER ordered by
+    /// count DESC to pick the most-frequent service/airline per agent (mode
+    /// approximation; DuckDB has no native MODE).</item>
+    /// <item>Final SELECT — LEFT JOIN per_agent to top_service and top_airline,
+    /// COALESCE nulls, compute avg_per_day, order by prm_count DESC, limit.</item>
+    /// </list>
+    /// Per-agent dedup (rather than the global <c>ROW_NUMBER() OVER (PARTITION BY
+    /// id ORDER BY row_id)</c> used elsewhere) is intentional: a service counts
+    /// once per agent, not once globally, because the same id can be handled by
+    /// multiple agents across pause/resume.
+    /// </remarks>
     public async Task<AgentRankingsResponse> GetTopAgentsAsync(
         string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
     {
@@ -95,6 +122,8 @@ public class RankingService : SqlBaseQueryService
                 SELECT * FROM '{path}' WHERE {where} AND agent_no IS NOT NULL AND agent_no != ''
             ),
             deduped AS (
+                -- Dedup per (agent_no, id): one service counts once per agent.
+                -- SUM({activeExpr}) accumulates duration across pause/resume rows.
                 SELECT agent_no, id, MIN(row_id) AS min_row_id,
                        SUM({activeExpr}) AS duration
                 FROM filtered
