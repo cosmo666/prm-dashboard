@@ -19,7 +19,7 @@ public class FilterService : BaseQueryService
     {
         var airports = airport.Split(
             ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
 
         await using var session = await _duck.AcquireAsync(ct);
         var conn = session.Connection;

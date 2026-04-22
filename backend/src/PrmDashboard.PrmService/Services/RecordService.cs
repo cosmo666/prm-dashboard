@@ -20,7 +20,7 @@ public class RecordService : BaseQueryService
         int page = 1, int pageSize = 20, string sort = "service_date:desc",
         CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
         var orderBy = sort switch
         {
@@ -107,7 +107,7 @@ public class RecordService : BaseQueryService
     public async Task<List<PrmSegmentDto>> GetSegmentsAsync(
         string tenantSlug, int prmId, string airport, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var airports = airport.Split(
             ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 

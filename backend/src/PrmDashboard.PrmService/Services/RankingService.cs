@@ -36,7 +36,7 @@ public class RankingService : BaseQueryService
     public async Task<FlightRankingsResponse> GetTopFlightsAsync(
         string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
 
         await using var session = await _duck.AcquireAsync(ct);
@@ -111,7 +111,7 @@ public class RankingService : BaseQueryService
     public async Task<AgentRankingsResponse> GetTopAgentsAsync(
         string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
         var activeExpr = HhmmSql.ActiveMinutesExpr("start_time", "paused_at", "end_time");
 

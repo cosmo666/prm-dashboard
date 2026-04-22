@@ -127,6 +127,21 @@ public abstract class BaseQueryService
     protected static string EscapePath(string path) => path.Replace("'", "''");
 
     /// <summary>
+    /// Resolves the parquet path for the given tenant, verifies the file exists, and
+    /// returns it ready for SQL interpolation (single quotes escaped). Throws
+    /// <see cref="TenantParquetNotFoundException"/> if the file is absent — caught by
+    /// <c>ExceptionHandlerMiddleware</c> and translated to 404. Combines what would
+    /// otherwise be three boilerplate lines per service method into one helper.
+    /// </summary>
+    protected string ResolveTenantParquet(string tenantSlug)
+    {
+        var path = _paths.TenantPrmServices(tenantSlug);
+        if (!File.Exists(path))
+            throw new TenantParquetNotFoundException(tenantSlug, path);
+        return EscapePath(path);
+    }
+
+    /// <summary>
     /// Runs a <c>SELECT DISTINCT {col} FROM '{path}' WHERE {where} AND {col} IS NOT NULL ORDER BY 1</c>
     /// query on the given connection, returning the distinct values as a list. Re-creates
     /// <see cref="DuckDBParameter"/> instances per call (they're stateful — cannot be shared across commands).
@@ -178,7 +193,7 @@ public abstract class BaseQueryService
         string tenantSlug, PrmFilterParams filters, string col,
         bool skipNull = false, int? limit = null, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
         var nullGuard = skipNull ? $" AND {col} IS NOT NULL AND {col} != ''" : "";
 

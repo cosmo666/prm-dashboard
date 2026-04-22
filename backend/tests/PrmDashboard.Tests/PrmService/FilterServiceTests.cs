@@ -18,6 +18,16 @@ public class FilterServiceTests : IAsyncLifetime
     public Task DisposeAsync() => _fx.DisposeAsync();
 
     [Fact]
+    public async Task GetOptionsAsync_UnknownTenant_ThrowsTenantParquetNotFound()
+    {
+        // Tenant slug with no parquet file on disk should produce a typed
+        // exception that ExceptionHandlerMiddleware translates to 404 (not 500).
+        var ex = await Assert.ThrowsAsync<TenantParquetNotFoundException>(
+            () => _svc.GetOptionsAsync("never-onboarded", "DEL"));
+        Assert.Equal("never-onboarded", ex.TenantSlug);
+    }
+
+    [Fact]
     public async Task GetOptionsAsync_SingleAirport_ReturnsAllDimensions()
     {
         var r = await _svc.GetOptionsAsync(PrmFixtureBuilder.Tenant, "DEL");

@@ -17,7 +17,7 @@ public class TrendService : BaseQueryService
     public async Task<DailyTrendResponse> GetDailyAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
 
         await using var session = await _duck.AcquireAsync(ct);
@@ -48,7 +48,7 @@ public class TrendService : BaseQueryService
     public async Task<MonthlyTrendResponse> GetMonthlyAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
 
         await using var session = await _duck.AcquireAsync(ct);
@@ -78,7 +78,7 @@ public class TrendService : BaseQueryService
     public async Task<HourlyHeatmapResponse> GetHourlyAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
 
         await using var session = await _duck.AcquireAsync(ct);
@@ -121,7 +121,7 @@ public class TrendService : BaseQueryService
     public async Task<RequestedVsProvidedTrendResponse> GetRequestedVsProvidedAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
 
         await using var session = await _duck.AcquireAsync(ct);

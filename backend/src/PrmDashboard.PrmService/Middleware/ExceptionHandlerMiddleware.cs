@@ -1,3 +1,5 @@
+using PrmDashboard.PrmService.Services;
+
 namespace PrmDashboard.PrmService.Middleware;
 
 public class ExceptionHandlerMiddleware
@@ -16,6 +18,14 @@ public class ExceptionHandlerMiddleware
         try
         {
             await _next(context);
+        }
+        catch (TenantParquetNotFoundException ex)
+        {
+            // Newly provisioned tenant whose data hasn't been generated yet.
+            // Log as Information (not Error) — this is a known operational state, not a bug.
+            _logger.LogInformation("Tenant data missing: {TenantSlug}", ex.TenantSlug);
+            await WriteProblem(context, 404, "Not Found",
+                $"No PRM data available for tenant '{ex.TenantSlug}'");
         }
         catch (Exception ex)
         {

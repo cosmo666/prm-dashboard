@@ -18,7 +18,7 @@ public class PerformanceService : BaseQueryService
     public async Task<DurationDistributionResponse> GetDurationDistributionAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
         var activeExpr = HhmmSql.ActiveMinutesExpr("start_time", "paused_at", "end_time");
 
@@ -71,7 +71,7 @@ public class PerformanceService : BaseQueryService
     public async Task<DurationStatsResponse> GetDurationStatsAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
         var activeExpr = HhmmSql.ActiveMinutesExpr("start_time", "paused_at", "end_time");
 
@@ -110,7 +110,7 @@ public class PerformanceService : BaseQueryService
     public async Task<NoShowResponse> GetNoShowsAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
 
         await using var session = await _duck.AcquireAsync(ct);
@@ -152,7 +152,7 @@ public class PerformanceService : BaseQueryService
     public async Task<PauseAnalysisResponse> GetPauseAnalysisAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
         var toMinPaused = HhmmSql.ToMinutes("paused_at");
         var toMinNext = HhmmSql.ToMinutes("next_start");
@@ -232,7 +232,7 @@ public class PerformanceService : BaseQueryService
     public async Task<DurationByAgentTypeResponse> GetDurationByAgentTypeAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
         var activeExpr = HhmmSql.ActiveMinutesExpr("start_time", "paused_at", "end_time");
 

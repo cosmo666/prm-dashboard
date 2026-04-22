@@ -18,7 +18,7 @@ public class KpiService : BaseQueryService
     public async Task<KpiSummaryResponse> GetSummaryAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         await using var session = await _duck.AcquireAsync(ct);
 
         var current = await ComputeSummaryMetricsAsync(session.Connection, path, filters, ct);
@@ -57,7 +57,7 @@ public class KpiService : BaseQueryService
     public async Task<HandlingDistributionResponse> GetHandlingDistributionAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
 
         await using var session = await _duck.AcquireAsync(ct);
@@ -92,7 +92,7 @@ public class KpiService : BaseQueryService
     public async Task<RequestedVsProvidedKpiResponse> GetRequestedVsProvidedAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
 
         await using var session = await _duck.AcquireAsync(ct);

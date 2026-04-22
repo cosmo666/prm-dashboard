@@ -35,7 +35,7 @@ public class BreakdownService : BaseQueryService
     public async Task<RouteBreakdownResponse> GetByRouteAsync(
         string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
 
         await using var session = await _duck.AcquireAsync(ct);
@@ -78,7 +78,7 @@ public class BreakdownService : BaseQueryService
     public async Task<ServiceTypeMatrixResponse> GetByServiceTypeAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
 
         await using var session = await _duck.AcquireAsync(ct);
@@ -144,7 +144,7 @@ public class BreakdownService : BaseQueryService
     public async Task<SankeyResponse> GetByAgentTypeAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
 
         await using var session = await _duck.AcquireAsync(ct);
@@ -191,7 +191,7 @@ public class BreakdownService : BaseQueryService
     public async Task<AgentServiceMatrixResponse> GetAgentServiceMatrixAsync(
         string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
     {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var path = ResolveTenantParquet(tenantSlug);
         var (where, parms) = BuildWhereClause(filters);
 
         await using var session = await _duck.AcquireAsync(ct);
