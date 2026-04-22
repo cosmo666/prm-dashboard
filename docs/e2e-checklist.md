@@ -106,11 +106,15 @@ curl -X POST http://localhost:5000/api/auth/login \
   -H "X-Tenant-Slug: aeroground" \
   -d '{"username":"admin","password":"admin123"}'
 
-# Verify seed data
-docker compose exec mysql mysql -uroot -prootpassword -e "
-  SELECT slug, name FROM prm_master.tenants;
-  SELECT COUNT(*) AS aeroground FROM aeroground_db.prm_services;
-  SELECT COUNT(*) AS skyserve FROM skyserve_db.prm_services;
-  SELECT COUNT(*) AS globalprm FROM globalprm_db.prm_services;
-"
+# Verify generated parquet files
+ls data/master/        # tenants.parquet, employees.parquet, employee_airports.parquet
+ls data/aeroground/    # prm_services.parquet
+ls data/skyserve/      # prm_services.parquet
+ls data/globalprm/     # prm_services.parquet
+
+# Optional: row counts via DuckDB CLI (or any service's /api/prm/kpis/summary endpoint)
+duckdb -c "SELECT slug, name FROM 'data/master/tenants.parquet';
+           SELECT COUNT(*) AS aeroground FROM 'data/aeroground/prm_services.parquet';
+           SELECT COUNT(*) AS skyserve   FROM 'data/skyserve/prm_services.parquet';
+           SELECT COUNT(*) AS globalprm  FROM 'data/globalprm/prm_services.parquet';"
 ```

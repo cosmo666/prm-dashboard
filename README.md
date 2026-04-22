@@ -2,12 +2,12 @@
 
 Multi-tenant analytics POC for **Passenger with Reduced Mobility (PRM)** ground handling services. Airports and ground-handling companies use this to monitor wheelchair assists, medical-assist services, and other accessibility operations across their locations.
 
-> **Status:** POC feature-complete. All 9 phases / 21 tasks implemented. See [docs/e2e-checklist.md](docs/e2e-checklist.md) for verification steps.
+> **Status:** POC feature-complete. Original MySQL/EF stack migrated end-to-end to DuckDB + per-tenant Parquet (Phases 1 → 3d-2, completed 2026-04-22). Backend runtime is EF/MySQL-free in source. **132/132 tests passing.** See [docs/e2e-checklist.md](docs/e2e-checklist.md) for verification steps.
 
 ## What it does
 
-- **Multi-tenant** — each ground handler (AeroGround, SkyServe, GlobalPRM, ...) has its own isolated database, accessed via tenant subdomain (e.g., `aeroground.prm-app.com`)
-- **Runtime tenant onboarding** — attach a new MySQL database on any host, insert one row in `prm_master.tenants`, and the schema auto-bootstraps on first request. No code changes, no restarts
+- **Multi-tenant** — each ground handler (AeroGround, SkyServe, GlobalPRM, ...) has its own isolated dataset, accessed via tenant subdomain (e.g., `aeroground.prm-app.com`)
+- **Per-tenant Parquet files** — runtime services read `data/{slug}/prm_services.parquet` directly via DuckDB. The slug → file path mapping is a pure string convention; no database lookup, no inter-service HTTP calls
 - **Airport-level RBAC** — employees only see data for airports they're assigned to (enforced by JWT claim + server-side middleware)
 - **5-tab dashboard** — Overview, Top 10, Service Breakup, Fulfillment, Insights — with ~17 interactive ECharts visualizations, cross-filtering, drill-down, and 16 date-range presets
 
@@ -15,23 +15,25 @@ Multi-tenant analytics POC for **Passenger with Reduced Mobility (PRM)** ground 
 
 ## Architecture
 
-```
+```text
 Browser (Angular 17 SPA)
   | HTTPS
 API Gateway (Ocelot, port 5000)
-  |-- /api/auth/**    --> Auth Service      (port 5001)
-  |-- /api/tenants/** --> Tenant Service    (port 5002)
-  '-- /api/prm/**     --> PRM Service       (port 5003)
+  |-- /api/auth/**    --> Auth Service      (port 5001) -- reads master/employees.parquet
+  |-- /api/tenants/** --> Tenant Service    (port 5002) -- reads master/tenants.parquet
+  '-- /api/prm/**     --> PRM Service       (port 5003) -- reads data/{slug}/prm_services.parquet
                              |
                    +---------+-----------+
-                   |  Master MySQL DB    |   tenants, employees, employee_airports, refresh_tokens
-                   |  Tenant 1 DB        |   prm_services (can live on a different instance)
-                   |  Tenant 2 DB        |   prm_services
-                   |  Tenant 3 DB        |   prm_services
+                   |  data/master/       |   tenants.parquet, employees.parquet, employee_airports.parquet
+                   |  data/{tenant-1}/   |   prm_services.parquet
+                   |  data/{tenant-2}/   |   prm_services.parquet
+                   |  data/{tenant-3}/   |   prm_services.parquet
                    +---------------------+
 ```
 
-Each tenant DB can live on a completely separate MySQL instance. The `Tenant.GetConnectionString()` method and the `SchemaMigrator` in TenantService support arbitrary `db_host`/`db_port`/`db_name`/`db_user`/`db_password` per tenant.
+Each runtime service uses `DuckDB.NET` to read the Parquet files directly — no ORM, no DbContext, no inter-service HTTP for tenant resolution. The per-tenant data unit is a single Parquet file under `data/{slug}/`. The legacy MySQL stack is retained only as the *source* for the one-shot CSV → Parquet pipeline at `backend/tools/PrmDashboard.{CsvExporter,ParquetBuilder}/`.
+
+Refresh tokens live in `InMemoryRefreshTokenStore` (process-local; restart forgets all sessions — POC compromise).
 
 ---
 
@@ -41,8 +43,9 @@ Each tenant DB can live on a completely separate MySQL instance. The `Tenant.Get
 |---|---|---|
 | **Backend runtime** | .NET | 8.0 |
 | **Backend framework** | ASP.NET Core Web API | 8.0 |
-| **ORM** | Entity Framework Core (Pomelo MySQL) | 8.0.2 |
-| **Raw SQL driver** | MySqlConnector | 2.3.7 |
+| **Runtime data layer** | DuckDB.NET (reading Parquet) | 1.5.0 |
+| **Storage format** | Apache Parquet (per-tenant + master files under `data/`) | - |
+| **Refresh-token store** | `InMemoryRefreshTokenStore` (process-local) | - |
 | **Auth - password hashing** | BCrypt.Net-Next | 4.0.3 |
 | **Auth - JWT** | System.IdentityModel.Tokens.Jwt | 7.6.2 |
 | **API Gateway** | Ocelot | 23.2.0 |
@@ -52,7 +55,7 @@ Each tenant DB can live on a completely separate MySQL instance. The `Tenant.Get
 | **Frontend state** | NgRx Signal Store (@ngrx/signals) | - |
 | **Language** | TypeScript (strict mode) | 5.x |
 | **Styling** | SCSS with CSS custom properties | - |
-| **Database** | MySQL | 8.0 |
+| **Legacy data source** | MySQL 8.0 — used only by the one-shot CSV exporter tool, not by runtime services | 8.0 |
 | **Container orchestration** | Docker Compose | - |
 
 ---
@@ -61,7 +64,7 @@ Each tenant DB can live on a completely separate MySQL instance. The `Tenant.Get
 
 ### How tenant isolation works
 
-```
+```text
 1. User visits  aeroground.prm-app.com
                       |
 2. Angular TenantResolver extracts slug "aeroground" from subdomain
@@ -72,11 +75,12 @@ Each tenant DB can live on a completely separate MySQL instance. The `Tenant.Get
    Headers: X-Tenant-Slug: aeroground
    Body: { username, password }
                       |
-4. Auth Service resolves tenant via TenantService
-   --> looks up employees WHERE tenant_id = resolved tenant
+4. Auth Service authenticates against master/employees.parquet:
+   --> queries WHERE tenant_id = resolved tenant
    --> validates password via BCrypt
    --> issues JWT with claims: sub, tenant_id, tenant_slug, name, airports[]
-   --> sets httpOnly refresh cookie (7-day, Secure, SameSite=Strict)
+   --> sets httpOnly refresh cookie (7-day, Secure, SameSite=Strict);
+       refresh token stored in process-local InMemoryRefreshTokenStore
                       |
 5. Subsequent API calls flow through Ocelot Gateway:
    Gateway middleware extracts subdomain from Host header
@@ -84,72 +88,61 @@ Each tenant DB can live on a completely separate MySQL instance. The `Tenant.Get
    --> forwards to downstream service
                       |
 6. PRM Service receives request:
-   --> reads X-Tenant-Slug header
-   --> calls TenantService.ResolveAsync(slug) to get connection string
-   --> SchemaMigrator.RunAsync() runs on cache miss (auto-applies migrations)
-   --> connection cached for 5 minutes
-   --> validates airport RBAC: ?airport=X must be in JWT airports claim
-   --> queries tenant-specific database
+   --> TenantSlugClaimCheckMiddleware verifies X-Tenant-Slug presence + match against JWT claim
+   --> AirportAccessMiddleware validates ?airport=X against JWT airports claim (403 on mismatch)
+   --> BaseQueryService.ResolveTenantParquet(slug) maps slug to data/{slug}/prm_services.parquet
+       (throws TenantParquetNotFoundException -> 404 if file missing)
+   --> opens DuckDB session, runs the SQL query against the parquet file
    --> returns data scoped to that tenant only
 ```
 
 ### Tenant resolution chain
 
-```
-Subdomain --> slug --> prm_master.tenants row --> decrypted connection string --> tenant DB
-```
-
-- **No cross-tenant data leakage** — each request resolves to exactly one tenant DB
-- **Connection caching** — resolved connections are cached in-memory for 5 min (not shared across replicas)
-- **Schema migration** — on cache miss, `SchemaMigrator` applies any pending SQL migrations from `TenantService/Schema/Migrations/` before returning the connection
-- **RBAC enforcement** — PRM Service middleware validates `?airport=X` against the JWT `airports` claim; returns 403 on mismatch
-
-### Onboarding a new tenant (zero downtime)
-
-```sql
--- 1. Create empty database on any reachable MySQL instance
-CREATE DATABASE newclient_db;
-
--- 2. Register tenant in master DB
-INSERT INTO prm_master.tenants
-  (name, slug, db_host, db_port, db_name, db_user, db_password, is_active, primary_color)
-VALUES
-  ('New Client', 'newclient', 'mysql-host-2', 3306, 'newclient_db', 'app_user', 'encrypted_pwd', TRUE, '#2563eb');
-
--- 3. Add employees and airport assignments
-INSERT INTO prm_master.employees (tenant_id, username, password_hash, display_name)
-VALUES (LAST_INSERT_ID(), 'admin', 'BCRYPT_PENDING:admin123', 'Admin NewClient');
-
-INSERT INTO prm_master.employee_airports (employee_id, airport_code, airport_name)
-VALUES (LAST_INSERT_ID(), 'LHR', 'Heathrow Airport');
+```text
+Subdomain --> slug (X-Tenant-Slug header) --> data/{slug}/prm_services.parquet --> DuckDB query
 ```
 
-Then point `newclient.prm-app.com` DNS at the Angular app. The first request auto-bootstraps the tenant DB schema via the embedded `SchemaMigrator`.
+- **No cross-tenant data leakage** — each request resolves to exactly one tenant's parquet file via a pure string convention.
+- **No connection caching** — DuckDB sessions are pooled at the connection level by `IDuckDbContext`; tenant resolution itself is a free string-concatenation, no cache needed.
+- **No schema migration** — the Parquet schema IS the schema. To evolve a column, regenerate the affected parquet file via the data pipeline.
+- **RBAC enforcement** — PRM Service middleware validates `?airport=X` against the JWT `airports` claim; returns 403 on mismatch. `TenantSlugClaimCheckMiddleware` rejects 400 if the gateway header is missing for any authenticated request.
 
-No deploys, no manual DDL, no downtime.
+### Onboarding a new tenant
+
+1. Add a row to `database/init/03-seed-tenants.sql` (master MySQL) with the new tenant's `slug`, `name`, `is_active`, `logo_url`, `primary_color`. (The legacy `db_host`/`db_port`/`db_name`/`db_user`/`db_password` columns are still present in the seed schema but ignored at runtime.)
+2. Add employees + airport assignments to `04-seed-employees.sql`.
+3. Generate the per-tenant `data/{slug}/prm_services.parquet` file (see "Data regeneration" below).
+4. Restart the `auth` and `tenant` services so `TenantsLoader.StartAsync` picks up the new tenant in its startup dictionary. (`prm` doesn't need a restart — it computes the path lazily per request.)
+5. Point `{slug}.prm-app.com` DNS at the Angular app.
+
+If a tenant's parquet file is missing at request time (e.g., onboarded but data not generated yet), PRM Service returns **404 Not Found** via `TenantParquetNotFoundException`, not a 500.
 
 ---
 
-## Database Schema
+## Data layout (Parquet runtime + MySQL legacy source)
 
-### Master Database (`prm_master`)
+The runtime services read **Parquet files** under `data/`. The Parquet schema is generated by the `tools/PrmDashboard.ParquetBuilder` pipeline from MySQL exports; the MySQL schema below documents the source-of-truth columns. Parquet column names are snake_case copies of these.
 
-#### `tenants`
+### Master Database (`prm_master`) → `data/master/*.parquet`
+
+#### `tenants` → `data/master/tenants.parquet`
 
 | Column | Type | Constraints |
 |---|---|---|
 | `id` | INT | PRIMARY KEY, AUTO_INCREMENT |
 | `name` | VARCHAR(100) | NOT NULL |
 | `slug` | VARCHAR(50) | NOT NULL, UNIQUE |
-| `db_host` | VARCHAR(255) | NOT NULL, DEFAULT 'mysql' |
-| `db_port` | INT | NOT NULL, DEFAULT 3306 |
-| `db_name` | VARCHAR(100) | NOT NULL |
-| `db_user` | VARCHAR(100) | NOT NULL, DEFAULT 'root' |
-| `db_password` | VARCHAR(255) | NOT NULL |
+| `db_host` | VARCHAR(255) | NOT NULL, DEFAULT 'mysql' (legacy — runtime ignores) |
+| `db_port` | INT | NOT NULL, DEFAULT 3306 (legacy — runtime ignores) |
+| `db_name` | VARCHAR(100) | NOT NULL (legacy — runtime ignores) |
+| `db_user` | VARCHAR(100) | NOT NULL, DEFAULT 'root' (legacy — runtime ignores) |
+| `db_password` | VARCHAR(255) | NOT NULL (legacy — runtime ignores) |
 | `is_active` | BOOLEAN | NOT NULL, DEFAULT TRUE |
 | `created_at` | DATETIME | NOT NULL, DEFAULT CURRENT_TIMESTAMP |
 | `logo_url` | VARCHAR(500) | NULL |
 | `primary_color` | VARCHAR(7) | NOT NULL, DEFAULT '#2563eb' |
+
+The five `db_*` columns survive in the parquet file as historical artefacts but no runtime code reads them — Phase 3d-2 deleted the `/api/tenants/resolve/{slug}` endpoint that was their only consumer.
 
 #### `employees`
 
@@ -178,20 +171,13 @@ Unique: `(tenant_id, username)`
 
 Unique: `(employee_id, airport_code)`
 
-#### `refresh_tokens`
+#### `refresh_tokens` (LEGACY — no longer used)
 
-| Column | Type | Constraints |
-|---|---|---|
-| `id` | INT | PRIMARY KEY, AUTO_INCREMENT |
-| `employee_id` | INT | NOT NULL, FK -> employees(id) CASCADE |
-| `token` | VARCHAR(500) | NOT NULL, UNIQUE |
-| `expires_at` | DATETIME | NOT NULL |
-| `created_at` | DATETIME | NOT NULL, DEFAULT CURRENT_TIMESTAMP |
-| `revoked` | BOOLEAN | NOT NULL, DEFAULT FALSE |
+The MySQL `refresh_tokens` table still exists in `database/init/01-master-schema.sql` for historical compatibility, but the runtime AuthService now uses `InMemoryRefreshTokenStore` (process-local). The MySQL table is not read by any runtime service and is not exported to Parquet.
 
-Index: `(employee_id, revoked, expires_at)`
+### Per-tenant data → `data/{slug}/prm_services.parquet`
 
-### Tenant Databases (`aeroground_db`, `skyserve_db`, `globalprm_db`)
+The runtime per-tenant data is one Parquet file per tenant slug. The MySQL legacy schema below is the source for the `tools/PrmDashboard.ParquetBuilder` pipeline; column names map 1:1 to the parquet file's columns (snake_case).
 
 #### `prm_services`
 
@@ -223,9 +209,9 @@ Index: `(employee_id, revoked, expires_at)`
 | `requested` | INT | NOT NULL, DEFAULT 0 (1 = pre-requested, 0 = walk-up) |
 | `service_date` | DATE | NOT NULL |
 
-Indexes: `(loc_name, service_date)`, `(service_date, loc_name, airline)`, `(id)`, `(airline)`, `(service)`, `(agent_no)`, `(prm_agent_type)`
+Indexes (MySQL source only — Parquet has no indexes; DuckDB scans columns vectorised): `(loc_name, service_date)`, `(service_date, loc_name, airline)`, `(id)`, `(airline)`, `(service)`, `(agent_no)`, `(prm_agent_type)`
 
-**Dedup pattern:** `COUNT(DISTINCT id)` — pause/resume creates multiple rows with the same `id`; each service counts once. Duration = sum of active segments per `id`.
+**Dedup pattern:** `ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) = 1` (canonical) or `COUNT(DISTINCT id)` (count-only) — pause/resume creates multiple rows with the same `id`; the first (lowest `row_id`) is the canonical row holding the service's metadata. Duration = sum of active segments per `id` via `HhmmSql.ActiveMinutesExpr` — `(COALESCE(paused_at, end_time) − start_time)` in minutes, clamped ≥0.
 
 ---
 
@@ -261,9 +247,10 @@ All PRM analytics endpoints require `Authorization: Bearer <token>` and accept t
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| GET | `/api/tenants/config?slug=X` | No | Tenant branding (name, logo, color) |
-| GET | `/api/tenants/resolve/{slug}` | Yes | Internal: returns tenant connection info |
+| GET | `/api/tenants/config?slug=X` | No | Tenant branding (name, logo, color) — served from startup-loaded dict |
 | GET | `/api/tenants/airports` | Yes | Airports assigned to authenticated employee |
+
+(The legacy `/api/tenants/resolve/{slug}` endpoint was removed in Phase 3d-2 — it returned MySQL connection info, which is no longer needed since PrmService computes the per-tenant Parquet path directly.)
 
 ### KPI Endpoints (`/api/prm/kpis`)
 
@@ -338,6 +325,16 @@ docker compose up --build
 
 Then visit `http://aeroground.localhost:4200` (or use the `X-Tenant-Slug` header in dev) and log in with `admin` / `admin123`.
 
+**Data regeneration** (legacy MySQL → Parquet pipeline, run only when the seed data changes):
+
+```bash
+docker compose up mysql -d                                          # 1. Boot MySQL with seed scripts
+dotnet run --project backend/tools/PrmDashboard.CsvExporter         # 2. Export tables → CSV
+dotnet run --project backend/tools/PrmDashboard.ParquetBuilder      # 3. CSV → per-tenant Parquet under data/
+```
+
+Runtime services don't connect to MySQL; they read directly from `data/{slug}/prm_services.parquet` and `data/master/*.parquet` via DuckDB.
+
 ## Demo Credentials
 
 All seed users share the password `admin123` (hashed on first login via the `BCRYPT_PENDING:` bootstrap convention).
@@ -356,25 +353,33 @@ Each username exists independently per tenant -- scoped by the `X-Tenant-Slug` h
 prm-dashboard/
 +-- backend/
 |   +-- PrmDashboard.sln
-|   '-- src/
-|       +-- PrmDashboard.Shared/        # Entity models, DTOs, time helpers
-|       +-- PrmDashboard.AuthService/    # Login, refresh, logout, /me
-|       +-- PrmDashboard.TenantService/  # Tenant resolution + SchemaMigrator
-|       +-- PrmDashboard.PrmService/     # 23 analytics endpoints (6 controllers)
-|       '-- PrmDashboard.Gateway/        # Ocelot routing + subdomain middleware
+|   +-- src/
+|   |   +-- PrmDashboard.Shared/        # DuckDB abstractions, DTOs, plain data classes, helpers
+|   |   +-- PrmDashboard.AuthService/    # Login, refresh, logout, /me; InMemoryRefreshTokenStore
+|   |   +-- PrmDashboard.TenantService/  # /config + /airports; TenantsLoader (startup dict)
+|   |   +-- PrmDashboard.PrmService/     # 25 analytics endpoints over per-tenant Parquet via DuckDB
+|   |   '-- PrmDashboard.Gateway/        # Ocelot routing + subdomain middleware
+|   +-- tools/
+|   |   +-- PrmDashboard.CsvExporter/    # One-shot: legacy MySQL -> CSV (uses MySqlConnector)
+|   |   '-- PrmDashboard.ParquetBuilder/ # One-shot: CSV -> per-tenant Parquet (uses DuckDB)
+|   '-- tests/
+|       '-- PrmDashboard.Tests/          # 132 tests across all services + integration fixtures
++-- data/                                # Generated by tools/; gitignored
+|   +-- master/                          # tenants.parquet, employees.parquet, employee_airports.parquet
+|   '-- {tenant-slug}/                   # prm_services.parquet -- one folder per tenant
 +-- frontend/                            # Angular 17 SPA
 |   '-- src/app/
 |       +-- core/                        # Auth, API client, stores (tenant, auth, filter, navigation)
 |       +-- features/                    # auth/login, home, dashboard/{5 tabs, components}
 |       '-- shared/                      # 6 chart wrappers, top-bar, airport-selector, pipes, directives
 +-- database/
-|   +-- init/                            # MySQL init + seed scripts (run on container boot)
+|   +-- init/                            # MySQL init + seed scripts (legacy source for the export pipeline)
 |   '-- seed/                            # Python PRM data generator (~17k records)
 +-- docs/
 |   +-- e2e-checklist.md
 |   '-- superpowers/
-|       +-- specs/                       # Design specs
-|       '-- plans/                       # Implementation plan (21 tasks / 9 phases)
+|       +-- specs/                       # Design specs (original POC + Phase 1-3d-2 migration)
+|       '-- plans/                       # Implementation plans (original POC + Phase 1-3d-2 migration)
 +-- docker-compose.yml
 +-- .env.example
 '-- README.md
@@ -401,6 +406,20 @@ Then walk the [E2E checklist](docs/e2e-checklist.md) for manual verification.
 - [CLAUDE.md](CLAUDE.md) -- project instructions for Claude Code
 
 ## Recent Changes
+
+### 2026-04-22 — MySQL/EF → DuckDB/Parquet migration (Phases 1 → 3d-2)
+
+Backend runtime is now EF/MySQL-free. All 25 PrmService analytics endpoints, plus AuthService and TenantService, read directly from per-tenant Parquet files via `DuckDB.NET`. Highlights:
+
+- **Phases 1-2:** Built `tools/PrmDashboard.CsvExporter` (MySQL → CSV) and `tools/PrmDashboard.ParquetBuilder` (CSV → per-tenant Parquet under `data/`).
+- **Phase 3a:** Shared `IDuckDbContext` + `TenantParquetPaths` + `DataPathOptions` + `DataPathValidator` + `PooledDuckDbSession` foundation.
+- **Phase 3b:** AuthService rewritten — reads `master/employees.parquet`; refresh tokens moved to `InMemoryRefreshTokenStore`.
+- **Phase 3c:** TenantService rewritten — `TenantsLoader` (startup dict from `master/tenants.parquet`); `SchemaMigrator` deleted.
+- **Phase 3d-1:** PrmService — all 25 endpoints over DuckDB SQL; `BaseQueryService` central filter builder; `HhmmSql` time helpers; 43 new tests.
+- **Phase 3d-2:** Cleanup — `/api/tenants/resolve/{slug}` deleted; `Tenant.cs`, `RefreshToken.cs`, `PrmServiceRecord.cs` removed; EF/Pomelo packages dropped from `Shared.csproj`.
+- **Hardening:** `TenantSlugClaimCheckMiddleware` now requires `X-Tenant-Slug` presence (not just match); `TenantParquetNotFoundException` → 404 mapping.
+
+Migration design: `docs/superpowers/specs/2026-04-20-mysql-to-duckdb-migration-design.md`. Per-phase plans under `docs/superpowers/plans/`.
 
 ### 2026-04-13 — Dashboard UI polish
 

@@ -4,86 +4,97 @@
 
 - **Solution:** `backend/PrmDashboard.sln` (legacy `.sln` format, NOT `.slnx` — Dockerfile `COPY` patterns expect the classic extension)
 - **One project per microservice** under `backend/src/`:
-  - `PrmDashboard.Shared/` — entities, DTOs, pure helpers (no business logic)
-  - `PrmDashboard.AuthService/` — owns login, refresh, logout, /me
-  - `PrmDashboard.TenantService/` — owns tenant resolution + `SchemaMigrator`
-  - `PrmDashboard.PrmService/` — owns all 19 dashboard endpoints
-  - `PrmDashboard.Gateway/` — Ocelot routing + subdomain middleware
+  - `PrmDashboard.Shared/` — DuckDB abstractions, DTOs, plain data classes (Employee, EmployeeAirport, TenantInfo), TimeHelpers, SerilogBootstrap, common middleware. **No EF entities, no DbContext, no business logic.**
+  - `PrmDashboard.AuthService/` — owns login, refresh, logout, /me. Reads employees from `master/employees.parquet`; refresh tokens kept in `InMemoryRefreshTokenStore` (process-local, forgotten on restart — POC compromise).
+  - `PrmDashboard.TenantService/` — owns `/config` (public, login-page branding) and `/airports` (RBAC airport list per employee). Reads `master/tenants.parquet` and `master/employee_airports.parquet`. Uses `TenantsLoader : IHostedService` to load the tenant dict once at startup.
+  - `PrmDashboard.PrmService/` — owns all 25 dashboard endpoints. Inherits from `BaseQueryService`; queries per-tenant `data/{slug}/prm_services.parquet` files via DuckDB.
+  - `PrmDashboard.Gateway/` — Ocelot routing + subdomain → `X-Tenant-Slug` header middleware.
+- **Tools** under `backend/tools/`:
+  - `PrmDashboard.CsvExporter/` — one-shot legacy MySQL → CSV export (still uses `MySqlConnector` for the source DB).
+  - `PrmDashboard.ParquetBuilder/` — converts CSVs into the per-tenant Parquet layout under `data/`.
 
 Each service has its own `Program.cs`, `appsettings.json`, `appsettings.Development.json`, and `Dockerfile`.
 
 ## Framework patterns
 
 - **ASP.NET Core 8 minimal hosting** (`WebApplicationBuilder` + `app.MapControllers()`)
-- **Controllers thin** — delegate to services. Controllers validate input shape and return DTOs; services own business logic
-- **Dependency injection** — register services in `Program.cs`. Prefer `Scoped` for DB-touching services, `Singleton` for caches and stateless helpers, `Transient` rarely
-- **Return `ProblemDetails`** for errors via `Results.Problem()` or `[ProducesResponseType]`
-- **Use `[HttpGet]` / `[HttpPost]` attributes** on controller actions, not minimal endpoints — we want OpenAPI discovery and attribute-based routing
+- **Controllers thin** — delegate to services. Controllers validate input shape and return DTOs; services own business logic.
+- **Dependency injection** — register services in `Program.cs`. Prefer `Scoped` for per-request services, `Singleton` for stateless helpers and the DuckDB pool, `Transient` rarely.
+- **Return `ProblemDetails`** for errors via `ExceptionHandlerMiddleware` or `Results.Problem()`.
+- **Use `[HttpGet]` / `[HttpPost]` attributes** on controller actions, not minimal endpoints — we want OpenAPI discovery and attribute-based routing.
 
-## EF Core patterns
+## DuckDB + Parquet patterns
 
-- **EF Core 8 with Pomelo MySQL provider** (`Pomelo.EntityFrameworkCore.MySql` 8.0.2)
-- **Use modern style:** `dbContext.Tenants.Where(...).ToListAsync()`, NOT legacy `Query<T>()`
-- **AsNoTracking() for read-only queries** — cheaper, no change-tracking overhead
-- **Include() sparingly** — prefer projections to DTOs with `Select()` when you only need specific fields
-- **Never leak IQueryable across service boundaries** — materialize with `ToListAsync()` / `FirstOrDefaultAsync()` before returning
-- **Migrations live in `Schema/Migrations/` as embedded SQL files** (PRM-specific pattern — see multi-tenant section)
+The runtime data layer uses DuckDB.NET reading directly from Parquet files. There is no ORM. There is no DbContext. There are no migrations.
 
-## MySqlConnector for raw SQL
+- **Acquire a session per request:** `await using var session = await _duck.AcquireAsync(ct);` — returns a `PooledDuckDbSession` borrowing a `DuckDBConnection` from the singleton pool. Reuse `session.Connection` for multiple commands within the same handler if you need them.
+- **Always parameterise user input:** `cmd.Parameters.Add(new DuckDBParameter("name", value));`. Path literals (the parquet file path) are interpolated directly because they're server-owned via `TenantParquetPaths`, but always pass them through `EscapePath(...)` first to neutralise single quotes.
+- **Re-create `DuckDBParameter` per command** — they're stateful and cannot be shared across multiple `DbCommand` instances. Pattern: `foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));`
+- **Read scalars with `Convert.ToInt32(reader.GetValue(N))` / `Convert.ToDouble(...)`** — never raw `(int)` / `(long)` casts. DuckDB.NET may return `Int32`, `Int64`, or `BigInteger` from what looks like an int column; `Convert.To*` handles all of them.
+- **Cast aggregates explicitly when they feed `Convert.ToInt32`/`ToDouble`:**
+  - `COUNT(*)::INT` for counts
+  - `SUM(CASE WHEN … THEN 1 ELSE 0 END)::INT` for conditional counts (raw `SUM` returns BigInteger which `Convert.ToInt32` cannot unbox)
+  - `SUM(integer_arithmetic)::DOUBLE` when the result feeds `quantile_cont` or `Convert.ToDouble`
+  - **Never** put a cast inside `ROUND(100.0 * SUM(...) / total, 2)` — the `100.0` already promotes the expression to DOUBLE, and an `::INT` inside would truncate.
+- **Integer division uses `//`** — DuckDB's `/` on integer literals returns DOUBLE. `2359/100` is `23.59`, and `CAST(23.59 AS INTEGER)` rounds to `24`. Use `2359 // 100` (`= 23`) for HHMM truncation. The `HhmmSql.ToMinutes` helper bakes this in.
+- **Dedup pattern (canonical):**
 
-- **Use `MySqlConnector` 2.3.7** (the underlying driver Pomelo sits on) when you need raw SQL — specifically:
-  - `SchemaMigrator` in TenantService
-  - Dashboard aggregation queries in PrmService where EF LINQ is clunky (e.g., window functions, percentiles)
-- **Always parameterize** — never string-concatenate user input into SQL
-- **Dispose properly** — `await using var conn = new MySqlConnection(cs);` and `await using var cmd = ...`
-- **Use transactions for multi-statement writes** (see `SchemaMigrator.RunAsync()` for the pattern)
+  ```sql
+  WITH deduped AS (
+      SELECT * FROM (
+          SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
+          FROM '{path}' WHERE {where}
+      ) t WHERE rn = 1
+  )
+  ```
 
-## Multi-tenant database access
+  The `t` alias on the inner subquery is required by SQL standard. Always include it.
+- **Use `BaseQueryService` helpers** instead of rolling your own:
+  - `BuildWhereClause(filters)` → `(sqlFragment, IReadOnlyList<DuckDBParameter>)` — composes the full filter predicate.
+  - `ResolveTenantParquet(slug)` → escaped path string; throws `TenantParquetNotFoundException` (mapped to 404) if the file is missing.
+  - `GroupCountAsync(slug, filters, col, skipNull, limit)` — the dedup + group-count + percentage pattern shared by Breakdown and Ranking services.
+  - `DistinctAsync(conn, path, col, where, parms)` / `MinMaxDateAsync(...)` — used by FilterService.
+  - `GetPrevPeriodStart(from, to)` — period-over-period bound (use `from.AddDays(-1)` for `prev_end`).
+  - `EscapePath(path)` — single-quote escaping for SQL string interpolation.
+  - `HhmmSql.ToMinutes(colExpr)` / `HhmmSql.ActiveMinutesExpr(start, paused, end)` — HHMM time arithmetic in SQL.
+
+## Multi-tenant data access
 
 This is the core architectural pattern — every service that touches tenant data must follow it:
 
-1. **Gateway extracts `X-Tenant-Slug` from the subdomain** and adds it as a request header before forwarding to downstream services
-2. **Services call `TenantService.ResolveAsync(slug)`** which returns a `Tenant` entity with decrypted connection string
-3. **`SchemaMigrator.RunAsync(connectionString)` is invoked on cache miss** before the connection is returned, ensuring the tenant DB has all required schema
-4. **The resolved connection string is used as a scoped `DbContext`** or raw `MySqlConnection` for the duration of the request
-5. **Tenant connections are cached in-memory for 5 minutes** — subsequent requests skip the resolution round-trip but the cache is not shared across replicas
+1. **Gateway extracts `X-Tenant-Slug` from the subdomain** and adds it as a request header before forwarding to downstream services.
+2. **`TenantSlugClaimCheckMiddleware` validates the header** against the JWT `tenant_slug` claim — rejects 400 if missing, 403 if mismatched. Both presence AND match are required for any authenticated request with a `tenant_slug` claim.
+3. **`PrmControllerBase.GetTenantSlug()`** reads the header (and throws if empty — defense-in-depth; middleware should already have rejected).
+4. **`BaseQueryService.ResolveTenantParquet(slug)`** maps the slug to `data/{slug}/prm_services.parquet`, verifies existence (throws `TenantParquetNotFoundException` → 404 if missing), and returns the SQL-escaped path.
+5. **The escaped path is interpolated directly into `FROM '{path}'`** — no connection-string lookup, no inter-service HTTP call.
 
-Key invariant: **no hardcoded tenant names anywhere in the code**. Everything flows through the slug → tenant entity → connection string chain.
+Key invariants:
 
-## Migration files
-
-Location: `backend/src/PrmDashboard.TenantService/Schema/Migrations/*.sql`
-
-Naming: `NNN_snake_case_description.sql` where `NNN` is zero-padded ordinal (e.g., `001_create_prm_services.sql`, `002_add_cost_center.sql`).
-
-Rules:
-
-1. **Never edit a committed migration file.** Applied migrations are immutable facts in each tenant's `schema_migrations` tracker table
-2. **Never delete a migration file** — same reason
-3. **Always add a new file** for a new schema change
-4. **Idempotent DDL** — use `CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS` (MySQL 8.0.29+), or guard with `INFORMATION_SCHEMA` checks
-5. **Embedded as resources** — each file must be listed in the `.csproj` as `<EmbeddedResource>` so the runner reads them via `Assembly.GetManifestResourceStream`
-6. **Transactional** — the runner wraps each migration in a transaction; if the DDL fails the tracker row is not inserted and the migration retries on next request
+- **No hardcoded tenant names anywhere in the code.** Everything flows from the gateway-injected header through the slug → file path mapping.
+- **Tenant resolution is a pure string function.** `TenantParquetPaths.TenantPrmServices(slug)` is `Path.Combine(_root, slug, "prm_services.parquet")` — no IO, no cache.
+- **Master data goes through `TenantsLoader`** (a startup-loaded `IReadOnlyDictionary<string, TenantInfo>`) for hot lookup paths like `/config`. The dict is loaded once in `StartAsync` from `master/tenants.parquet`; no runtime invalidation.
 
 ## Auth & JWT
 
-- **`BCrypt.Net-Next`** for password hashing (work factor 11 default)
-- **`System.IdentityModel.Tokens.Jwt`** for token issuance and validation
-- **Access token** — 15 minutes, signed HS256 with secret from `Jwt:Secret` config
-- **Refresh token** — 7 days, stored as raw token in `refresh_tokens` table (POC compromise — production should hash via SHA-256), delivered as httpOnly + Secure + SameSite=Strict cookie scoped to `/api/auth`
-- **JWT claims** — `sub` (employee id), `tenant_id`, `tenant_slug`, `name`, `airports` (list)
-- **Airport RBAC** — PRM Service middleware parses `?airport=…` (accepts one code or a CSV like `DEL,BOM`) and validates **every** requested airport against the JWT `airports` claim; 403 on any mismatch. In query logic use `PrmFilterParams.AirportList` (not the raw `Airport` string) — same contract as `AirlineList`/`ServiceList`/`HandledByList`; `BaseQueryService.ApplyFilters` handles the single vs. multi-airport branch
+- **`BCrypt.Net-Next`** for password hashing (work factor 11 default).
+- **`System.IdentityModel.Tokens.Jwt`** for token issuance and validation.
+- **Access token** — 15 minutes, signed HS256 with secret from `Jwt:Secret` config.
+- **Refresh token** — 7 days, kept in `InMemoryRefreshTokenStore` (process-local — restart forgets all sessions). Delivered as httpOnly + Secure + SameSite=Strict cookie scoped to `/api/auth`. **POC compromise; needs a durable store before production.**
+- **JWT claims** — `sub` (employee id), `tenant_id`, `tenant_slug`, `name`, `airports` (CSV).
+- **Airport RBAC** — PRM Service `AirportAccessMiddleware` parses `?airport=…` (one code or a CSV like `DEL,BOM`) and validates **every** requested airport against the JWT `airports` claim; 403 on any mismatch. In query logic always use `PrmFilterParams.AirportList` (not the raw `Airport` string) — same contract as `AirlineList` / `ServiceList` / `HandledByList`. `BaseQueryService.BuildWhereClause` handles the single-vs-multi airport branch (single → equality, multi → `IN`).
 
 ## Configuration
 
-- **Pattern:** `appsettings.json` (committed, defaults) + `appsettings.Development.json` (committed, dev overrides) + environment variables (deploy-time secrets)
-- **Nested config uses double-underscore in env vars:** `Jwt:Secret` → `Jwt__Secret`
-- **Never hardcode** connection strings, secrets, or URLs — always via `IConfiguration`
-- **Fail fast** — validate required config in `Program.cs` at startup; missing values should throw before the service starts accepting requests
+- **Pattern:** `appsettings.json` (committed, defaults) + `appsettings.Development.json` (committed, dev overrides) + environment variables (deploy-time secrets).
+- **Nested config uses double-underscore in env vars:** `Jwt:Secret` → `Jwt__Secret`.
+- **Data path lookup order in services:** `PRM_DATA_PATH` env var → `DataPath` config → throw at startup. `DataPathValidator` (hosted service) verifies `{Root}/master/` exists before the app accepts traffic.
+- **Never hardcode** secrets, paths, or URLs — always via `IConfiguration` (or `Options<T>` for shape).
+- **Fail fast** — validate required config in `Program.cs` at startup; missing values should throw before the service starts accepting requests.
 
 ## Logging
 
-- **`ILogger<T>`** via DI — never use `Console.WriteLine` or static loggers
+- **`ILogger<T>`** via DI — never use `Console.WriteLine` or static loggers.
+- **Serilog bootstrap** via `builder.AddPrmSerilog(serviceName: "auth"|"tenant"|"prm")` — sets up structured console output, `CorrelationId` enrichment, and the standard `MinimumLevel.Override` chain.
 - **Structured logging** — pass values as template parameters, not string concatenation:
 
   ```csharp
@@ -97,38 +108,52 @@ Rules:
   - `Warning` — recoverable problems
   - `Error` — failures that produce wrong results or 5xx
   - `Critical` — data loss or system-wide failure
-- **Never log passwords, tokens, PII, or connection strings**
+- **Never log passwords, tokens, PII, or connection strings.**
 
 ## Testing
 
-- **xUnit** for unit tests (not MSTest, not NUnit)
-- **Tests live in `backend/tests/`** mirroring the `src/` structure
-- **Integration tests hit a real MySQL** via Testcontainers or a dedicated test database — NOT mocked
-- **`WebApplicationFactory<TEntryPoint>`** for integration tests against the full pipeline
-- **Assertion library:** use plain `Assert.*` — no Fluent Assertions or Shouldly in the POC (keep dependencies minimal)
-- **Test naming:** `MethodName_Scenario_ExpectedBehavior` (e.g., `ResolveAsync_UnknownSlug_ReturnsNull`)
+- **xUnit** for unit and integration tests (not MSTest, not NUnit).
+- **Tests live in `backend/tests/PrmDashboard.Tests/`** mirroring the `src/` structure (one folder per service: `AuthService/`, `TenantService/`, `PrmService/`, etc.).
+- **Integration tests use real DuckDB** against deterministic Parquet fixtures (e.g., `PrmFixtureBuilder` writes a 21-row `prm_services.parquet` to a temp directory; per-test or per-class `IAsyncLifetime` cleans up). NOT mocked.
+- **Pure unit tests** for builders that don't need a connection (e.g., `BaseQueryService.BuildWhereClause` golden-string assertions). Access protected statics via `internal static *ForTest` shims gated by `<InternalsVisibleTo Include="PrmDashboard.Tests" />` in the source csproj.
+- **Assertion library:** plain `Assert.*` — no Fluent Assertions or Shouldly in the POC.
+- **Test naming:** `MethodName_Scenario_ExpectedBehavior` (e.g., `GetSummaryAsync_WithDateRange_IncludesPrevPeriod`).
+- **Pin exact values where derivable from the fixture** — e.g., `Assert.Equal(10.0, r.AvgPauseDurationMinutes)` is stronger than `Assert.True(r.AvgPauseDurationMinutes > 0)` and catches dedup regressions.
 
 ## Anti-patterns to avoid
 
-- ❌ Service locator (`serviceProvider.GetService<T>()` inside business logic) — use constructor injection
-- ❌ Static state (`public static Dictionary<...> _cache`) — use `IMemoryCache` or `IDistributedCache`
-- ❌ `async void` — always `async Task`
-- ❌ `.Result` / `.Wait()` on tasks — always `await`
-- ❌ Leaking `DbContext` instances across requests — they are not thread-safe
-- ❌ Raw SQL interpolation — always use parameters
-- ❌ Swallowing exceptions silently — log and rethrow or wrap in a domain exception
-- ❌ Hardcoded tenant names, airport codes, or service types anywhere in the code
+- ❌ Service locator (`serviceProvider.GetService<T>()` inside business logic) — use constructor injection.
+- ❌ Static state for caches (`public static Dictionary<...> _cache`) — register with DI as `Singleton`.
+- ❌ `async void` — always `async Task`.
+- ❌ `.Result` / `.Wait()` on tasks — always `await`.
+- ❌ Sharing a `DuckDBParameter` instance across two commands — re-create it (`new DuckDBParameter(p.Name, p.Value)`).
+- ❌ Raw SQL interpolation of caller-supplied values — always use parameters.
+- ❌ Swallowing exceptions silently — log and rethrow, or convert to a typed domain exception (`TenantParquetNotFoundException`) that the middleware maps to a status code.
+- ❌ Hardcoded tenant names, airport codes, or service types anywhere in the code.
+- ❌ EF Core, Pomelo, MySqlConnector, `DbContext`, `IQueryable`, or `OnModelCreating` in runtime services. (The `tools/PrmDashboard.CsvExporter` legacy data export is the only place `MySqlConnector` is allowed.)
+- ❌ `_paths.TenantPrmServices(slug)` directly in service code — use `ResolveTenantParquet(slug)` from the base class so the existence check (→ 404) and quote-escape happen consistently.
 
 ## Dependencies (pinned)
 
 ```xml
-<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
-<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
-<PackageReference Include="MySqlConnector" Version="2.3.7" />
+<!-- Shared / runtime services -->
+<PackageReference Include="DuckDB.NET.Data" Version="1.5.0" />
+<PackageReference Include="DuckDB.NET.Bindings.Full" Version="1.5.0" />
+<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.6" />
+<PackageReference Include="Microsoft.Extensions.ObjectPool" Version="10.0.6" />
+<PackageReference Include="Serilog" Version="4.2.0" />
+<PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+
+<!-- AuthService / TenantService / PrmService -->
 <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
 <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
 <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.6.2" />
+
+<!-- Gateway -->
 <PackageReference Include="Ocelot" Version="23.2.0" />
+
+<!-- Tools only — NOT runtime -->
+<PackageReference Include="MySqlConnector" Version="2.3.7" />
 ```
 
 Never upgrade major versions without a dedicated task and testing.
