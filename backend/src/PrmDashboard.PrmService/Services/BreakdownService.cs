@@ -1,272 +1,312 @@
-using Microsoft.EntityFrameworkCore;
-using PrmDashboard.PrmService.Data;
+using DuckDB.NET.Data;
+using PrmDashboard.Shared.Data;
 using PrmDashboard.Shared.DTOs;
 
 namespace PrmDashboard.PrmService.Services;
 
-public class BreakdownService : BaseQueryService
+public class BreakdownService : SqlBaseQueryService
 {
     private readonly ILogger<BreakdownService> _logger;
 
-    public BreakdownService(TenantDbContextFactory factory, ILogger<BreakdownService> logger)
-        : base(factory)
+    public BreakdownService(IDuckDbContext duck, TenantParquetPaths paths, ILogger<BreakdownService> logger)
+        : base(duck, paths)
     {
         _logger = logger;
     }
 
-    /// <summary>
-    /// Matrix: months x service types, COUNT DISTINCT id per cell.
-    /// </summary>
-    // TODO(perf): materializes filtered rows into memory then aggregates in C#.
-    // Acceptable for POC scale (~15k rows per tenant). For production, rewrite as
-    // raw SQL with ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) for dedup.
+    public async Task<BreakdownResponse> GetByAirlineAsync(
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
+    {
+        var items = await GroupCountAsync(tenantSlug, filters, "airline", skipNull: false, ct);
+        _logger.LogInformation("Airline breakdown for {Slug}/{Airport}: {Count}", tenantSlug, filters.Airport, items.Count);
+        return new BreakdownResponse(items);
+    }
+
+    public async Task<BreakdownResponse> GetByLocationAsync(
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
+    {
+        var items = await GroupCountAsync(tenantSlug, filters, "pos_location", skipNull: true, ct);
+        _logger.LogInformation("Location breakdown for {Slug}/{Airport}: {Count}", tenantSlug, filters.Airport, items.Count);
+        return new BreakdownResponse(items);
+    }
+
+    public async Task<RouteBreakdownResponse> GetByRouteAsync(
+        string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
+    {
+        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var (where, parms) = BuildWhereClause(filters);
+
+        await using var session = await _duck.AcquireAsync(ct);
+        await using var cmd = session.Connection.CreateCommand();
+        cmd.CommandText = $@"
+            WITH deduped AS (
+                SELECT * FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
+                    FROM '{path}' WHERE {where}
+                ) t WHERE rn = 1
+                    AND departure IS NOT NULL AND departure != ''
+                    AND arrival   IS NOT NULL AND arrival   != ''
+            ),
+            t AS (SELECT COUNT(*) AS total FROM deduped)
+            SELECT departure, arrival, COUNT(*)::INT AS cnt,
+                   CASE WHEN (SELECT total FROM t) > 0
+                        THEN ROUND(100.0 * COUNT(*) / (SELECT total FROM t), 2)
+                        ELSE 0.0 END AS pct
+            FROM deduped
+            GROUP BY departure, arrival
+            ORDER BY cnt DESC
+            LIMIT $limit";
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
+        cmd.Parameters.Add(new DuckDBParameter("limit", limit));
+
+        var items = new List<RouteItem>();
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            items.Add(new RouteItem(
+                Departure: reader.GetString(0),
+                Arrival: reader.GetString(1),
+                Count: Convert.ToInt32(reader.GetValue(2)),
+                Percentage: Convert.ToDouble(reader.GetValue(3))));
+        }
+        _logger.LogInformation("Route breakdown for {Slug}/{Airport}: {Count}", tenantSlug, filters.Airport, items.Count);
+        return new RouteBreakdownResponse(items);
+    }
+
     public async Task<ServiceTypeMatrixResponse> GetByServiceTypeAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
-        var query = ApplyFilters(db, filters);
+        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var (where, parms) = BuildWhereClause(filters);
 
-        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
-        var rows = await query.ToListAsync(ct);
-        var deduped = rows
-            .GroupBy(r => r.Id)
-            .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToList();
+        await using var session = await _duck.AcquireAsync(ct);
+        var conn = session.Connection;
 
-        var serviceTypes = deduped.Select(r => r.Service).Distinct().OrderBy(s => s).ToList();
+        // 1. Distinct service types
+        await using var typesCmd = conn.CreateCommand();
+        typesCmd.CommandText = $@"
+            WITH deduped AS (
+                SELECT * FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
+                    FROM '{path}' WHERE {where}
+                ) t WHERE rn = 1
+            )
+            SELECT DISTINCT service FROM deduped ORDER BY service";
+        foreach (var p in parms) typesCmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
+        var types = new List<string>();
+        await using (var r = await typesCmd.ExecuteReaderAsync(ct))
+            while (await r.ReadAsync(ct)) types.Add(r.GetString(0));
 
-        var matrixRows = deduped
-            .GroupBy(r => new { r.ServiceDate.Year, r.ServiceDate.Month })
-            .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
-            .Select(g =>
+        // 2. Matrix: month × service → count
+        await using var matCmd = conn.CreateCommand();
+        matCmd.CommandText = $@"
+            WITH deduped AS (
+                SELECT * FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
+                    FROM '{path}' WHERE {where}
+                ) t WHERE rn = 1
+            )
+            SELECT strftime(service_date, '%Y-%m') AS ym, service, COUNT(*)::INT AS cnt
+            FROM deduped
+            GROUP BY ym, service
+            ORDER BY ym";
+        foreach (var p in parms) matCmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
+
+        var byMonth = new Dictionary<string, Dictionary<string, int>>();
+        await using (var r = await matCmd.ExecuteReaderAsync(ct))
+        {
+            while (await r.ReadAsync(ct))
             {
-                var counts = new Dictionary<string, int>();
-                foreach (var st in serviceTypes)
-                    counts[st] = g.Count(r => r.Service == st);
+                var ym = r.GetString(0);
+                var sv = r.GetString(1);
+                var cnt = Convert.ToInt32(r.GetValue(2));
+                if (!byMonth.TryGetValue(ym, out var dict))
+                    byMonth[ym] = dict = new Dictionary<string, int>();
+                dict[sv] = cnt;
+            }
+        }
 
-                return new ServiceTypeMatrixRow(
-                    $"{g.Key.Year}-{g.Key.Month:D2}",
-                    counts,
-                    g.Count());
-            })
-            .ToList();
+        var rows = byMonth.OrderBy(kv => kv.Key).Select(kv =>
+        {
+            var counts = new Dictionary<string, int>();
+            foreach (var t in types) counts[t] = kv.Value.GetValueOrDefault(t);
+            var total = counts.Values.Sum();
+            return new ServiceTypeMatrixRow(kv.Key, counts, total);
+        }).ToList();
 
-        _logger.LogInformation("Service type matrix for {Slug}/{Airport}: {Types} types x {Months} months",
-            tenantSlug, filters.Airport, serviceTypes.Count, matrixRows.Count);
-
-        return new ServiceTypeMatrixResponse(serviceTypes, matrixRows);
+        _logger.LogInformation("Service type matrix for {Slug}/{Airport}: {Types}×{Months}",
+            tenantSlug, filters.Airport, types.Count, rows.Count);
+        return new ServiceTypeMatrixResponse(types, rows);
     }
 
-    /// <summary>
-    /// Sankey: AgentType -> Service -> top flights. Dedup by id (first row).
-    /// </summary>
-    // TODO(perf): materializes filtered rows into memory then aggregates in C#.
-    // Acceptable for POC scale (~15k rows per tenant). For production, rewrite as
-    // raw SQL with ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) for dedup.
     public async Task<SankeyResponse> GetByAgentTypeAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
-        var query = ApplyFilters(db, filters);
+        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var (where, parms) = BuildWhereClause(filters);
 
-        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
-        var rows = await query.ToListAsync(ct);
-        var deduped = rows
-            .GroupBy(r => r.Id)
-            .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToList();
+        await using var session = await _duck.AcquireAsync(ct);
+        var conn = session.Connection;
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $@"
+            WITH deduped AS (
+                SELECT * FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
+                    FROM '{path}' WHERE {where}
+                ) t WHERE rn = 1
+            )
+            SELECT prm_agent_type, service, flight FROM deduped";
+        foreach (var p in parms) cmd.Parameters.Add(p);
 
         var nodes = new Dictionary<string, int>();
         var links = new Dictionary<(string, string), int>();
 
-        foreach (var row in deduped)
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
         {
-            string agentType = row.PrmAgentType;
-            string service = row.Service;
-            string flight = row.Flight;
-
-            // Accumulate node values
-            nodes[agentType] = nodes.GetValueOrDefault(agentType) + 1;
-            nodes[service] = nodes.GetValueOrDefault(service) + 1;
-            nodes[flight] = nodes.GetValueOrDefault(flight) + 1;
-
-            // AgentType -> Service link
-            var link1 = (agentType, service);
-            links[link1] = links.GetValueOrDefault(link1) + 1;
-
-            // Service -> Flight link
-            var link2 = (service, flight);
-            links[link2] = links.GetValueOrDefault(link2) + 1;
+            var at = reader.GetString(0);
+            var sv = reader.GetString(1);
+            var fl = reader.GetString(2);
+            nodes[at] = nodes.GetValueOrDefault(at) + 1;
+            nodes[sv] = nodes.GetValueOrDefault(sv) + 1;
+            nodes[fl] = nodes.GetValueOrDefault(fl) + 1;
+            var k1 = (at, sv);
+            var k2 = (sv, fl);
+            links[k1] = links.GetValueOrDefault(k1) + 1;
+            links[k2] = links.GetValueOrDefault(k2) + 1;
         }
 
-        // Keep only top flights per service to avoid Sankey clutter
-        var topFlightLinks = links
-            .Where(kv => !nodes.ContainsKey(kv.Key.Item1) ||
-                deduped.Any(r => r.Service == kv.Key.Item1 && r.Flight == kv.Key.Item2))
-            .Where(kv => deduped.Any(r => r.PrmAgentType == kv.Key.Item1) ||
-                deduped.Any(r => r.Service == kv.Key.Item1))
-            .OrderByDescending(kv => kv.Value)
-            .ToList();
-
         var sankeyNodes = nodes.Select(kv => new SankeyNode(kv.Key, kv.Value)).ToList();
-        var sankeyLinks = topFlightLinks.Select(kv => new SankeyLink(kv.Key.Item1, kv.Key.Item2, kv.Value)).ToList();
+        var sankeyLinks = links.OrderByDescending(kv => kv.Value)
+            .Select(kv => new SankeyLink(kv.Key.Item1, kv.Key.Item2, kv.Value)).ToList();
 
         _logger.LogInformation("Sankey breakdown for {Slug}/{Airport}: {Nodes} nodes, {Links} links",
             tenantSlug, filters.Airport, sankeyNodes.Count, sankeyLinks.Count);
-
         return new SankeyResponse(sankeyNodes, sankeyLinks);
     }
 
-    /// <summary>
-    /// Breakdown by airline — group by Airline, COUNT DISTINCT id, percentage.
-    /// </summary>
-    public async Task<BreakdownResponse> GetByAirlineAsync(
-        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
-    {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
-        var query = ApplyFilters(db, filters);
-
-        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
-        var rows = await query.ToListAsync(ct);
-        var deduped = rows
-            .GroupBy(r => r.Id)
-            .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToList();
-
-        int total = deduped.Count;
-        var items = deduped
-            .GroupBy(r => r.Airline)
-            .Select(g => new BreakdownItem(
-                g.Key,
-                g.Count(),
-                total > 0 ? Math.Round((double)g.Count() / total * 100, 2) : 0))
-            .OrderByDescending(x => x.Count)
-            .ToList();
-
-        _logger.LogInformation("Airline breakdown for {Slug}/{Airport}: {Count} airlines",
-            tenantSlug, filters.Airport, items.Count);
-
-        return new BreakdownResponse(items);
-    }
-
-    /// <summary>
-    /// Breakdown by POS location — skip nulls/empty, COUNT DISTINCT id.
-    /// </summary>
-    public async Task<BreakdownResponse> GetByLocationAsync(
-        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
-    {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
-        var query = ApplyFilters(db, filters);
-
-        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
-        var rows = await query.ToListAsync(ct);
-        var deduped = rows
-            .GroupBy(r => r.Id)
-            .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToList();
-
-        var withLocation = deduped.Where(r => !string.IsNullOrEmpty(r.PosLocation)).ToList();
-        int total = withLocation.Count;
-
-        var items = withLocation
-            .GroupBy(r => r.PosLocation!)
-            .Select(g => new BreakdownItem(
-                g.Key,
-                g.Count(),
-                total > 0 ? Math.Round((double)g.Count() / total * 100, 2) : 0))
-            .OrderByDescending(x => x.Count)
-            .ToList();
-
-        _logger.LogInformation("Location breakdown for {Slug}/{Airport}: {Count} locations",
-            tenantSlug, filters.Airport, items.Count);
-
-        return new BreakdownResponse(items);
-    }
-
-    /// <summary>
-    /// Route breakdown — group by Departure+Arrival (skip nulls), top N.
-    /// </summary>
-    public async Task<RouteBreakdownResponse> GetByRouteAsync(
-        string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
-    {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
-        var query = ApplyFilters(db, filters);
-
-        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
-        var rows = await query.ToListAsync(ct);
-        var deduped = rows
-            .GroupBy(r => r.Id)
-            .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToList();
-
-        var withRoute = deduped
-            .Where(r => !string.IsNullOrEmpty(r.Departure) && !string.IsNullOrEmpty(r.Arrival))
-            .ToList();
-        int total = withRoute.Count;
-
-        var items = withRoute
-            .GroupBy(r => new { r.Departure, r.Arrival })
-            .Select(g => new RouteItem(
-                g.Key.Departure!,
-                g.Key.Arrival!,
-                g.Count(),
-                total > 0 ? Math.Round((double)g.Count() / total * 100, 2) : 0))
-            .OrderByDescending(x => x.Count)
-            .Take(limit)
-            .ToList();
-
-        _logger.LogInformation("Route breakdown for {Slug}/{Airport}: {Count} routes",
-            tenantSlug, filters.Airport, items.Count);
-
-        return new RouteBreakdownResponse(items);
-    }
-
-    /// <summary>
-    /// Agent × Service Type matrix — top 10 agents by volume, count per service type.
-    /// </summary>
     public async Task<AgentServiceMatrixResponse> GetAgentServiceMatrixAsync(
         string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
-        var query = ApplyFilters(db, filters);
+        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var (where, parms) = BuildWhereClause(filters);
 
-        var rows = await query.ToListAsync(ct);
-        var deduped = rows
-            .GroupBy(r => r.Id)
-            .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToList();
+        await using var session = await _duck.AcquireAsync(ct);
+        var conn = session.Connection;
 
-        var topAgents = deduped
-            .Where(r => !string.IsNullOrEmpty(r.AgentNo))
-            .GroupBy(r => r.AgentNo!)
-            .OrderByDescending(g => g.Count())
-            .Take(limit)
-            .Select(g => new { AgentNo = g.Key, Name = g.First().AgentName ?? g.Key })
-            .ToList();
+        // 1. Top agents by volume
+        await using var agentsCmd = conn.CreateCommand();
+        agentsCmd.CommandText = $@"
+            WITH deduped AS (
+                SELECT * FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
+                    FROM '{path}' WHERE {where}
+                ) t WHERE rn = 1
+                    AND agent_no IS NOT NULL AND agent_no != ''
+            )
+            SELECT agent_no, ANY_VALUE(agent_name) AS name, COUNT(*)::INT AS cnt
+            FROM deduped
+            GROUP BY agent_no
+            ORDER BY cnt DESC
+            LIMIT $limit";
+        foreach (var p in parms) agentsCmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
+        agentsCmd.Parameters.Add(new DuckDBParameter("limit", limit));
 
-        var serviceTypes = deduped
-            .Select(r => r.Service)
-            .Distinct()
-            .OrderBy(s => s)
-            .ToList();
+        var agentNos = new List<string>();
+        var agentNames = new List<string>();
+        await using (var r = await agentsCmd.ExecuteReaderAsync(ct))
+        {
+            while (await r.ReadAsync(ct))
+            {
+                agentNos.Add(r.GetString(0));
+                agentNames.Add(r.IsDBNull(1) ? r.GetString(0) : r.GetString(1));
+            }
+        }
 
-        var agentSet = topAgents.Select(a => a.AgentNo).ToHashSet();
-        var counts = deduped
-            .Where(r => r.AgentNo != null && agentSet.Contains(r.AgentNo))
-            .GroupBy(r => new { r.AgentNo, r.Service })
-            .ToDictionary(g => (g.Key.AgentNo!, g.Key.Service), g => g.Count());
+        if (agentNos.Count == 0)
+            return new AgentServiceMatrixResponse(agentNos, agentNames, new List<string>(), new List<List<int>>());
 
-        var values = topAgents.Select(a =>
-            serviceTypes.Select(s => counts.GetValueOrDefault((a.AgentNo, s), 0)).ToList()
-        ).ToList();
+        // 2. Service types (within the filtered + deduped set)
+        await using var typesCmd = conn.CreateCommand();
+        typesCmd.CommandText = $@"
+            WITH deduped AS (
+                SELECT * FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
+                    FROM '{path}' WHERE {where}
+                ) t WHERE rn = 1
+            )
+            SELECT DISTINCT service FROM deduped ORDER BY service";
+        foreach (var p in parms) typesCmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
+        var types = new List<string>();
+        await using (var r = await typesCmd.ExecuteReaderAsync(ct))
+            while (await r.ReadAsync(ct)) types.Add(r.GetString(0));
 
-        _logger.LogInformation("Agent-service matrix for {Slug}/{Airport}: {Agents} agents x {Types} types",
-            tenantSlug, filters.Airport, topAgents.Count, serviceTypes.Count);
+        // 3. Matrix values — filter to top agents only
+        var agentNosList = agentNos.Select((_, i) => $"$ag{i}").ToArray();
+        await using var matCmd = conn.CreateCommand();
+        matCmd.CommandText = $@"
+            WITH deduped AS (
+                SELECT * FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
+                    FROM '{path}' WHERE {where}
+                ) t WHERE rn = 1
+                    AND agent_no IN ({string.Join(",", agentNosList)})
+            )
+            SELECT agent_no, service, COUNT(*)::INT AS cnt
+            FROM deduped GROUP BY agent_no, service";
+        foreach (var p in parms) matCmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
+        for (var i = 0; i < agentNos.Count; i++) matCmd.Parameters.Add(new DuckDBParameter($"ag{i}", agentNos[i]));
 
-        return new AgentServiceMatrixResponse(
-            topAgents.Select(a => a.AgentNo).ToList(),
-            topAgents.Select(a => a.Name).ToList(),
-            serviceTypes,
-            values);
+        var counts = new Dictionary<(string, string), int>();
+        await using (var r = await matCmd.ExecuteReaderAsync(ct))
+        {
+            while (await r.ReadAsync(ct))
+                counts[(r.GetString(0), r.GetString(1))] = Convert.ToInt32(r.GetValue(2));
+        }
+
+        var values = agentNos.Select(a => types.Select(t => counts.GetValueOrDefault((a, t), 0)).ToList()).ToList();
+
+        _logger.LogInformation("Agent-service matrix for {Slug}/{Airport}: {A}×{T}",
+            tenantSlug, filters.Airport, agentNos.Count, types.Count);
+        return new AgentServiceMatrixResponse(agentNos, agentNames, types, values);
+    }
+
+    private async Task<List<BreakdownItem>> GroupCountAsync(
+        string tenantSlug, PrmFilterParams filters, string col, bool skipNull, CancellationToken ct)
+    {
+        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var (where, parms) = BuildWhereClause(filters);
+        var nullGuard = skipNull ? $" AND {col} IS NOT NULL AND {col} != ''" : "";
+
+        await using var session = await _duck.AcquireAsync(ct);
+        await using var cmd = session.Connection.CreateCommand();
+        cmd.CommandText = $@"
+            WITH deduped AS (
+                SELECT * FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
+                    FROM '{path}' WHERE {where}
+                ) t WHERE rn = 1{nullGuard}
+            ),
+            t AS (SELECT COUNT(*) AS total FROM deduped)
+            SELECT {col} AS label, COUNT(*)::INT AS cnt,
+                   CASE WHEN (SELECT total FROM t) > 0
+                        THEN ROUND(100.0 * COUNT(*) / (SELECT total FROM t), 2)
+                        ELSE 0.0 END AS pct
+            FROM deduped
+            GROUP BY {col}
+            ORDER BY cnt DESC";
+        foreach (var p in parms) cmd.Parameters.Add(p);
+
+        var items = new List<BreakdownItem>();
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            items.Add(new BreakdownItem(
+                Label: reader.GetString(0),
+                Count: Convert.ToInt32(reader.GetValue(1)),
+                Percentage: Convert.ToDouble(reader.GetValue(2))));
+        }
+        return items;
     }
 }
