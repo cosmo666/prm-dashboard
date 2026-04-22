@@ -148,7 +148,7 @@ public class KpiService : SqlBaseQueryService
             deduped AS (
                 SELECT * FROM (
                     SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn FROM filtered
-                ) WHERE rn = 1
+                ) t WHERE rn = 1
             ),
             durations AS (
                 SELECT id, SUM({activeExpr}) AS d FROM filtered GROUP BY id

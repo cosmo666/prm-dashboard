@@ -23,7 +23,8 @@ public class KpiServiceTests : IAsyncLifetime
     {
         var f = new PrmFilterParams { Airport = "DEL" };
         var r = await _svc.GetSummaryAsync(PrmFixtureBuilder.Tenant, f);
-        Assert.True(r.TotalPrm > 0);
+        // DEL distinct ids: 1,2,4-10 (current) + 15-20 (prev-period) = 15 total
+        Assert.Equal(15, r.TotalPrm);
         Assert.Equal(0, r.TotalPrmPrevPeriod);
     }
 
@@ -39,9 +40,10 @@ public class KpiServiceTests : IAsyncLifetime
             DateTo = new DateOnly(2026, 3, 7)
         };
         var r = await _svc.GetSummaryAsync(PrmFixtureBuilder.Tenant, f);
-        Assert.True(r.TotalPrm > 0);
-        // Ids 15-17 (dates Feb 22-24) fall into prev period window Feb 22-28
-        Assert.True(r.TotalPrmPrevPeriod > 0);
+        // DEL ids with service_date Mar 1-7: ids 1,2,4,5,6,7,8,9,10 = 9 distinct
+        Assert.Equal(9, r.TotalPrm);
+        // Ids 15-17 (dates Feb 22, Feb 23, Feb 24) fall into prev period window Feb 22-28
+        Assert.Equal(3, r.TotalPrmPrevPeriod);
     }
 
     [Fact]
