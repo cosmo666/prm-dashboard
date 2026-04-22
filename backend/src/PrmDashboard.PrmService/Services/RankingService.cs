@@ -18,18 +18,18 @@ public class RankingService : SqlBaseQueryService
     public async Task<RankingsResponse> GetTopAirlinesAsync(
         string tenantSlug, PrmFilterParams filters, int limit = 10, CancellationToken ct = default)
     {
-        var items = await GroupCountTopAsync(tenantSlug, filters, "airline", limit, ct);
-        _logger.LogInformation("Top airlines for {Slug}/{Airport}: {Count}",
-            tenantSlug, filters.Airport, items.Count);
+        var rows = await GroupCountAsync(tenantSlug, filters, "airline", skipNull: false, limit: limit, ct: ct);
+        var items = rows.Select(r => new RankingItem(r.Label, r.Count, r.Pct)).ToList();
+        _logger.LogInformation("Top airlines for {Slug}/{Airport}: {Count}", tenantSlug, filters.Airport, items.Count);
         return new RankingsResponse(items);
     }
 
     public async Task<RankingsResponse> GetTopServicesAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var items = await GroupCountTopAsync(tenantSlug, filters, "service", limit: null, ct);
-        _logger.LogInformation("Service rankings for {Slug}/{Airport}: {Count}",
-            tenantSlug, filters.Airport, items.Count);
+        var rows = await GroupCountAsync(tenantSlug, filters, "service", skipNull: false, limit: null, ct: ct);
+        var items = rows.Select(r => new RankingItem(r.Label, r.Count, r.Pct)).ToList();
+        _logger.LogInformation("Service rankings for {Slug}/{Airport}: {Count}", tenantSlug, filters.Airport, items.Count);
         return new RankingsResponse(items);
     }
 
@@ -196,43 +196,4 @@ public class RankingService : SqlBaseQueryService
         return new AgentRankingsResponse(items);
     }
 
-    private async Task<List<RankingItem>> GroupCountTopAsync(
-        string tenantSlug, PrmFilterParams filters, string col, int? limit, CancellationToken ct)
-    {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
-        var (where, parms) = BuildWhereClause(filters);
-
-        await using var session = await _duck.AcquireAsync(ct);
-        await using var cmd = session.Connection.CreateCommand();
-        cmd.CommandText = $@"
-            WITH deduped AS (
-                SELECT * FROM (
-                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
-                    FROM '{path}' WHERE {where}
-                ) t WHERE rn = 1
-            ),
-            t AS (SELECT COUNT(*) AS total FROM deduped)
-            SELECT d.{col} AS label,
-                   COUNT(*) AS cnt,
-                   CASE WHEN (SELECT total FROM t) > 0
-                        THEN ROUND(100.0 * COUNT(*) / (SELECT total FROM t), 2)
-                        ELSE 0.0 END AS pct
-            FROM deduped d
-            GROUP BY d.{col}
-            ORDER BY cnt DESC
-            {(limit.HasValue ? "LIMIT $limit" : "")}";
-        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
-        if (limit.HasValue) cmd.Parameters.Add(new DuckDBParameter("limit", limit.Value));
-
-        var items = new List<RankingItem>();
-        await using var reader = await cmd.ExecuteReaderAsync(ct);
-        while (await reader.ReadAsync(ct))
-        {
-            items.Add(new RankingItem(
-                Label: reader.GetString(0),
-                Count: Convert.ToInt32(reader.GetValue(1)),
-                Percentage: Convert.ToDouble(reader.GetValue(2))));
-        }
-        return items;
-    }
 }

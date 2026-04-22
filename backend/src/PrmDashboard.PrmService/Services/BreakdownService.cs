@@ -17,7 +17,8 @@ public class BreakdownService : SqlBaseQueryService
     public async Task<BreakdownResponse> GetByAirlineAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var items = await GroupCountAsync(tenantSlug, filters, "airline", skipNull: false, ct);
+        var rows = await GroupCountAsync(tenantSlug, filters, "airline", skipNull: false, ct: ct);
+        var items = rows.Select(r => new BreakdownItem(r.Label, r.Count, r.Pct)).ToList();
         _logger.LogInformation("Airline breakdown for {Slug}/{Airport}: {Count}", tenantSlug, filters.Airport, items.Count);
         return new BreakdownResponse(items);
     }
@@ -25,7 +26,8 @@ public class BreakdownService : SqlBaseQueryService
     public async Task<BreakdownResponse> GetByLocationAsync(
         string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        var items = await GroupCountAsync(tenantSlug, filters, "pos_location", skipNull: true, ct);
+        var rows = await GroupCountAsync(tenantSlug, filters, "pos_location", skipNull: true, ct: ct);
+        var items = rows.Select(r => new BreakdownItem(r.Label, r.Count, r.Pct)).ToList();
         _logger.LogInformation("Location breakdown for {Slug}/{Airport}: {Count}", tenantSlug, filters.Airport, items.Count);
         return new BreakdownResponse(items);
     }
@@ -157,7 +159,7 @@ public class BreakdownService : SqlBaseQueryService
                 ) t WHERE rn = 1
             )
             SELECT prm_agent_type, service, flight FROM deduped";
-        foreach (var p in parms) cmd.Parameters.Add(p);
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
 
         var nodes = new Dictionary<string, int>();
         var links = new Dictionary<(string, string), int>();
@@ -272,41 +274,4 @@ public class BreakdownService : SqlBaseQueryService
         return new AgentServiceMatrixResponse(agentNos, agentNames, types, values);
     }
 
-    private async Task<List<BreakdownItem>> GroupCountAsync(
-        string tenantSlug, PrmFilterParams filters, string col, bool skipNull, CancellationToken ct)
-    {
-        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
-        var (where, parms) = BuildWhereClause(filters);
-        var nullGuard = skipNull ? $" AND {col} IS NOT NULL AND {col} != ''" : "";
-
-        await using var session = await _duck.AcquireAsync(ct);
-        await using var cmd = session.Connection.CreateCommand();
-        cmd.CommandText = $@"
-            WITH deduped AS (
-                SELECT * FROM (
-                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
-                    FROM '{path}' WHERE {where}
-                ) t WHERE rn = 1{nullGuard}
-            ),
-            t AS (SELECT COUNT(*) AS total FROM deduped)
-            SELECT {col} AS label, COUNT(*)::INT AS cnt,
-                   CASE WHEN (SELECT total FROM t) > 0
-                        THEN ROUND(100.0 * COUNT(*) / (SELECT total FROM t), 2)
-                        ELSE 0.0 END AS pct
-            FROM deduped
-            GROUP BY {col}
-            ORDER BY cnt DESC";
-        foreach (var p in parms) cmd.Parameters.Add(p);
-
-        var items = new List<BreakdownItem>();
-        await using var reader = await cmd.ExecuteReaderAsync(ct);
-        while (await reader.ReadAsync(ct))
-        {
-            items.Add(new BreakdownItem(
-                Label: reader.GetString(0),
-                Count: Convert.ToInt32(reader.GetValue(1)),
-                Percentage: Convert.ToDouble(reader.GetValue(2))));
-        }
-        return items;
-    }
 }

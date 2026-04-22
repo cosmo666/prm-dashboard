@@ -163,6 +163,59 @@ public abstract class SqlBaseQueryService
         return (min, max);
     }
 
+    /// <summary>
+    /// Runs a "grouped count with percentage" query pattern — dedup by id via
+    /// <c>ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id)</c>, then
+    /// <c>SELECT {col} AS label, COUNT(*) AS count, ROUND(100.0 * COUNT(*) / total, 2) AS pct</c>
+    /// grouped by <paramref name="col"/>. Optionally skips rows where the grouped
+    /// column is NULL or empty. Optional <paramref name="limit"/> applies a
+    /// <c>LIMIT $limit</c> clause.
+    /// </summary>
+    /// <param name="col">Column name to group by — trusted input, interpolated directly into SQL.</param>
+    /// <param name="skipNull">When true, filters out rows where <c>{col}</c> is NULL or empty string.</param>
+    /// <param name="limit">Optional LIMIT applied after ORDER BY count DESC.</param>
+    protected async Task<List<(string Label, int Count, double Pct)>> GroupCountAsync(
+        string tenantSlug, PrmFilterParams filters, string col,
+        bool skipNull = false, int? limit = null, CancellationToken ct = default)
+    {
+        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var (where, parms) = BuildWhereClause(filters);
+        var nullGuard = skipNull ? $" AND {col} IS NOT NULL AND {col} != ''" : "";
+
+        await using var session = await _duck.AcquireAsync(ct);
+        await using var cmd = session.Connection.CreateCommand();
+        cmd.CommandText = $@"
+            WITH deduped AS (
+                SELECT * FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
+                    FROM '{path}' WHERE {where}
+                ) t WHERE rn = 1{nullGuard}
+            ),
+            t AS (SELECT COUNT(*) AS total FROM deduped)
+            SELECT {col} AS label,
+                   COUNT(*)::INT AS cnt,
+                   CASE WHEN (SELECT total FROM t) > 0
+                        THEN ROUND(100.0 * COUNT(*) / (SELECT total FROM t), 2)
+                        ELSE 0.0 END AS pct
+            FROM deduped
+            GROUP BY {col}
+            ORDER BY cnt DESC
+            {(limit.HasValue ? "LIMIT $limit" : "")}";
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
+        if (limit.HasValue) cmd.Parameters.Add(new DuckDBParameter("limit", limit.Value));
+
+        var items = new List<(string Label, int Count, double Pct)>();
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            items.Add((
+                Label: reader.GetString(0),
+                Count: Convert.ToInt32(reader.GetValue(1)),
+                Pct: Convert.ToDouble(reader.GetValue(2))));
+        }
+        return items;
+    }
+
     // --- Test shims ---
     // BuildWhereClause and GetPrevPeriodStart are protected static so they
     // aren't directly callable from xUnit. These internal wrappers allow the
