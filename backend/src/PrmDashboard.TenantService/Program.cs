@@ -1,10 +1,9 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using PrmDashboard.Shared.Data;
 using PrmDashboard.Shared.Logging;
 using PrmDashboard.Shared.Middleware;
-using PrmDashboard.TenantService.Data;
 using PrmDashboard.TenantService.Services;
 using Serilog;
 
@@ -20,9 +19,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var connStr = builder.Configuration.GetConnectionString("MasterDb")
-    ?? throw new InvalidOperationException("ConnectionStrings:MasterDb is required");
-
 var jwtSecret = builder.Configuration["Jwt:Secret"];
 if (string.IsNullOrEmpty(jwtSecret))
     throw new InvalidOperationException("Jwt:Secret is required");
@@ -35,8 +31,33 @@ var jwtAudience = builder.Configuration["Jwt:Audience"];
 if (string.IsNullOrEmpty(jwtAudience))
     throw new InvalidOperationException("Jwt:Audience is required");
 
-builder.Services.AddDbContext<MasterDbContext>(opt =>
-    opt.UseMySql(connStr, new MySqlServerVersion(new Version(8, 0, 36))));
+// Phase 3a foundation: DuckDB + Parquet data path
+builder.Services.Configure<DataPathOptions>(o =>
+{
+    o.Root = Environment.GetEnvironmentVariable("PRM_DATA_PATH")
+             ?? builder.Configuration["DataPath"]
+             ?? throw new InvalidOperationException(
+                 "Data path required: set PRM_DATA_PATH env var or DataPath in appsettings.");
+
+    o.PoolSize = builder.Configuration.GetValue<int?>("DataPath:PoolSize")
+                 ?? DataPathOptions.DefaultPoolSize;
+
+    if (o.PoolSize < DataPathOptions.MinPoolSize || o.PoolSize > DataPathOptions.MaxPoolSize)
+        throw new InvalidOperationException(
+            $"DataPath:PoolSize out of range [{DataPathOptions.MinPoolSize}, {DataPathOptions.MaxPoolSize}]: {o.PoolSize}");
+});
+
+// DataPathValidator MUST register before TenantsLoader — it runs first and
+// fails startup on missing data/ so TenantsLoader gets a clean error path.
+builder.Services.AddHostedService<DataPathValidator>();
+builder.Services.AddSingleton<IDuckDbContext, DuckDbContext>();
+builder.Services.AddSingleton<TenantParquetPaths>();
+
+// TenantsLoader is BOTH injected into TenantResolutionService AND run as a
+// hosted service. The second registration points the host lifecycle at the
+// same singleton instance.
+builder.Services.AddSingleton<TenantsLoader>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<TenantsLoader>());
 
 // JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -56,11 +77,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// Memory cache for tenant resolution
-builder.Services.AddMemoryCache();
-
 // Tenant services
-builder.Services.AddSingleton<SchemaMigrator>();
 builder.Services.AddScoped<TenantResolutionService>();
 
 // CORS — allowlist from config
