@@ -33,8 +33,7 @@ public class PerformanceServiceTests : IAsyncLifetime
     {
         var f = new PrmFilterParams { Airport = "ZZZ" };
         var r = await _svc.GetDurationStatsAsync(PrmFixtureBuilder.Tenant, f);
-        Assert.Equal(0, r.Min);
-        Assert.Equal(0, r.P95);
+        Assert.Equal(new DurationStatsResponse(0, 0, 0, 0, 0, 0), r);
     }
 
     [Fact]
@@ -52,8 +51,10 @@ public class PerformanceServiceTests : IAsyncLifetime
     {
         var f = new PrmFilterParams { Airport = "DEL" };
         var r = await _svc.GetPauseAnalysisAsync(PrmFixtureBuilder.Tenant, f);
-        Assert.True(r.TotalPaused >= 1); // Fixture Id=1 has a pause
-        Assert.True(r.AvgPauseDurationMinutes > 0);
+        // Fixture id 1 is the only paused service at DEL: paused at 920, resumed at 930.
+        // Expected gap: (930/100*60 + 930%100) - (920/100*60 + 920%100) = 570 - 560 = 10 min.
+        Assert.Equal(1, r.TotalPaused);
+        Assert.Equal(10.0, r.AvgPauseDurationMinutes);
     }
 
     [Fact]

@@ -45,7 +45,7 @@ public class PerformanceService : SqlBaseQueryService
         foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
 
         await using var reader = await cmd.ExecuteReaderAsync(ct);
-        if (!await reader.ReadAsync(ct) || reader.IsDBNull(6) || Convert.ToInt32(reader.GetValue(6)) == 0)
+        if (!await reader.ReadAsync(ct) || Convert.ToInt32(reader.GetValue(6)) == 0)
             return new DurationDistributionResponse(new List<DurationBucket>(), 0, 0, 0);
 
         var b = new int[]
