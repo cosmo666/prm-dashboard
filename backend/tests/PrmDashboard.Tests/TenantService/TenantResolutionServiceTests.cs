@@ -127,37 +127,6 @@ public class TenantResolutionServiceTests : IAsyncLifetime
         Assert.Null(result);
     }
 
-    // ---- ResolveAsync ----
-
-    [Fact]
-    public async Task ResolveAsync_KnownSlug_ReturnsDbConnectionFields()
-    {
-        var data = await _sut.ResolveAsync(ActiveSlug, CancellationToken.None);
-
-        Assert.NotNull(data);
-        Assert.Equal(TenantId, data!.Id);
-        Assert.Equal(ActiveSlug, data.Slug);
-        Assert.Equal("mysql-host", data.DbHost);
-        Assert.Equal(3306, data.DbPort);
-        Assert.Equal("active_db", data.DbName);
-        Assert.Equal("root", data.DbUser);
-        Assert.Equal("rootpw", data.DbPassword);
-    }
-
-    [Fact]
-    public async Task ResolveAsync_UnknownSlug_ReturnsNull()
-    {
-        var data = await _sut.ResolveAsync(UnknownSlug, CancellationToken.None);
-        Assert.Null(data);
-    }
-
-    [Fact]
-    public async Task ResolveAsync_InactiveSlug_ReturnsNull()
-    {
-        var data = await _sut.ResolveAsync(InactiveSlug, CancellationToken.None);
-        Assert.Null(data);
-    }
-
     // ---- GetAirportsForEmployeeAsync ----
 
     [Fact]

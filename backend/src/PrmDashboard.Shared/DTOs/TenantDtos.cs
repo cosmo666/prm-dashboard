@@ -8,11 +8,3 @@ public record TenantConfigResponse(
     string PrimaryColor
 );
 
-public record TenantResolveResponse(
-    int TenantId,
-    string DbHost,
-    int DbPort,
-    string DbName,
-    string DbUser,
-    string DbPassword
-);

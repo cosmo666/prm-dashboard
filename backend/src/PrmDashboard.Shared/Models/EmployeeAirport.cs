@@ -6,6 +6,4 @@ public class EmployeeAirport
     public int EmployeeId { get; set; }
     public string AirportCode { get; set; } = string.Empty;
     public string AirportName { get; set; } = string.Empty;
-
-    public Employee Employee { get; set; } = null!;
 }

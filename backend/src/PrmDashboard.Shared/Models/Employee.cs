@@ -12,7 +12,5 @@ public class Employee
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastLogin { get; set; }
 
-    public Tenant Tenant { get; set; } = null!;
     public ICollection<EmployeeAirport> Airports { get; set; } = new List<EmployeeAirport>();
-    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

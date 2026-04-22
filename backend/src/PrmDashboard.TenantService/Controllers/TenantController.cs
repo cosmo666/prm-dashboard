@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PrmDashboard.Shared.DTOs;
 using PrmDashboard.TenantService.Services;
 
 namespace PrmDashboard.TenantService.Controllers;
@@ -30,32 +29,6 @@ public class TenantController : ControllerBase
             return Problem(detail: $"Tenant '{slug}' not found", statusCode: 404, title: "Not Found");
 
         return Ok(config);
-    }
-
-    /// <summary>
-    /// Internal endpoint for service-to-service tenant resolution.
-    /// Returns tenant ID and connection string. NOT routed by the gateway —
-    /// only reachable within the Docker network. In production, add service-to-service auth.
-    /// </summary>
-    [Authorize]
-    [HttpGet("resolve/{slug}")]
-    public async Task<IActionResult> Resolve(string slug, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(slug))
-            return Problem(detail: "slug is required", statusCode: 400, title: "Bad Request");
-
-        var tenant = await _tenantService.ResolveAsync(slug, ct);
-        if (tenant == null)
-            return Problem(detail: $"Tenant '{slug}' not found or inactive", statusCode: 404, title: "Not Found");
-
-        var response = new TenantResolveResponse(
-            tenant.Id,
-            tenant.DbHost,
-            tenant.DbPort,
-            tenant.DbName,
-            tenant.DbUser,
-            tenant.DbPassword);
-        return Ok(response);
     }
 
     /// <summary>
