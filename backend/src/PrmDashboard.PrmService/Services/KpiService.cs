@@ -1,257 +1,195 @@
-using Microsoft.EntityFrameworkCore;
-using PrmDashboard.PrmService.Data;
+using DuckDB.NET.Data;
+using PrmDashboard.PrmService.Sql;
+using PrmDashboard.Shared.Data;
 using PrmDashboard.Shared.DTOs;
-using PrmDashboard.Shared.Extensions;
 
 namespace PrmDashboard.PrmService.Services;
 
-public class KpiService : BaseQueryService
+public class KpiService : SqlBaseQueryService
 {
     private readonly ILogger<KpiService> _logger;
 
-    public KpiService(TenantDbContextFactory factory, ILogger<KpiService> logger)
-        : base(factory)
+    public KpiService(IDuckDbContext duck, TenantParquetPaths paths, ILogger<KpiService> logger)
+        : base(duck, paths)
     {
         _logger = logger;
     }
 
-    /// <summary>
-    /// Total PRM count, agent counts, avg per agent per day, avg duration,
-    /// fulfillment %, and previous-period comparisons.
-    /// </summary>
-    // TODO(perf): materializes filtered rows into memory then aggregates in C#.
-    // Acceptable for POC scale (~15k rows per tenant). For production, rewrite as
-    // raw SQL with ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) for dedup.
     public async Task<KpiSummaryResponse> GetSummaryAsync(
-        string tenantSlug,
-        PrmFilterParams filters,
-        CancellationToken ct = default)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
-        var query = ApplyFilters(db, filters);
+        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        await using var session = await _duck.AcquireAsync(ct);
 
-        var rows = await query.ToListAsync(ct);
-        var currentMetrics = ComputeSummaryMetrics(rows, filters);
+        var current = await ComputeSummaryMetricsAsync(session.Connection, path, filters, ct);
 
-        // Previous period comparison (only when date range is specified)
-        int prevTotalPrm = 0;
-        double prevAvgPerAgentPerDay = 0;
-        double prevAvgDuration = 0;
-
-        if (filters.DateFrom.HasValue && filters.DateTo.HasValue)
+        var prev = (filters.DateFrom, filters.DateTo) switch
         {
-            var prevStart = GetPrevPeriodStart(filters.DateFrom.Value, filters.DateTo.Value);
-            var prevEnd = filters.DateFrom.Value.AddDays(-1);
+            ({ } from, { } to) => await ComputeSummaryMetricsAsync(
+                session.Connection, path,
+                new PrmFilterParams
+                {
+                    Airport = filters.Airport,
+                    DateFrom = GetPrevPeriodStart(from, to),
+                    DateTo = from.AddDays(-1),
+                    Airline = filters.Airline, Service = filters.Service,
+                    HandledBy = filters.HandledBy, Flight = filters.Flight, AgentNo = filters.AgentNo
+                }, ct),
+            _ => SummaryMetrics.Zero
+        };
 
-            var prevFilters = new PrmFilterParams
-            {
-                Airport = filters.Airport,
-                DateFrom = prevStart,
-                DateTo = prevEnd,
-                Airline = filters.Airline,
-                Service = filters.Service,
-                HandledBy = filters.HandledBy,
-                Flight = filters.Flight,
-                AgentNo = filters.AgentNo
-            };
-
-            var prevRows = await ApplyFilters(db, prevFilters).ToListAsync(ct);
-            var prevMetrics = ComputeSummaryMetrics(prevRows, prevFilters);
-            prevTotalPrm = prevMetrics.TotalPrm;
-            prevAvgPerAgentPerDay = prevMetrics.AvgPerAgentPerDay;
-            prevAvgDuration = prevMetrics.AvgDuration;
-        }
-
-        _logger.LogInformation(
-            "KPI summary for {Slug}/{Airport}: {TotalPrm} services",
-            tenantSlug, filters.Airport, currentMetrics.TotalPrm);
+        _logger.LogInformation("KPI summary for {Slug}/{Airport}: {TotalPrm}",
+            tenantSlug, filters.Airport, current.TotalPrm);
 
         return new KpiSummaryResponse(
-            TotalPrm: currentMetrics.TotalPrm,
-            TotalPrmPrevPeriod: prevTotalPrm,
-            TotalAgents: currentMetrics.TotalAgents,
-            AgentsSelf: currentMetrics.AgentsSelf,
-            AgentsOutsourced: currentMetrics.AgentsOutsourced,
-            AvgServicesPerAgentPerDay: currentMetrics.AvgPerAgentPerDay,
-            AvgServicesPrevPeriod: prevAvgPerAgentPerDay,
-            AvgDurationMinutes: currentMetrics.AvgDuration,
-            AvgDurationPrevPeriod: prevAvgDuration,
-            FulfillmentPct: currentMetrics.FulfillmentPct
-        );
+            TotalPrm: current.TotalPrm,
+            TotalPrmPrevPeriod: prev.TotalPrm,
+            TotalAgents: current.TotalAgents,
+            AgentsSelf: current.AgentsSelf,
+            AgentsOutsourced: current.AgentsOutsourced,
+            AvgServicesPerAgentPerDay: current.AvgPerAgentPerDay,
+            AvgServicesPrevPeriod: prev.AvgPerAgentPerDay,
+            AvgDurationMinutes: current.AvgDuration,
+            AvgDurationPrevPeriod: prev.AvgDuration,
+            FulfillmentPct: current.FulfillmentPct);
     }
 
-    /// <summary>
-    /// Groups services by PrmAgentType (SELF / OUTSOURCED) after dedup by id.
-    /// </summary>
-    // TODO(perf): materializes filtered rows into memory then aggregates in C#.
-    // Acceptable for POC scale (~15k rows per tenant). For production, rewrite as
-    // raw SQL with ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) for dedup.
     public async Task<HandlingDistributionResponse> GetHandlingDistributionAsync(
-        string tenantSlug,
-        PrmFilterParams filters,
-        CancellationToken ct = default)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
-        var query = ApplyFilters(db, filters);
+        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var (where, parms) = BuildWhereClause(filters);
 
-        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
-        var rows = await query.ToListAsync(ct);
-        var deduped = rows
-            .GroupBy(r => r.Id)
-            .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToList();
+        await using var session = await _duck.AcquireAsync(ct);
+        await using var cmd = session.Connection.CreateCommand();
+        cmd.CommandText = $@"
+            WITH deduped AS (
+                SELECT * FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
+                    FROM '{path}' WHERE {where}
+                ) t WHERE rn = 1
+            )
+            SELECT prm_agent_type, COUNT(*)::INT AS cnt
+            FROM deduped
+            GROUP BY prm_agent_type
+            ORDER BY cnt DESC";
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
 
-        var groups = deduped
-            .GroupBy(r => r.PrmAgentType)
-            .OrderByDescending(g => g.Count())
-            .ToList();
+        var labels = new List<string>();
+        var values = new List<int>();
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            labels.Add(reader.GetString(0));
+            values.Add(Convert.ToInt32(reader.GetValue(1)));
+        }
 
-        _logger.LogInformation(
-            "Handling distribution for {Slug}/{Airport}: {Groups} types",
-            tenantSlug, filters.Airport, groups.Count);
-
-        return new HandlingDistributionResponse(
-            Labels: groups.Select(g => g.Key).ToList(),
-            Values: groups.Select(g => g.Count()).ToList()
-        );
+        _logger.LogInformation("Handling distribution for {Slug}/{Airport}: {Types}",
+            tenantSlug, filters.Airport, labels.Count);
+        return new HandlingDistributionResponse(labels, values);
     }
 
-    /// <summary>
-    /// Requested vs provided KPIs with fulfillment and walk-up rates.
-    /// </summary>
     public async Task<RequestedVsProvidedKpiResponse> GetRequestedVsProvidedAsync(
-        string tenantSlug,
-        PrmFilterParams filters,
-        CancellationToken ct = default)
+        string tenantSlug, PrmFilterParams filters, CancellationToken ct = default)
     {
-        await using var db = await _factory.CreateDbContextAsync(tenantSlug, ct);
-        var query = ApplyFilters(db, filters);
+        var path = EscapePath(_paths.TenantPrmServices(tenantSlug));
+        var (where, parms) = BuildWhereClause(filters);
 
-        // Materialize first; EF Core 8 can't translate GroupBy().Select(g => g.OrderBy().First()).
-        var rows = await query.ToListAsync(ct);
-        var deduped = rows
-            .GroupBy(r => r.Id)
-            .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToList();
+        await using var session = await _duck.AcquireAsync(ct);
+        await using var cmd = session.Connection.CreateCommand();
+        cmd.CommandText = $@"
+            WITH deduped AS (
+                SELECT * FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn
+                    FROM '{path}' WHERE {where}
+                ) t WHERE rn = 1
+            )
+            SELECT COUNT(*)::INT AS provided, COALESCE(SUM(requested), 0)::INT AS requested
+            FROM deduped";
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
 
-        int totalProvided = deduped.Count;
-        // `Requested` is per-service-row: whether this specific PRM service was pre-requested (1) or walk-up (0).
-        // Sum after dedup = total pre-requested services in the filtered set.
-        int totalRequested = deduped.Sum(r => r.Requested);
+        int totalProvided = 0, totalRequested = 0;
+        await using (var reader = await cmd.ExecuteReaderAsync(ct))
+        {
+            if (await reader.ReadAsync(ct))
+            {
+                totalProvided = Convert.ToInt32(reader.GetValue(0));
+                totalRequested = Convert.ToInt32(reader.GetValue(1));
+            }
+        }
+
         int providedAgainstRequested = Math.Min(totalProvided, totalRequested);
-
-        // Fulfillment rate = % of provided services that were pre-requested.
-        // Bounded 0..100 because totalRequested <= totalProvided by construction
-        // (Requested is a 0/1 flag on each provided row).
-        double fulfillmentRate = totalProvided > 0
-            ? Math.Round((double)totalRequested / totalProvided * 100, 2)
-            : 0;
-
-        // Walk-ups are services provided beyond what was requested
+        double fulfillmentRate = totalProvided > 0 ? Math.Round(100.0 * totalRequested / totalProvided, 2) : 0;
         int walkUps = Math.Max(0, totalProvided - totalRequested);
-        double walkUpRate = totalProvided > 0
-            ? Math.Round((double)walkUps / totalProvided * 100, 2)
-            : 0;
+        double walkUpRate = totalProvided > 0 ? Math.Round(100.0 * walkUps / totalProvided, 2) : 0;
 
-        _logger.LogInformation(
-            "Requested vs provided for {Slug}/{Airport}: {Requested} req, {Provided} prov",
+        _logger.LogInformation("Requested vs provided for {Slug}/{Airport}: {Req} req, {Prov} prov",
             tenantSlug, filters.Airport, totalRequested, totalProvided);
-
         return new RequestedVsProvidedKpiResponse(
-            TotalRequested: totalRequested,
-            TotalProvided: totalProvided,
-            ProvidedAgainstRequested: providedAgainstRequested,
-            FulfillmentRate: fulfillmentRate,
-            WalkUpRate: walkUpRate
-        );
+            totalRequested, totalProvided, providedAgainstRequested, fulfillmentRate, walkUpRate);
     }
 
     private record SummaryMetrics(
-        int TotalPrm,
-        int TotalAgents,
-        int AgentsSelf,
-        int AgentsOutsourced,
-        double AvgPerAgentPerDay,
-        double AvgDuration,
-        double FulfillmentPct);
-
-    private static SummaryMetrics ComputeSummaryMetrics(
-        List<Shared.Models.PrmServiceRecord> rows,
-        PrmFilterParams filters)
+        int TotalPrm, int TotalAgents, int AgentsSelf, int AgentsOutsourced,
+        double AvgPerAgentPerDay, double AvgDuration, double FulfillmentPct)
     {
-        if (rows.Count == 0)
-            return new SummaryMetrics(0, 0, 0, 0, 0, 0, 0);
+        public static SummaryMetrics Zero { get; } = new(0, 0, 0, 0, 0, 0, 0);
+    }
 
-        // Distinct service count (dedup by id)
-        int totalPrm = rows.Select(r => r.Id).Distinct().Count();
+    private static async Task<SummaryMetrics> ComputeSummaryMetricsAsync(
+        DuckDBConnection conn, string path, PrmFilterParams filters, CancellationToken ct)
+    {
+        var (where, parms) = BuildWhereClause(filters);
+        var activeExpr = HhmmSql.ActiveMinutesExpr("start_time", "paused_at", "end_time");
 
-        // Agent counts — distinct AgentNo split by self vs outsourced
-        var selfAgents = rows
-            .Where(r => r.PrmAgentType == "SELF" && !string.IsNullOrEmpty(r.AgentNo))
-            .Select(r => r.AgentNo)
-            .Distinct()
-            .Count();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $@"
+            WITH filtered AS (SELECT * FROM '{path}' WHERE {where}),
+            deduped AS (
+                SELECT * FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) AS rn FROM filtered
+                ) WHERE rn = 1
+            ),
+            durations AS (
+                SELECT id, SUM({activeExpr}) AS d FROM filtered GROUP BY id
+            )
+            SELECT
+                (SELECT COUNT(*)::INT FROM deduped) AS total_prm,
+                (SELECT COUNT(DISTINCT agent_no)::INT FROM filtered
+                    WHERE prm_agent_type = 'SELF' AND agent_no IS NOT NULL AND agent_no != '') AS self_agents,
+                (SELECT COUNT(DISTINCT agent_no)::INT FROM filtered
+                    WHERE prm_agent_type != 'SELF' AND agent_no IS NOT NULL AND agent_no != '') AS outsourced_agents,
+                (SELECT COUNT(DISTINCT service_date)::INT FROM filtered) AS distinct_days,
+                (SELECT ROUND(AVG(d), 2) FROM durations) AS avg_duration,
+                (SELECT SUM(requested)::INT FROM deduped) AS total_requested";
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
 
-        var outsourcedAgents = rows
-            .Where(r => r.PrmAgentType != "SELF" && !string.IsNullOrEmpty(r.AgentNo))
-            .Select(r => r.AgentNo)
-            .Distinct()
-            .Count();
+        int totalPrm = 0, selfAgents = 0, outsourcedAgents = 0, distinctDays = 0;
+        int totalRequested = 0;
+        double avgDuration = 0;
+        await using (var r = await cmd.ExecuteReaderAsync(ct))
+        {
+            if (await r.ReadAsync(ct))
+            {
+                totalPrm         = Convert.ToInt32(r.GetValue(0));
+                selfAgents       = Convert.ToInt32(r.GetValue(1));
+                outsourcedAgents = Convert.ToInt32(r.GetValue(2));
+                distinctDays     = Convert.ToInt32(r.GetValue(3));
+                avgDuration      = r.IsDBNull(4) ? 0 : Convert.ToDouble(r.GetValue(4));
+                totalRequested   = r.IsDBNull(5) ? 0 : Convert.ToInt32(r.GetValue(5));
+            }
+        }
 
         int totalAgents = selfAgents + outsourcedAgents;
-
-        // Avg services per agent per day
-        int totalDays = ComputeTotalDays(rows, filters);
+        int totalDays = filters.DateFrom.HasValue && filters.DateTo.HasValue
+            ? filters.DateTo.Value.DayNumber - filters.DateFrom.Value.DayNumber + 1
+            : distinctDays;
         double avgPerAgentPerDay = totalAgents > 0 && totalDays > 0
-            ? Math.Round((double)totalPrm / totalAgents / totalDays, 2)
-            : 0;
-
-        // Avg duration: sum active minutes per id, then average
-        double avgDuration = ComputeAvgDuration(rows);
-
-        // Fulfillment: provided / requested
-        var deduped = rows
-            .GroupBy(r => r.Id)
-            .Select(g => g.OrderBy(r => r.RowId).First())
-            .ToList();
-
-        // Fulfillment rate = share of provided services that were pre-requested.
-        // Each row's `Requested` flag is 0 (walk-up) or 1 (pre-requested) per the
-        // seed data shape; summing after dedup gives the count of pre-requested
-        // services. Ratio is requested / total, bounded 0..100.
-        int totalRequested = deduped.Sum(r => r.Requested);
-        double fulfillmentPct = totalPrm > 0
-            ? Math.Round((double)totalRequested / totalPrm * 100, 2)
-            : 0;
+            ? Math.Round((double)totalPrm / totalAgents / totalDays, 2) : 0;
+        double fulfillmentPct = totalPrm > 0 ? Math.Round(100.0 * totalRequested / totalPrm, 2) : 0;
 
         return new SummaryMetrics(
             totalPrm, totalAgents, selfAgents, outsourcedAgents,
             avgPerAgentPerDay, avgDuration, fulfillmentPct);
-    }
-
-    private static int ComputeTotalDays(
-        List<Shared.Models.PrmServiceRecord> rows,
-        PrmFilterParams filters)
-    {
-        if (filters.DateFrom.HasValue && filters.DateTo.HasValue)
-            return filters.DateTo.Value.DayNumber - filters.DateFrom.Value.DayNumber + 1;
-
-        // Fallback: count distinct service dates in the data
-        return rows.Select(r => r.ServiceDate).Distinct().Count();
-    }
-
-    private static double ComputeAvgDuration(
-        List<Shared.Models.PrmServiceRecord> rows)
-    {
-        // Group by id, sum active minutes per service, then average
-        var durations = rows
-            .GroupBy(r => r.Id)
-            .Select(g => g.Sum(r =>
-                TimeHelpers.CalculateActiveMinutes(r.StartTime, r.PausedAt, r.EndTime)))
-            .ToList();
-
-        return durations.Count > 0
-            ? Math.Round(durations.Average(), 2)
-            : 0;
     }
 }
