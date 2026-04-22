@@ -33,8 +33,9 @@ public sealed class PrmFixtureBuilder : IAsyncLifetime
 
     public Task DisposeAsync()
     {
+        // DuckDbContext doesn't implement IDisposable/IAsyncDisposable — its
+        // pooled in-memory DuckDB connections are released at process exit.
         try { Directory.Delete(RootPath, recursive: true); } catch { /* best-effort */ }
-        if (Duck is IAsyncDisposable d) return d.DisposeAsync().AsTask();
         return Task.CompletedTask;
     }
 
@@ -192,7 +193,7 @@ public class PrmFixtureBuilderTests : IAsyncLifetime
         await using var s = await _fx.Duck.AcquireAsync();
         await using var cmd = s.Connection.CreateCommand();
         cmd.CommandText = $"SELECT COUNT(*) FROM '{_fx.Paths.TenantPrmServices(PrmFixtureBuilder.Tenant)}'";
-        var n = (long)(await cmd.ExecuteScalarAsync())!;
+        var n = System.Convert.ToInt64(await cmd.ExecuteScalarAsync());
         Assert.Equal(PrmFixtureBuilder.SeedRows().Count, (int)n);
     }
 }
