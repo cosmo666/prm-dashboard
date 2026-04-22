@@ -28,7 +28,7 @@ public class TrendService : BaseQueryService
             WHERE {where}
             GROUP BY service_date
             ORDER BY service_date";
-        foreach (var p in parms) cmd.Parameters.Add(p);
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
 
         var dates = new List<string>();
         var values = new List<int>();
@@ -59,7 +59,7 @@ public class TrendService : BaseQueryService
             WHERE {where}
             GROUP BY ym
             ORDER BY ym";
-        foreach (var p in parms) cmd.Parameters.Add(p);
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
 
         var months = new List<string>();
         var values = new List<int>();
@@ -97,7 +97,7 @@ public class TrendService : BaseQueryService
             FROM deduped
             WHERE start_time / 100 BETWEEN 0 AND 23
             GROUP BY dow, hr";
-        foreach (var p in parms) cmd.Parameters.Add(p);
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
 
         var values = new List<List<int>>();
         for (var d = 0; d < 7; d++) values.Add(Enumerable.Repeat(0, 24).ToList());
@@ -137,7 +137,7 @@ public class TrendService : BaseQueryService
             FROM deduped
             GROUP BY service_date
             ORDER BY service_date";
-        foreach (var p in parms) cmd.Parameters.Add(p);
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
 
         var dates = new List<string>();
         var provided = new List<int>();

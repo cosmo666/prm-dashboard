@@ -34,6 +34,7 @@ public class RecordService : BaseQueryService
         var conn = session.Connection;
 
         // Total count (on deduped set)
+        long total;
         await using (var countCmd = conn.CreateCommand())
         {
             countCmd.CommandText = $@"
@@ -42,61 +43,65 @@ public class RecordService : BaseQueryService
                     GROUP BY id
                 )";
             foreach (var p in parms) countCmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
-            var total = Convert.ToInt64(await countCmd.ExecuteScalarAsync(ct));
-
-            await using var cmd = conn.CreateCommand();
-            cmd.CommandText = $@"
-                WITH canonical AS (
-                    SELECT id, MIN(row_id) AS row_id FROM '{path}'
-                    WHERE {where}
-                    GROUP BY id
-                )
-                SELECT t.row_id, t.id, t.flight, t.agent_name, t.passenger_name,
-                       t.prm_agent_type, t.start_time, t.paused_at, t.end_time,
-                       t.service, t.seat_number, t.pos_location, t.no_show_flag,
-                       t.loc_name, t.arrival, t.airline, t.departure, t.requested,
-                       t.service_date
-                FROM '{path}' t
-                INNER JOIN canonical c ON c.row_id = t.row_id
-                ORDER BY t.{orderBy}
-                LIMIT $limit OFFSET $offset";
-            foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
-            cmd.Parameters.Add(new DuckDBParameter("limit", pageSize));
-            cmd.Parameters.Add(new DuckDBParameter("offset", (page - 1) * pageSize));
-
-            var items = new List<PrmRecordDto>();
-            await using var reader = await cmd.ExecuteReaderAsync(ct);
-            while (await reader.ReadAsync(ct))
-            {
-                items.Add(new PrmRecordDto(
-                    RowId: reader.GetInt32(0),
-                    Id: reader.GetInt32(1),
-                    Flight: reader.GetString(2),
-                    AgentName: reader.IsDBNull(3) ? null : reader.GetString(3),
-                    PassengerName: reader.GetString(4),
-                    PrmAgentType: reader.GetString(5),
-                    StartTime: reader.GetInt32(6),
-                    PausedAt: reader.IsDBNull(7) ? null : reader.GetInt32(7),
-                    EndTime: reader.GetInt32(8),
-                    Service: reader.GetString(9),
-                    SeatNumber: reader.IsDBNull(10) ? null : reader.GetString(10),
-                    PosLocation: reader.IsDBNull(11) ? null : reader.GetString(11),
-                    NoShowFlag: reader.IsDBNull(12) ? null : reader.GetString(12),
-                    LocName: reader.GetString(13),
-                    Arrival: reader.IsDBNull(14) ? null : reader.GetString(14),
-                    Airline: reader.GetString(15),
-                    Departure: reader.IsDBNull(16) ? null : reader.GetString(16),
-                    Requested: reader.GetInt32(17),
-                    ServiceDate: DateOnly.FromDateTime(reader.GetDateTime(18))));
-            }
-
-            var totalPages = total == 0 ? 0 : (int)Math.Ceiling((double)total / pageSize);
-            _logger.LogInformation(
-                "Records for {Slug}/{Airport}: page {Page}/{TotalPages}, {Count} items",
-                tenantSlug, filters.Airport, page, totalPages, items.Count);
-
-            return new PaginatedResponse<PrmRecordDto>(items, (int)total, page, pageSize, totalPages);
+            total = Convert.ToInt64(await countCmd.ExecuteScalarAsync(ct));
         }
+
+        // Dedup convention: `GROUP BY id + MIN(row_id)` is equivalent to
+        // `ROW_NUMBER() OVER (PARTITION BY id ORDER BY row_id) = 1` used elsewhere.
+        // Kept here because the join-back-by-row_id shape reads cleaner with an
+        // explicit canonical CTE rather than a windowed subquery.
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $@"
+            WITH canonical AS (
+                SELECT id, MIN(row_id) AS row_id FROM '{path}'
+                WHERE {where}
+                GROUP BY id
+            )
+            SELECT t.row_id, t.id, t.flight, t.agent_name, t.passenger_name,
+                   t.prm_agent_type, t.start_time, t.paused_at, t.end_time,
+                   t.service, t.seat_number, t.pos_location, t.no_show_flag,
+                   t.loc_name, t.arrival, t.airline, t.departure, t.requested,
+                   t.service_date
+            FROM '{path}' t
+            INNER JOIN canonical c ON c.row_id = t.row_id
+            ORDER BY t.{orderBy}
+            LIMIT $limit OFFSET $offset";
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
+        cmd.Parameters.Add(new DuckDBParameter("limit", pageSize));
+        cmd.Parameters.Add(new DuckDBParameter("offset", (page - 1) * pageSize));
+
+        var items = new List<PrmRecordDto>();
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            items.Add(new PrmRecordDto(
+                RowId: reader.GetInt32(0),
+                Id: reader.GetInt32(1),
+                Flight: reader.GetString(2),
+                AgentName: reader.IsDBNull(3) ? null : reader.GetString(3),
+                PassengerName: reader.GetString(4),
+                PrmAgentType: reader.GetString(5),
+                StartTime: reader.GetInt32(6),
+                PausedAt: reader.IsDBNull(7) ? null : reader.GetInt32(7),
+                EndTime: reader.GetInt32(8),
+                Service: reader.GetString(9),
+                SeatNumber: reader.IsDBNull(10) ? null : reader.GetString(10),
+                PosLocation: reader.IsDBNull(11) ? null : reader.GetString(11),
+                NoShowFlag: reader.IsDBNull(12) ? null : reader.GetString(12),
+                LocName: reader.GetString(13),
+                Arrival: reader.IsDBNull(14) ? null : reader.GetString(14),
+                Airline: reader.GetString(15),
+                Departure: reader.IsDBNull(16) ? null : reader.GetString(16),
+                Requested: reader.GetInt32(17),
+                ServiceDate: DateOnly.FromDateTime(reader.GetDateTime(18))));
+        }
+
+        var totalPages = total == 0 ? 0 : (int)Math.Ceiling((double)total / pageSize);
+        _logger.LogInformation(
+            "Records for {Slug}/{Airport}: page {Page}/{TotalPages}, {Count} items",
+            tenantSlug, filters.Airport, page, totalPages, items.Count);
+
+        return new PaginatedResponse<PrmRecordDto>(items, (int)total, page, pageSize, totalPages);
     }
 
     public async Task<List<PrmSegmentDto>> GetSegmentsAsync(
@@ -133,7 +138,7 @@ public class RecordService : BaseQueryService
             FROM '{path}'
             WHERE {where}
             ORDER BY row_id";
-        foreach (var p in parms) cmd.Parameters.Add(p);
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
 
         var segments = new List<PrmSegmentDto>();
         await using var reader = await cmd.ExecuteReaderAsync(ct);
