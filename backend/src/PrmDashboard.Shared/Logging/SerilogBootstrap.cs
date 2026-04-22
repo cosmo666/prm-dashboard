@@ -16,7 +16,6 @@ public static class SerilogBootstrap
         builder.Host.UseSerilog((ctx, services, lc) => lc
             .MinimumLevel.Information()
             .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
             .Enrich.FromLogContext()
             .Enrich.WithMachineName()
             .Enrich.WithProperty("Service", serviceName)
