@@ -1,7 +1,13 @@
 services:
+  # MySQL is only used by the legacy data-export pipeline
+  # (tools/PrmDashboard.CsvExporter). Runtime services do NOT connect to it.
+  # Gated behind the `data-pipeline` profile so `docker compose up` doesn't
+  # start it; bring it up explicitly with:
+  #   docker compose --profile data-pipeline up mysql -d
   mysql:
     image: mysql:8.0
     container_name: prm-mysql
+    profiles: ["data-pipeline"]
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
@@ -59,7 +65,7 @@ services:
     restart: unless-stopped
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__MasterDb=Server=mysql;Port=3306;Database=prm_master;User=root;Password=${MYSQL_ROOT_PASSWORD:-rootpassword}
+      - PRM_DATA_PATH=/app/data
       - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-change-in-production}
       - Jwt__Issuer=${JWT_ISSUER:-prm-dashboard}
       - Jwt__Audience=${JWT_AUDIENCE:-prm-dashboard-client}
@@ -69,9 +75,8 @@ services:
       - Cors__AllowedOrigins__1=http://aeroground.localhost:4200
       - Cors__AllowedOrigins__2=http://skyserve.localhost:4200
       - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
-    depends_on:
-      mysql:
-        condition: service_healthy
+    volumes:
+      - ./data:/app/data:ro
 
   tenant:
     build:
@@ -81,7 +86,7 @@ services:
     restart: unless-stopped
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__MasterDb=Server=mysql;Port=3306;Database=prm_master;User=root;Password=${MYSQL_ROOT_PASSWORD:-rootpassword}
+      - PRM_DATA_PATH=/app/data
       - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-change-in-production}
       - Jwt__Issuer=${JWT_ISSUER:-prm-dashboard}
       - Jwt__Audience=${JWT_AUDIENCE:-prm-dashboard-client}
@@ -89,9 +94,8 @@ services:
       - Cors__AllowedOrigins__1=http://aeroground.localhost:4200
       - Cors__AllowedOrigins__2=http://skyserve.localhost:4200
       - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
-    depends_on:
-      mysql:
-        condition: service_healthy
+    volumes:
+      - ./data:/app/data:ro
 
   prm:
     build:
@@ -101,8 +105,7 @@ services:
     restart: unless-stopped
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__MasterDb=Server=mysql;Port=3306;Database=prm_master;User=root;Password=${MYSQL_ROOT_PASSWORD:-rootpassword}
-      - TenantServiceUrl=http://tenant:8080
+      - PRM_DATA_PATH=/app/data
       - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-change-in-production}
       - Jwt__Issuer=${JWT_ISSUER:-prm-dashboard}
       - Jwt__Audience=${JWT_AUDIENCE:-prm-dashboard-client}
@@ -110,11 +113,8 @@ services:
       - Cors__AllowedOrigins__1=http://aeroground.localhost:4200
       - Cors__AllowedOrigins__2=http://skyserve.localhost:4200
       - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
-    depends_on:
-      mysql:
-        condition: service_healthy
-      tenant:
-        condition: service_started
+    volumes:
+      - ./data:/app/data:ro
 
   frontend:
     build:
