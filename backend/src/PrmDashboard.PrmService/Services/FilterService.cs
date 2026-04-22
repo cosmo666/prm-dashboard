@@ -4,7 +4,7 @@ using PrmDashboard.Shared.DTOs;
 
 namespace PrmDashboard.PrmService.Services;
 
-public class FilterService : SqlBaseQueryService
+public class FilterService : BaseQueryService
 {
     private readonly ILogger<FilterService> _logger;
 
@@ -24,7 +24,7 @@ public class FilterService : SqlBaseQueryService
         await using var session = await _duck.AcquireAsync(ct);
         var conn = session.Connection;
 
-        // Build airport WHERE fragment. Pattern matches SqlBaseQueryService.BuildWhereClause:
+        // Build airport WHERE fragment. Pattern matches BaseQueryService.BuildWhereClause:
         // multiple airports → IN clause; single (or empty) → equality.
         string where;
         List<DuckDBParameter> baseParms;

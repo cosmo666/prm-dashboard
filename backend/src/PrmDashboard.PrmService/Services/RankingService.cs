@@ -5,7 +5,7 @@ using PrmDashboard.Shared.DTOs;
 
 namespace PrmDashboard.PrmService.Services;
 
-public class RankingService : SqlBaseQueryService
+public class RankingService : BaseQueryService
 {
     private readonly ILogger<RankingService> _logger;
 

@@ -3,13 +3,13 @@ using PrmDashboard.Shared.DTOs;
 
 namespace PrmDashboard.Tests.PrmService;
 
-public class SqlBaseQueryServiceTests
+public class BaseQueryServiceTests
 {
     [Fact]
     public void BuildWhereClause_SingleAirport_ProducesEqualityAndOneParam()
     {
         var filters = new PrmFilterParams { Airport = "DEL" };
-        var (sql, parms) = SqlBaseQueryService.BuildWhereClauseForTest(filters);
+        var (sql, parms) = BaseQueryService.BuildWhereClauseForTest(filters);
 
         Assert.Contains("loc_name = $a0", sql);
         Assert.Single(parms);
@@ -21,7 +21,7 @@ public class SqlBaseQueryServiceTests
     public void BuildWhereClause_CsvAirports_ProducesInClause()
     {
         var filters = new PrmFilterParams { Airport = "DEL,BOM" };
-        var (sql, parms) = SqlBaseQueryService.BuildWhereClauseForTest(filters);
+        var (sql, parms) = BaseQueryService.BuildWhereClauseForTest(filters);
 
         Assert.Contains("loc_name IN (", sql);
         Assert.Equal(2, parms.Count);
@@ -43,7 +43,7 @@ public class SqlBaseQueryServiceTests
             Flight = "AI101",
             AgentNo = "A001"
         };
-        var (sql, parms) = SqlBaseQueryService.BuildWhereClauseForTest(filters);
+        var (sql, parms) = BaseQueryService.BuildWhereClauseForTest(filters);
 
         Assert.Contains("loc_name = $a0", sql);
         Assert.Contains("service_date >= $df", sql);
@@ -64,6 +64,6 @@ public class SqlBaseQueryServiceTests
         var from = new DateOnly(2026, 3, 8);
         var to = new DateOnly(2026, 3, 14);
         Assert.Equal(new DateOnly(2026, 3, 1),
-            SqlBaseQueryService.GetPrevPeriodStartForTest(from, to));
+            BaseQueryService.GetPrevPeriodStartForTest(from, to));
     }
 }

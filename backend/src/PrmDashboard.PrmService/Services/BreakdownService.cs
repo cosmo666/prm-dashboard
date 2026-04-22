@@ -4,7 +4,7 @@ using PrmDashboard.Shared.DTOs;
 
 namespace PrmDashboard.PrmService.Services;
 
-public class BreakdownService : SqlBaseQueryService
+public class BreakdownService : BaseQueryService
 {
     private readonly ILogger<BreakdownService> _logger;
 

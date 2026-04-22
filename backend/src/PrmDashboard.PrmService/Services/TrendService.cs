@@ -4,7 +4,7 @@ using PrmDashboard.Shared.DTOs;
 
 namespace PrmDashboard.PrmService.Services;
 
-public class TrendService : SqlBaseQueryService
+public class TrendService : BaseQueryService
 {
     private readonly ILogger<TrendService> _logger;
 

@@ -1,7 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using PrmDashboard.PrmService.Data;
 using PrmDashboard.PrmService.Middleware;
 using PrmDashboard.PrmService.Services;
 using PrmDashboard.Shared.Logging;
@@ -50,8 +49,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// DuckDB + Parquet data path (Phase 3d-1 migration — replaces TenantService HTTP path).
-// The HttpClient+TenantDbContextFactory below will be removed in Task 12 once all services migrate.
+// DuckDB + Parquet data path
 builder.Services.Configure<PrmDashboard.Shared.Data.DataPathOptions>(o =>
 {
     o.Root = Environment.GetEnvironmentVariable("PRM_DATA_PATH")
@@ -72,21 +70,6 @@ builder.Services.Configure<PrmDashboard.Shared.Data.DataPathOptions>(o =>
 builder.Services.AddHostedService<PrmDashboard.Shared.Data.DataPathValidator>();
 builder.Services.AddSingleton<PrmDashboard.Shared.Data.IDuckDbContext, PrmDashboard.Shared.Data.DuckDbContext>();
 builder.Services.AddSingleton<PrmDashboard.Shared.Data.TenantParquetPaths>();
-
-// Memory cache for tenant connection caching
-builder.Services.AddMemoryCache();
-
-// HttpContextAccessor — TenantDbContextFactory needs it to forward Bearer tokens
-builder.Services.AddHttpContextAccessor();
-
-// TenantDbContextFactory — resolves tenant DBs via TenantService HTTP calls
-var tenantServiceUrl = builder.Configuration["TenantServiceUrl"]
-    ?? throw new InvalidOperationException("TenantServiceUrl is required");
-
-builder.Services.AddHttpClient<TenantDbContextFactory>(client =>
-{
-    client.BaseAddress = new Uri(tenantServiceUrl);
-});
 
 // PRM query services
 builder.Services.AddScoped<KpiService>();

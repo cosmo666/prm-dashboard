@@ -5,7 +5,7 @@ using PrmDashboard.Shared.DTOs;
 
 namespace PrmDashboard.PrmService.Services;
 
-public class PerformanceService : SqlBaseQueryService
+public class PerformanceService : BaseQueryService
 {
     private readonly ILogger<PerformanceService> _logger;
 
