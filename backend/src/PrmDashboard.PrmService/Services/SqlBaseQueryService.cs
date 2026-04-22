@@ -126,6 +126,43 @@ public abstract class SqlBaseQueryService
     /// <summary>Escapes single quotes in filesystem path literals for use in DuckDB SQL strings.</summary>
     protected static string EscapePath(string path) => path.Replace("'", "''");
 
+    /// <summary>
+    /// Runs a <c>SELECT DISTINCT {col} FROM '{path}' WHERE {where} AND {col} IS NOT NULL ORDER BY 1</c>
+    /// query on the given connection, returning the distinct values as a list. Re-creates
+    /// <see cref="DuckDBParameter"/> instances per call (they're stateful — cannot be shared across commands).
+    /// </summary>
+    protected static async Task<List<string>> DistinctAsync(
+        DuckDBConnection conn, string path, string col, string where,
+        IReadOnlyList<DuckDBParameter> parms, CancellationToken ct = default)
+    {
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"SELECT DISTINCT {col} FROM '{path}' WHERE {where} AND {col} IS NOT NULL ORDER BY 1";
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
+        var list = new List<string>();
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+            list.Add(reader.GetString(0));
+        return list;
+    }
+
+    /// <summary>
+    /// Runs a <c>SELECT MIN(service_date), MAX(service_date)</c> query with the given WHERE fragment,
+    /// returning both dates as <see cref="DateOnly"/>, or <c>(null, null)</c> when no rows match.
+    /// </summary>
+    protected static async Task<(DateOnly? Min, DateOnly? Max)> MinMaxDateAsync(
+        DuckDBConnection conn, string path, string where,
+        IReadOnlyList<DuckDBParameter> parms, CancellationToken ct = default)
+    {
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"SELECT MIN(service_date), MAX(service_date) FROM '{path}' WHERE {where}";
+        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        if (!await reader.ReadAsync(ct) || reader.IsDBNull(0)) return (null, null);
+        var min = DateOnly.FromDateTime(reader.GetDateTime(0));
+        var max = DateOnly.FromDateTime(reader.GetDateTime(1));
+        return (min, max);
+    }
+
     // --- Test shims ---
     // BuildWhereClause and GetPrevPeriodStart are protected static so they
     // aren't directly callable from xUnit. These internal wrappers allow the

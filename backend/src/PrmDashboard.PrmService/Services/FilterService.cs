@@ -24,10 +24,11 @@ public class FilterService : SqlBaseQueryService
         await using var session = await _duck.AcquireAsync(ct);
         var conn = session.Connection;
 
-        // Build shared WHERE fragment + params for airport filter
+        // Build airport WHERE fragment. Pattern matches SqlBaseQueryService.BuildWhereClause:
+        // multiple airports → IN clause; single (or empty) → equality.
         string where;
         List<DuckDBParameter> baseParms;
-        if (airports.Length > 0)
+        if (airports.Length > 1)
         {
             var names = airports.Select((_, i) => $"$a{i}").ToArray();
             where = $"loc_name IN ({string.Join(",", names)})";
@@ -35,8 +36,9 @@ public class FilterService : SqlBaseQueryService
         }
         else
         {
+            var airportValue = airports.Length == 1 ? airports[0] : airport;
             where = "loc_name = $a0";
-            baseParms = new List<DuckDBParameter> { new("a0", airport) };
+            baseParms = new List<DuckDBParameter> { new("a0", airportValue) };
         }
 
         var airlines  = await DistinctAsync(conn, path, "airline",        where, baseParms, ct);
@@ -51,33 +53,5 @@ public class FilterService : SqlBaseQueryService
             tenantSlug, airport, airlines.Count, services.Count);
 
         return new FilterOptionsResponse(airlines, services, handledBy, flights, minDate, maxDate);
-    }
-
-    private static async Task<List<string>> DistinctAsync(
-        DuckDBConnection conn, string path, string col, string where,
-        IReadOnlyList<DuckDBParameter> parms, CancellationToken ct)
-    {
-        await using var cmd = conn.CreateCommand();
-        cmd.CommandText = $"SELECT DISTINCT {col} FROM '{path}' WHERE {where} AND {col} IS NOT NULL ORDER BY 1";
-        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
-        var list = new List<string>();
-        await using var reader = await cmd.ExecuteReaderAsync(ct);
-        while (await reader.ReadAsync(ct))
-            list.Add(reader.GetString(0));
-        return list;
-    }
-
-    private static async Task<(DateOnly?, DateOnly?)> MinMaxDateAsync(
-        DuckDBConnection conn, string path, string where,
-        IReadOnlyList<DuckDBParameter> parms, CancellationToken ct)
-    {
-        await using var cmd = conn.CreateCommand();
-        cmd.CommandText = $"SELECT MIN(service_date), MAX(service_date) FROM '{path}' WHERE {where}";
-        foreach (var p in parms) cmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
-        await using var reader = await cmd.ExecuteReaderAsync(ct);
-        if (!await reader.ReadAsync(ct) || reader.IsDBNull(0)) return (null, null);
-        var min = DateOnly.FromDateTime(reader.GetDateTime(0));
-        var max = DateOnly.FromDateTime(reader.GetDateTime(1));
-        return (min, max);
     }
 }
