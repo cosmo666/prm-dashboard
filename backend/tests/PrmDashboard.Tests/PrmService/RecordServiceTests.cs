@@ -64,4 +64,14 @@ public class RecordServiceTests : IAsyncLifetime
         var segs = await _svc.GetSegmentsAsync(PrmFixtureBuilder.Tenant, prmId: 9999, airport: "DEL");
         Assert.Empty(segs);
     }
+
+    [Fact]
+    public async Task GetRecordsAsync_SortStartTimeAsc_ReturnsItemsInAscendingOrder()
+    {
+        var f = new PrmFilterParams { Airport = "DEL" };
+        var r = await _svc.GetRecordsAsync(PrmFixtureBuilder.Tenant, f,
+            page: 1, pageSize: 100, sort: "start_time:asc");
+        var times = r.Items.Select(i => i.StartTime).ToList();
+        Assert.Equal(times.OrderBy(x => x).ToList(), times);
+    }
 }

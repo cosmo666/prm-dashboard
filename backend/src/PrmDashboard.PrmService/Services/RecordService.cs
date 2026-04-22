@@ -42,7 +42,7 @@ public class RecordService : SqlBaseQueryService
                     GROUP BY id
                 )";
             foreach (var p in parms) countCmd.Parameters.Add(new DuckDBParameter(p.ParameterName, p.Value));
-            var total = (long)(await countCmd.ExecuteScalarAsync(ct))!;
+            var total = Convert.ToInt64(await countCmd.ExecuteScalarAsync(ct));
 
             await using var cmd = conn.CreateCommand();
             cmd.CommandText = $@"
