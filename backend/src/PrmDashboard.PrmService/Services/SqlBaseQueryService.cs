@@ -32,6 +32,19 @@ public abstract class SqlBaseQueryService
     /// use an IN clause (<c>loc_name IN ($a0,$a1,...)</c>). All other filters
     /// are optional and omitted when absent.
     /// </summary>
+    /// <remarks>
+    /// Parameters emitted — callers must embed these names in their SQL and
+    /// re-bind the returned <see cref="DuckDBParameter"/>s onto their command:
+    /// <list type="bullet">
+    /// <item><description>Airport: <c>$a0</c> (single) or <c>$a0, $a1, ...</c> (multi)</description></item>
+    /// <item><description>Date range: <c>$df</c>, <c>$dt</c></description></item>
+    /// <item><description>Airline: <c>$al0, $al1, ...</c></description></item>
+    /// <item><description>Service: <c>$sv0, $sv1, ...</c></description></item>
+    /// <item><description>Handled-by: <c>$hb0, $hb1, ...</c></description></item>
+    /// <item><description>Flight: <c>$f</c></description></item>
+    /// <item><description>Agent no: <c>$ag</c></description></item>
+    /// </list>
+    /// </remarks>
     protected static (string Sql, IReadOnlyList<DuckDBParameter> Parameters) BuildWhereClause(
         PrmFilterParams filters)
     {
@@ -49,8 +62,10 @@ public abstract class SqlBaseQueryService
         }
         else
         {
-            // Single airport (or empty/null) — equality is cleaner and avoids
-            // DuckDB's occasional IN-clause planner overhead for single values.
+            // Single airport (or empty/null): equality is cleaner than a
+            // one-element IN clause and produces identical rows. The plan's
+            // original pattern used `{ Length: > 0 }` → IN; we split to give
+            // the planner a direct equality when possible.
             var airportValue = airports is { Length: 1 } ? airports[0] : (filters.Airport ?? "");
             sb.Append("loc_name = $a0");
             parms.Add(new DuckDBParameter("a0", airportValue));
@@ -97,9 +112,10 @@ public abstract class SqlBaseQueryService
     }
 
     /// <summary>
-    /// Calculates the start date of the previous comparison period.
-    /// The previous period has the same length as the current period and ends
-    /// the day before the current period starts.
+    /// Returns the start date of the previous comparison period. The previous
+    /// period has the same length as the current period (inclusive of both
+    /// endpoints) and ends the day before the current period starts — i.e.
+    /// <c>prev_end = from.AddDays(-1)</c>.
     /// </summary>
     protected static DateOnly GetPrevPeriodStart(DateOnly from, DateOnly to)
     {

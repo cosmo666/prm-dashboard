@@ -26,6 +26,7 @@ public class SqlBaseQueryServiceTests
         Assert.Contains("loc_name IN (", sql);
         Assert.Equal(2, parms.Count);
         Assert.Equal(new[] { "DEL", "BOM" }, parms.Select(p => p.Value).ToArray());
+        Assert.Equal(new[] { "a0", "a1" }, parms.Select(p => p.ParameterName).ToArray());
     }
 
     [Fact]
