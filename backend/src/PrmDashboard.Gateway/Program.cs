@@ -20,16 +20,11 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 builder.Services.AddOcelot(builder.Configuration);
 
-// Fail-fast JWT config
-var jwtSecret = builder.Configuration["Jwt:Secret"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
-if (string.IsNullOrEmpty(jwtSecret))
-    throw new InvalidOperationException("Jwt:Secret is required");
-if (string.IsNullOrEmpty(jwtIssuer))
-    throw new InvalidOperationException("Jwt:Issuer is required");
-if (string.IsNullOrEmpty(jwtAudience))
-    throw new InvalidOperationException("Jwt:Audience is required");
+// Fail-fast JWT config (length + placeholder check via shared validator)
+var jwt = PrmDashboard.Shared.Extensions.JwtStartupValidator.ReadAndValidate(builder.Configuration, "gateway");
+var jwtSecret = jwt.Secret;
+var jwtIssuer = jwt.Issuer;
+var jwtAudience = jwt.Audience;
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>

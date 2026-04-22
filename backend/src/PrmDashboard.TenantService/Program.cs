@@ -19,17 +19,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var jwtSecret = builder.Configuration["Jwt:Secret"];
-if (string.IsNullOrEmpty(jwtSecret))
-    throw new InvalidOperationException("Jwt:Secret is required");
-
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-if (string.IsNullOrEmpty(jwtIssuer))
-    throw new InvalidOperationException("Jwt:Issuer is required");
-
-var jwtAudience = builder.Configuration["Jwt:Audience"];
-if (string.IsNullOrEmpty(jwtAudience))
-    throw new InvalidOperationException("Jwt:Audience is required");
+var jwt = PrmDashboard.Shared.Extensions.JwtStartupValidator.ReadAndValidate(builder.Configuration, "tenant");
+var jwtSecret = jwt.Secret;
+var jwtIssuer = jwt.Issuer;
+var jwtAudience = jwt.Audience;
 
 // Phase 3a foundation: DuckDB + Parquet data path
 builder.Services.Configure<DataPathOptions>(o =>
