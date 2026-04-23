@@ -38,12 +38,14 @@ builder.Services.AddAuthentication("Bearer")
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+            ClockSkew = TimeSpan.Zero
         };
     });
 builder.Services.AddAuthorization();
 
 // CORS — allowlist from config
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+if (allowedOrigins.Length == 0) Console.Error.WriteLine("[startup] WARN: Cors:AllowedOrigins is empty; cross-origin browser requests will fail. Set it via config or env (e.g. Cors__AllowedOrigins__0=http://localhost:4200).");
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
