@@ -1,10 +1,15 @@
 import { environment } from '../../../../environments/environment';
 import { DatePreset } from '../../../core/store/filter.store';
 
-// POC_TODAY is hardcoded via environment config because seed data ends at 2026-03-31.
-// Production builds should remove this and use `new Date()` directly.
-const [pocY, pocM, pocD] = environment.pocToday.split('-').map(Number);
-export const POC_TODAY = new Date(pocY, pocM - 1, pocD);
+// POC_TODAY is anchored to environment.pocToday when set (dev build uses
+// '2026-03-31' so date-range presets line up with the seed data's last day).
+// Production builds set pocToday='' and this falls back to real `new Date()`.
+export const POC_TODAY = environment.pocToday
+  ? (() => {
+      const [y, m, d] = environment.pocToday.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    })()
+  : new Date();
 
 function iso(d: Date): string {
   const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
