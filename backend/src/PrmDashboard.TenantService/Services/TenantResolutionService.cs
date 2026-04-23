@@ -52,7 +52,7 @@ public class TenantResolutionService
         await using var cmd = session.Connection.CreateCommand();
         cmd.CommandText = $"""
             SELECT airport_code, airport_name
-            FROM '{EscapeSingleQuotes(_paths.MasterEmployeeAirports)}'
+            FROM '{TenantParquetPaths.EscapeSqlLiteral(_paths.MasterEmployeeAirports)}'
             WHERE employee_id = $eid
             ORDER BY airport_code
             """;
@@ -69,5 +69,4 @@ public class TenantResolutionService
         return result;
     }
 
-    private static string EscapeSingleQuotes(string path) => path.Replace("'", "''");
 }

@@ -52,7 +52,7 @@ public sealed class TenantsLoader : IHostedService
         await using var cmd = session.Connection.CreateCommand();
         cmd.CommandText = $"""
             SELECT id, name, slug, is_active, created_at, logo_url, primary_color
-            FROM '{EscapeSingleQuotes(_paths.MasterTenants)}'
+            FROM '{TenantParquetPaths.EscapeSqlLiteral(_paths.MasterTenants)}'
             WHERE is_active
             """;
 
@@ -73,5 +73,4 @@ public sealed class TenantsLoader : IHostedService
         return result;
     }
 
-    private static string EscapeSingleQuotes(string path) => path.Replace("'", "''");
 }

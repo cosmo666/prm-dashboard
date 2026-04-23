@@ -161,7 +161,7 @@ public class AuthenticationService
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = $"""
             SELECT id, name, slug, is_active, created_at, logo_url, primary_color
-            FROM '{EscapeSingleQuotes(_paths.MasterTenants)}'
+            FROM '{TenantParquetPaths.EscapeSqlLiteral(_paths.MasterTenants)}'
             WHERE slug = $slug AND is_active
             LIMIT 1
             """;
@@ -193,8 +193,8 @@ public class AuthenticationService
             SELECT e.id, e.tenant_id, e.username, e.password_hash, e.display_name, e.email,
                    e.is_active, e.created_at, e.last_login,
                    ea.airport_code, ea.airport_name
-            FROM '{EscapeSingleQuotes(_paths.MasterEmployees)}' e
-            LEFT JOIN '{EscapeSingleQuotes(_paths.MasterEmployeeAirports)}' ea
+            FROM '{TenantParquetPaths.EscapeSqlLiteral(_paths.MasterEmployees)}' e
+            LEFT JOIN '{TenantParquetPaths.EscapeSqlLiteral(_paths.MasterEmployeeAirports)}' ea
               ON ea.employee_id = e.id
             WHERE e.tenant_id = $tid AND e.username = $uname AND e.is_active
             ORDER BY e.id, ea.airport_code
@@ -213,8 +213,8 @@ public class AuthenticationService
             SELECT e.id, e.tenant_id, e.username, e.password_hash, e.display_name, e.email,
                    e.is_active, e.created_at, e.last_login,
                    ea.airport_code, ea.airport_name
-            FROM '{EscapeSingleQuotes(_paths.MasterEmployees)}' e
-            LEFT JOIN '{EscapeSingleQuotes(_paths.MasterEmployeeAirports)}' ea
+            FROM '{TenantParquetPaths.EscapeSqlLiteral(_paths.MasterEmployees)}' e
+            LEFT JOIN '{TenantParquetPaths.EscapeSqlLiteral(_paths.MasterEmployeeAirports)}' ea
               ON ea.employee_id = e.id
             WHERE e.id = $eid AND e.is_active
             ORDER BY ea.airport_code
@@ -269,5 +269,4 @@ public class AuthenticationService
         return (emp, airports, passwordHash);
     }
 
-    private static string EscapeSingleQuotes(string path) => path.Replace("'", "''");
 }

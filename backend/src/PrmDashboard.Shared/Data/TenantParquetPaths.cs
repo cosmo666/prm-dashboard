@@ -39,6 +39,13 @@ public sealed class TenantParquetPaths
     public string MasterEmployeeAirports => Path.Combine(_root, "master", "employee_airports.parquet");
 
     /// <summary>
+    /// Escapes single quotes for safe interpolation into DuckDB SQL string
+    /// literals (<c>FROM '{path}'</c>). The canonical helper used by every
+    /// service that embeds one of this class's paths into a query string.
+    /// </summary>
+    public static string EscapeSqlLiteral(string path) => path.Replace("'", "''");
+
+    /// <summary>
     /// Returns the per-tenant Parquet path. Throws
     /// <see cref="ArgumentException"/> if the slug doesn't match the allowed
     /// format — this is the last-line-of-defense against path traversal or
