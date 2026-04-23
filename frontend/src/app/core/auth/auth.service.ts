@@ -77,7 +77,6 @@ export class AuthService {
     return {
       id: res.employee.id,
       name: res.employee.displayName,
-      tenantId: 0, // not returned by backend; derive from TenantStore if needed
       tenantSlug: this.tenantStore.slug(),
       airports: res.employee.airports,
     };

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using PrmDashboard.PrmService.Services;
 
 namespace PrmDashboard.PrmService.Middleware;
@@ -38,6 +39,8 @@ public class ExceptionHandlerMiddleware
     {
         context.Response.StatusCode = status;
         context.Response.ContentType = "application/problem+json";
-        await context.Response.WriteAsJsonAsync(new { type = $"https://httpstatuses.com/{status}", title, status, detail });
+        // Use WriteAsync with pre-serialized JSON so WriteAsJsonAsync cannot override ContentType.
+        var body = JsonSerializer.Serialize(new { type = $"https://httpstatuses.com/{status}", title, status, detail });
+        await context.Response.WriteAsync(body);
     }
 }

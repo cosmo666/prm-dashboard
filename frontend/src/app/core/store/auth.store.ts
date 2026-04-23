@@ -9,7 +9,6 @@ export interface Airport {
 export interface Employee {
   id: number;
   name: string;
-  tenantId: number;
   tenantSlug: string;
   airports: Airport[];
 }
