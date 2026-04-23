@@ -58,7 +58,7 @@ export class LoginComponent {
     this.loading.set(true);
     this.error.set(null);
     try {
-      await firstValueFrom(this.auth.login(this.username(), this.password(), this.tenant.slug()));
+      await firstValueFrom(this.auth.login(this.username(), this.password()));
       this.router.navigate(['/home']);
     } catch (e: any) {
       this.error.set(e?.error?.message ?? 'Invalid credentials — try again');

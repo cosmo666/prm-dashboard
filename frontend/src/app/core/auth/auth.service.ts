@@ -28,7 +28,7 @@ export class AuthService {
   private readonly tenantStore = inject(TenantStore);
   private readonly router = inject(Router);
 
-  login(username: string, password: string, _tenantSlug: string): Observable<LoginResponse> {
+  login(username: string, password: string): Observable<LoginResponse> {
     return this.api.post<LoginResponse>('/auth/login', { username, password }).pipe(
       tap((res) => this.applySession(res)),
     );
