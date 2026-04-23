@@ -61,7 +61,7 @@ export class ServiceBreakupComponent {
     ).subscribe({
       next: (r) => {
         // ServiceTypeMatrixResponse: serviceTypes[], rows[{monthYear, serviceCounts, total}]
-        const svcTypes: string[] = r.byService.serviceTypes ?? [];
+        const _svcTypes: string[] = r.byService.serviceTypes ?? [];
         const monthRows: MatrixRow[] = (r.byService.rows ?? []).map((m: any) => {
           const counts: any = {};
           let total = 0;

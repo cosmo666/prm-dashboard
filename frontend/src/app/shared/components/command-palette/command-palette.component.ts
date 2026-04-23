@@ -7,7 +7,6 @@ import {
   effect,
   inject,
   signal,
-  AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -352,7 +351,7 @@ interface Command {
     }
   `],
 })
-export class CommandPaletteComponent implements AfterViewInit {
+export class CommandPaletteComponent {
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
   @ViewChild('listEl') listEl?: ElementRef<HTMLDivElement>;
 
@@ -407,8 +406,6 @@ export class CommandPaletteComponent implements AfterViewInit {
       }
     }, { allowSignalWrites: true });
   }
-
-  ngAfterViewInit(): void { /* no-op */ }
 
   @HostListener('document:keydown', ['$event'])
   onGlobalKeydown(e: KeyboardEvent): void {
