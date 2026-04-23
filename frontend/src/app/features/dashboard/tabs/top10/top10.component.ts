@@ -83,7 +83,7 @@ export class Top10Component {
       }),
       takeUntilDestroyed(),
     ).subscribe({
-      next: (r: any) => {
+      next: (r) => {
         this.topAirlines.set((r.airlines.items ?? []).map((a: any) => ({
           label: a.label,
           value: a.count,

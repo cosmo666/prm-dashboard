@@ -72,7 +72,7 @@ export class InsightsComponent {
       }),
       takeUntilDestroyed(),
     ).subscribe({
-      next: (r: any) => {
+      next: (r) => {
         // KPIs
         this.pauseRate.set(r.pause.pauseRate ?? 0);
         const hLabels: string[] = r.handling.labels ?? [];

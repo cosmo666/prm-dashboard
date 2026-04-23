@@ -29,7 +29,7 @@ export class FilterBarComponent implements OnInit {
 
   ngOnInit() {
     this.dataSvc.filterOptions().subscribe({
-      next: (res: any) => {
+      next: (res) => {
         this.airlines.set(res.airlines ?? []);
         this.services.set(res.services ?? []);
         this.loaded.set(true);

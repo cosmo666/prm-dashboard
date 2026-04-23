@@ -81,7 +81,7 @@ export class OverviewComponent {
       }),
       takeUntilDestroyed(),
     ).subscribe({
-      next: (r: any) => {
+      next: (r) => {
         // KPIs — compute delta as % change vs previous period
         this.totalPrm.set(r.kpis.totalPrm ?? 0);
         const prevPrm = r.kpis.totalPrmPrevPeriod;

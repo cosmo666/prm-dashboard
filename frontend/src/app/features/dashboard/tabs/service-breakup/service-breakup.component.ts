@@ -59,7 +59,7 @@ export class ServiceBreakupComponent {
       }),
       takeUntilDestroyed(),
     ).subscribe({
-      next: (r: any) => {
+      next: (r) => {
         // ServiceTypeMatrixResponse: serviceTypes[], rows[{monthYear, serviceCounts, total}]
         const svcTypes: string[] = r.byService.serviceTypes ?? [];
         const monthRows: MatrixRow[] = (r.byService.rows ?? []).map((m: any) => {

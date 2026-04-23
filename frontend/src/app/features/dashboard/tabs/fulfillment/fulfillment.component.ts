@@ -61,7 +61,7 @@ export class FulfillmentComponent {
       }),
       takeUntilDestroyed(),
     ).subscribe({
-      next: (r: any) => {
+      next: (r) => {
         // KPIs from RequestedVsProvidedKpiResponse
         this.totalRequested.set(r.rvp.totalRequested ?? 0);
         this.totalProvided.set(r.rvp.totalProvided ?? 0);

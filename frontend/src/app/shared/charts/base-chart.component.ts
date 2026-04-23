@@ -1,7 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgxEchartsDirective } from 'ngx-echarts';
-import { EChartsOption } from 'echarts';
+import { EChartsOption, ECElementEvent } from 'echarts';
 
 @Component({
   selector: 'app-base-chart',
@@ -197,7 +197,7 @@ export class BaseChartComponent {
   options = input.required<EChartsOption>();
   loading = input<boolean>(false);
   isEmpty = input<boolean>(false);
-  chartClick = output<any>();
+  chartClick = output<ECElementEvent>();
 
   // Screen-reader description — falls back to title/subtitle if no explicit
   // description is provided by the caller.
