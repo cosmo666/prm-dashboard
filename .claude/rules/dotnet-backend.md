@@ -78,9 +78,12 @@ Key invariants:
 
 - **`BCrypt.Net-Next`** for password hashing (work factor 11 default).
 - **`System.IdentityModel.Tokens.Jwt`** for token issuance and validation.
+- **Startup validation** — every service calls `PrmDashboard.Shared.Extensions.JwtStartupValidator.ReadAndValidate(builder.Configuration, "<svc>")` BEFORE wiring up `AddJwtBearer`. The validator enforces: non-empty `Jwt:Secret`/`Issuer`/`Audience`; minimum 32-byte secret (HS256); rejects the `change-in-production` placeholder shipped in `.env.example` / compose default. Never bypass with `config["Jwt:Secret"]` + a hand-written check — always call the validator.
+- **`ClockSkew = TimeSpan.Zero`** on every `TokenValidationParameters`. Default is 5 minutes, which silently extends the documented access-token lifetime by 33%.
 - **Access token** — 15 minutes, signed HS256 with secret from `Jwt:Secret` config.
 - **Refresh token** — 7 days, kept in `InMemoryRefreshTokenStore` (process-local — restart forgets all sessions). Delivered as httpOnly + Secure + SameSite=Strict cookie scoped to `/api/auth`. **POC compromise; needs a durable store before production.**
 - **JWT claims** — `sub` (employee id), `tenant_id`, `tenant_slug`, `name`, `airports` (CSV).
+- **Tenant slug format** — validated at `TenantParquetPaths.TenantPrmServices(slug)` via the compiled regex `^[a-z][a-z0-9-]{0,49}$`. Any request whose slug doesn't match hits `ArgumentException` before `Path.Combine`. The gateway/login flow already filter slugs in practice; this is defense-in-depth before filesystem operations.
 - **Airport RBAC** — PRM Service `AirportAccessMiddleware` parses `?airport=…` (one code or a CSV like `DEL,BOM`) and validates **every** requested airport against the JWT `airports` claim; 403 on any mismatch. In query logic always use `PrmFilterParams.AirportList` (not the raw `Airport` string) — same contract as `AirlineList` / `ServiceList` / `HandledByList`. `BaseQueryService.BuildWhereClause` handles the single-vs-multi airport branch (single → equality, multi → `IN`).
 
 ## Configuration
@@ -113,12 +116,15 @@ Key invariants:
 ## Testing
 
 - **xUnit** for unit and integration tests (not MSTest, not NUnit).
-- **Tests live in `backend/tests/PrmDashboard.Tests/`** mirroring the `src/` structure (one folder per service: `AuthService/`, `TenantService/`, `PrmService/`, etc.).
-- **Integration tests use real DuckDB** against deterministic Parquet fixtures (e.g., `PrmFixtureBuilder` writes a 21-row `prm_services.parquet` to a temp directory; per-test or per-class `IAsyncLifetime` cleans up). NOT mocked.
-- **Pure unit tests** for builders that don't need a connection (e.g., `BaseQueryService.BuildWhereClause` golden-string assertions). Access protected statics via `internal static *ForTest` shims gated by `<InternalsVisibleTo Include="PrmDashboard.Tests" />` in the source csproj.
+- **Tests live in `backend/tests/PrmDashboard.Tests/`** mirroring the `src/` structure (one folder per service: `AuthService/`, `TenantService/`, `PrmService/`, `Shared/`, etc.).
+- **Three test layers:**
+  - **Pure unit** — builders that don't need a connection (e.g., `BaseQueryService.BuildWhereClause` golden-string, `JwtStartupValidator.ReadAndValidate`, `TenantParquetPaths.TenantPrmServices` slug validation). Access protected statics via `internal static *ForTest` shims gated by `<InternalsVisibleTo Include="PrmDashboard.Tests" />` in the source csproj.
+  - **Service-level integration** — real DuckDB against deterministic Parquet fixtures (`PrmFixtureBuilder` writes a 21-row `prm_services.parquet` to a temp directory; per-test or per-class `IAsyncLifetime` cleans up). NOT mocked.
+  - **HTTP-boundary integration** — `WebApplicationFactory<PrmServiceEntryPoint>` for middleware behaviour (TenantSlugClaimCheckMiddleware, AirportAccessMiddleware, ExceptionHandlerMiddleware). Use a namespaced anchor class (`PrmServiceEntryPoint` in `PrmService/TestingEntryPoint.cs`) as the factory's type parameter — NOT the global `Program` class, because multiple projects in the solution define their own and CS0433 would collide. Inject config via `Environment.SetEnvironmentVariable("Jwt__Secret", …)` because the minimal-API entry reads `builder.Configuration` before `ConfigureAppConfiguration` overrides can apply.
 - **Assertion library:** plain `Assert.*` — no Fluent Assertions or Shouldly in the POC.
 - **Test naming:** `MethodName_Scenario_ExpectedBehavior` (e.g., `GetSummaryAsync_WithDateRange_IncludesPrevPeriod`).
 - **Pin exact values where derivable from the fixture** — e.g., `Assert.Equal(10.0, r.AvgPauseDurationMinutes)` is stronger than `Assert.True(r.AvgPauseDurationMinutes > 0)` and catches dedup regressions.
+- **Content-type in middleware responses:** use `Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(obj))` with an explicit `Response.ContentType = "application/problem+json"`. NOT `WriteAsJsonAsync(obj)` — it silently overwrites `ContentType` back to `application/json`, breaking RFC 7807 compliance and asserted by the middleware integration tests.
 
 ## Anti-patterns to avoid
 

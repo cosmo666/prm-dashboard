@@ -147,6 +147,16 @@ and `data/master/*.parquet` via DuckDB.
 | 2026-04-22 | TenantService no longer exposes `/resolve/{slug}` | Phase 3d-2 — endpoint had zero callers after PrmService migrated to DuckDB. Removed along with its `LegacyTenantResolveData` record and `TenantResolveResponse` DTO. |
 | 2026-04-22 | `TenantSlugClaimCheckMiddleware` requires both presence AND match of `X-Tenant-Slug` for any authenticated request with a `tenant_slug` claim | Defense-in-depth: a request without the gateway's injected header has bypassed the gateway entirely and shouldn't reach a controller. 400 on missing, 403 on mismatch. |
 | 2026-04-22 | `TenantParquetNotFoundException` → 404 mapping in `ExceptionHandlerMiddleware` | A newly provisioned tenant whose data hasn't been generated yet returns a typed Not Found rather than an opaque DuckDB IO error → 500. Restores the legacy 404 behaviour. |
+| 2026-04-22 | `JwtStartupValidator` in `Shared/Extensions` called from all 4 `Program.cs` | Enforces three invariants at startup: (a) `Jwt:Secret` is non-empty (AuthService had `?? throw` which accepted `""`); (b) rejects the `change-in-production` placeholder shipped in `.env.example`/compose fallback; (c) requires ≥32-byte secrets for HS256. Fails fast with a clear error rather than silently running with a zero-byte or publicly-known key. |
+| 2026-04-23 | HHMM truncation uses `//` everywhere (including `TrendService.GetHourlyAsync`) | One heatmap query had slipped through with `CAST(start_time / 100 AS INTEGER)`; `start_time=2359` would round to hour=24 and be silently dropped from the 7×24 grid. `BaseQueryService.ResolveTenantParquet(slug)` + `Convert.ToInt32` on scalar reads are enforced across all 25 endpoints. Regression test seeds `start_time=2359` and pins hour=23. |
+| 2026-04-23 | Tenant slug format validated at `TenantParquetPaths.TenantPrmServices(slug)` | Regex `^[a-z][a-z0-9-]{0,49}$` — blocks path-traversal sequences (`../etc`, `foo/bar`, `foo\bar`) before `Path.Combine`. Defense-in-depth; the gateway + login flow already filter slugs in practice but this is the last line before filesystem operations. |
+| 2026-04-23 | `ClockSkew = TimeSpan.Zero` on all JWT validators (Auth/Tenant/Prm/Gateway) | Default 5-min skew silently extended the 15-min access-token lifetime to 20. Making the documented lifetime the real bound. |
+| 2026-04-23 | Middleware writes `ProblemDetails` via `WriteAsync` + pre-serialised JSON, not `WriteAsJsonAsync` | `WriteAsJsonAsync` silently overwrote the `application/problem+json` content-type back to `application/json`. Uncovered by the new WebApplicationFactory middleware tests. |
+| 2026-04-23 | `WebApplicationFactory<PrmServiceEntryPoint>` integration tests for the 3 PrmService middlewares | 8 tests covering 401/400/403/404/200 at the HTTP boundary (`TenantSlugClaimCheckMiddleware`, `AirportAccessMiddleware`, `ExceptionHandlerMiddleware`). Uses a namespaced `PrmServiceEntryPoint` anchor class because multiple projects define a global `Program`. |
+| 2026-04-23 | Backend containers run as non-root (`USER app`) with per-service `HEALTHCHECK` | The aspnet:8.0 base image ships a non-root `app` user; previously ignored. Healthchecks live in both Dockerfile (for k8s / standalone) and compose (for dependency ordering). Gateway `depends_on` upgraded from `service_started` to `service_healthy` so it doesn't accept traffic before auth/tenant/prm finish initialising. |
+| 2026-04-23 | `ASPNETCORE_ENVIRONMENT` in compose is `${ASPNETCORE_ENVIRONMENT:-Development}` | Was hardcoded to `Development`, which exposed Swagger UI through the gateway in every deployment. CI/CD can now override via env. |
+| 2026-04-23 | Frontend ESLint wired up (`@angular-eslint@17` + `@typescript-eslint@7` + `eslint@8`) with `npm run lint` | Previously the rule file said "ng lint must pass" but no tooling was installed. Baseline: 0 errors, 28 warnings (all `no-explicit-any` in intentional ECharts handlers). |
+| 2026-04-23 | Frontend `forkJoin` subscribe results are type-inferred (not `(r: any)`) | Every dashboard tab discarded the typed DTO shape at the `next:` handler. Type-check now catches a backend DTO change at compile time. |
 
 ## Conventions
 
@@ -255,6 +265,19 @@ When adding a new tenant, the flow is:
 | **Phase 3d-2** | Final EF/MySQL cleanup — `/resolve` endpoint deleted, vestigial Shared models stripped, EF/Pomelo packages dropped from Shared.csproj | ✅ Complete |
 | **Hardening** | `TenantSlugClaimCheckMiddleware` requires header presence; `TenantParquetNotFoundException` → 404 | ✅ Complete |
 
-**Backend runtime is now EF/MySQL-free in source.** MySQL remains only as the source for the one-shot `tools/PrmDashboard.CsvExporter` data pipeline. **132/132 tests passing.**
+**Backend runtime is now EF/MySQL-free in source.** MySQL remains only as the source for the one-shot `tools/PrmDashboard.CsvExporter` data pipeline.
 
-Last updated: 2026-04-22 (Phase 3d-2 + hardening fixes for tenant-slug header presence and missing-parquet 404 mapping).
+### Post-migration review + hardening (2026-04-22 → 2026-04-23)
+
+Three-agent code review surfaced ~40 findings across backend / frontend / ops. All Critical + Important items closed in four phases. Highlights:
+
+- **Real bugs fixed (3):** HHMM heatmap `CAST` rounding, `(int)total` cast silently truncating at scale, `WriteAsJsonAsync` clobbering `application/problem+json` content-type.
+- **Security hardening:** `JwtStartupValidator` (length + placeholder + non-empty), slug path-traversal guard, `ClockSkew = TimeSpan.Zero`, CORS empty-allowlist startup warning, non-root `USER app` in all backend Dockerfiles.
+- **Ops:** `backend/.dockerignore` (context size cut dramatically), per-service `HEALTHCHECK` in Dockerfiles, per-service healthcheck stanzas in compose, gateway `depends_on: service_healthy`, `ASPNETCORE_ENVIRONMENT` override-able via env.
+- **Test coverage:** `WebApplicationFactory` integration tests for the 3 PrmService middlewares (8 new), `JwtStartupValidator` unit tests (9 new), `TenantParquetPaths.TenantPrmServices` slug validation (22 new), heatmap-boundary regression.
+- **Frontend tooling:** `@angular-eslint@17` + `@typescript-eslint@7` + `eslint@8` wired up with `ng lint`; scaffold `app.component.spec.ts` replaced with a real sanity test; `forkJoin` results now type-inferred instead of `(r: any)`; `tailwindcss` + `postcss` dead deps removed; `pocToday: ''` in production environment falls back to real `new Date()`.
+- **Dead code:** `Employee.tenantId` field removed, three copies of `EscapeSingleQuotes` consolidated to `TenantParquetPaths.EscapeSqlLiteral`, `.env.example` correctly unignored in `.gitignore`.
+
+**Tests: 172/172 backend + 1/1 frontend passing.** Build clean.
+
+Last updated: 2026-04-23 (Phase A–D review response + hardening — Docker compose now ships non-root containers with healthy-dependency wiring; 40 new backend tests; frontend has a working lint gate).
