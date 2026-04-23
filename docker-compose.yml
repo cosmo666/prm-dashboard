@@ -32,7 +32,7 @@ services:
     ports:
       - "${GATEWAY_PORT:-5000}:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
       - AUTH_SERVICE_URL=http://auth:8080
       - TENANT_SERVICE_URL=http://tenant:8080
       - PRM_SERVICE_URL=http://prm:8080
@@ -45,11 +45,11 @@ services:
       - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
     depends_on:
       auth:
-        condition: service_started
+        condition: service_healthy
       tenant:
-        condition: service_started
+        condition: service_healthy
       prm:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
       interval: 10s
@@ -64,7 +64,7 @@ services:
     container_name: prm-auth
     restart: unless-stopped
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
       - PRM_DATA_PATH=/app/data
       - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-change-in-production}
       - Jwt__Issuer=${JWT_ISSUER:-prm-dashboard}
@@ -77,6 +77,12 @@ services:
       - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
     volumes:
       - ./data:/app/data:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   tenant:
     build:
@@ -85,7 +91,7 @@ services:
     container_name: prm-tenant
     restart: unless-stopped
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
       - PRM_DATA_PATH=/app/data
       - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-change-in-production}
       - Jwt__Issuer=${JWT_ISSUER:-prm-dashboard}
@@ -96,6 +102,12 @@ services:
       - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
     volumes:
       - ./data:/app/data:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   prm:
     build:
@@ -104,7 +116,7 @@ services:
     container_name: prm-prm
     restart: unless-stopped
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
       - PRM_DATA_PATH=/app/data
       - Jwt__Secret=${JWT_SECRET:-your-256-bit-secret-key-change-in-production}
       - Jwt__Issuer=${JWT_ISSUER:-prm-dashboard}
@@ -115,6 +127,12 @@ services:
       - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
     volumes:
       - ./data:/app/data:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   frontend:
     build:

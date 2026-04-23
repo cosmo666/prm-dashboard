@@ -1,0 +1,22 @@
+# Exclude build artefacts from Docker build context. Each service Dockerfile
+# uses COPY src/Foo/... to pull only what it needs, but the daemon still
+# receives the whole context (potentially hundreds of MB of DuckDB native
+# binaries in bin/) unless we exclude them here.
+
+**/bin/
+**/obj/
+**/*.user
+**/*.pdb
+
+# Test project + tools are not needed for any runtime image.
+tests/
+tools/
+
+# Worktrees + IDE / editor noise.
+.worktrees/
+.vs/
+.idea/
+.vscode/
+
+# Solution file isn't needed inside the container.
+*.sln

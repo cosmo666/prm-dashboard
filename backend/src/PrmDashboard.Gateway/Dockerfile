@@ -23,4 +23,9 @@ RUN dotnet publish src/PrmDashboard.Gateway/PrmDashboard.Gateway.csproj -c Relea
 
 FROM base AS final
 COPY --from=build /app/publish .
+# HEALTHCHECK so standalone `docker run` / Kubernetes / ECS can surface
+# liveness without relying on docker-compose's healthcheck stanza.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -fsS http://localhost:8080/health || exit 1
+USER app
 ENTRYPOINT ["dotnet", "PrmDashboard.Gateway.dll"]
