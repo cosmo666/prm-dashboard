@@ -21,7 +21,7 @@
   max-width: 1600px;
   margin: 0 auto;
   padding: 0 24px;
-  height: 64px;
+  height: 52px;
   display: flex;
   align-items: center;
   gap: 20px;
@@ -40,8 +40,8 @@
 }
 
 .brand__mark {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   background: var(--ink);
   border-radius: 4px;
   display: flex;
@@ -63,10 +63,10 @@
 }
 
 .brand__glyph {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: 18px;
-  font-weight: 400;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--on-ink);
 }
 

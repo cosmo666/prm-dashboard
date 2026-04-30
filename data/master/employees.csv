@@ -1,0 +1,13 @@
+id,tenant_id,username,password_hash,display_name,email,is_active,created_at,last_login
+1,1,admin,$2a$11$AKu0gtKmBALgEV5o3TJ8a.WYTo1ly8tOwnDhUVw6QET0Fevvr9uya,Admin AeroGround,admin@aeroground.com,true,2026-04-09T11:07:37Z,2026-04-10T11:06:48Z
+2,1,john,BCRYPT_PENDING:admin123,John Mathews,john@aeroground.com,true,2026-04-09T11:07:37Z,
+3,1,priya,BCRYPT_PENDING:admin123,Priya Sharma,priya@aeroground.com,true,2026-04-09T11:07:37Z,
+4,1,ravi,BCRYPT_PENDING:admin123,Ravi Kumar,ravi@aeroground.com,true,2026-04-09T11:07:37Z,
+5,2,admin,BCRYPT_PENDING:admin123,Admin SkyServe,admin@skyserve.com,true,2026-04-09T11:07:37Z,
+6,2,anika,BCRYPT_PENDING:admin123,Anika Patel,anika@skyserve.com,true,2026-04-09T11:07:37Z,
+7,2,deepak,BCRYPT_PENDING:admin123,Deepak Reddy,deepak@skyserve.com,true,2026-04-09T11:07:37Z,
+8,2,sunita,BCRYPT_PENDING:admin123,Sunita Desai,sunita@skyserve.com,true,2026-04-09T11:07:37Z,
+9,3,admin,$2a$11$xNjlBSu4vl8h1QPK/dEPfOTKtbk9ZHXi6SAqHDFjxUgBR.fxDg83.,Admin GlobalPRM,admin@globalprm.com,true,2026-04-09T11:07:37Z,2026-04-20T14:37:01Z
+10,3,sarah,BCRYPT_PENDING:admin123,Sarah Williams,sarah@globalprm.com,true,2026-04-09T11:07:37Z,
+11,3,mike,BCRYPT_PENDING:admin123,Mike Johnson,mike@globalprm.com,true,2026-04-09T11:07:37Z,
+12,3,li,BCRYPT_PENDING:admin123,Li Wei,li@globalprm.com,true,2026-04-09T11:07:37Z,

@@ -14,6 +14,7 @@ import { NavigationStore } from '../../core/store/navigation.store';
 import { resolvePreset } from './utils/date-presets';
 
 const TAB_NAMES = ['Overview', 'Top 10', 'Service Breakup', 'Fulfillment', 'Insights'];
+const TAB_LABELS = ['Overview', 'Top 10', 'Service breakup', 'Fulfillment', 'Insights'];
 
 @Component({
   selector: 'app-dashboard',
@@ -31,6 +32,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private nav = inject(NavigationStore);
 
   activeTab = signal(0);
+  readonly tabLabels = TAB_LABELS;
   private initialized = false;
 
   // Human-readable summary of active secondary filters, e.g.

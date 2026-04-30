@@ -1,0 +1,4 @@
+id,name,slug,is_active,created_at,logo_url,primary_color
+1,AeroGround Services,aeroground,true,2026-04-09T11:07:37Z,,#2563eb
+2,SkyServe Ground Handling,skyserve,true,2026-04-09T11:07:37Z,,#7c3aed
+3,GlobalPRM,globalprm,true,2026-04-09T11:07:37Z,,#059669

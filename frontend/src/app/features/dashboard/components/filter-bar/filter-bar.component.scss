@@ -175,6 +175,96 @@
   font-weight: 600;
 }
 
+// ============================================================
+// Inline mode — compact pills used inside the tabs/control row
+// Each pill renders its own label/value/caret; an invisible
+// <mat-select> is absolutely positioned on top to catch clicks
+// and deliver Material's overlay panel.
+// ============================================================
+.filter-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.fb-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+
+  &:hover { border-color: var(--border-strong); }
+
+  &.is-active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    .fb-pill__val { color: var(--accent-fg); }
+  }
+}
+
+.fb-pill__label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.fb-pill__val {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.fb-pill__caret {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+// Invisible mat-select overlay — clicks pass through, Material's
+// overlay panel anchors to this element so the dropdown still
+// aligns correctly with the pill.
+:host ::ng-deep .fb-pill__select {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+
+  // Collapse Material's own visual into nothing — we provide the UI.
+  .mat-mdc-select-trigger { width: 100%; height: 100%; }
+  .mat-mdc-select-value,
+  .mat-mdc-select-placeholder,
+  .mat-mdc-select-arrow-wrapper { display: none !important; }
+}
+
+.fb-inline-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 140ms ease;
+
+  &:hover { color: var(--ink); border-color: var(--border-strong); }
+}
+
 // Responsive
 @media (max-width: 768px) {
   .filter-bar__body {

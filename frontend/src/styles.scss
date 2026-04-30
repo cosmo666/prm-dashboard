@@ -38,74 +38,145 @@
 }
 
 // ------------------------------------------------------------
-// Design tokens (CSS variables mirror Tailwind config for raw CSS)
+// Design tokens — "PRM Executive Dashboard" handoff (Inter Tight +
+// indigo accent, warm off-white surfaces, 9-tone categorical palette)
 // ------------------------------------------------------------
 :root {
   // Tenant accent — overridden by ThemeService from tenant.primaryColor
-  --tenant-accent: #1d4ed8;
-  --tenant-accent-soft: rgba(29, 78, 216, 0.12);
+  --tenant-accent: #5b5bd6;
+  --tenant-accent-soft: rgba(91, 91, 214, 0.12);
 
-  // LIGHT theme (default) — warm stone with cobalt accent
-  --bg: #fafaf7;
+  // LIGHT theme — airy warm off-white with indigo accent
+  --bg: #fcfcfb;
   --surface: #ffffff;
-  --surface-2: #f5f5f4;
-  --border: #e7e5e4;
-  --border-strong: #d6d3d1;
-  --ink: #0c0c0c;
-  --ink-muted: #44403c;
-  // --muted: darkened from #78716c to #706a65 for WCAG AA on both --bg and --surface-2
-  // Contrast ratios: 5.08:1 on --bg, 5.31:1 on --surface, 4.88:1 on --surface-2
-  --muted: #706a65;
-  --accent: #1d4ed8;
-  --accent-hover: #1e40af;
-  --accent-bg: #eff6ff;
-  --accent-fg: #1e3a8a;
-  --success: #047857;
-  --warning: #b45309;
-  --danger: #b91c1c;
+  --surface-2: #f6f6f4;
+  --surface-3: #f0efec;
+  --border: #ebeae6;
+  --border-strong: #dcdad4;
+  --ink: #111110;
+  --ink-2: #1f1e1b;
+  --ink-muted: #5b594f;
+  --muted: #706a65;          // darkened from handoff #8a8577 for WCAG AA
+  --muted-2: #b5b0a2;
 
-  --shadow-card: 0 1px 2px rgba(12, 12, 12, 0.04);
-  --shadow-elevated: 0 8px 24px rgba(12, 12, 12, 0.08);
+  // Primary: modern SaaS indigo — confident, not too bright
+  --accent: #5b5bd6;
+  --accent-hover: #4a4ac7;
+  --accent-bg: #eceafc;      // alias of accent-soft
+  --accent-soft: #eceafc;
+  --accent-fg: #2f2da6;      // readable on --accent-soft (WCAG AA)
 
-  // Translucent chrome backgrounds (used by sticky top bar)
-  --topbar-bg: rgba(250, 250, 247, 0.85);
+  --success: #2d6a3c;
+  --success-soft: #e7f1e8;
+  --warning: #b35a00;
+  --warning-soft: #fbefda;
+  --danger: #b03a2e;
+  --danger-soft: #f8e4e0;
+
+  // Categorical palette — indigo → violet → amber → coral → emerald → sky → rose → slate → lime
+  --c-cat-1: #5b5bd6;
+  --c-cat-2: #8e4ec6;
+  --c-cat-3: #d4a017;
+  --c-cat-4: #e5684f;
+  --c-cat-5: #2f9e6e;
+  --c-cat-6: #4a8dcf;
+  --c-cat-7: #d45d8a;
+  --c-cat-8: #5f6977;
+  --c-cat-9: #8aa03d;
+
+  --shadow-sm: 0 1px 2px rgba(17, 17, 16, 0.04);
+  --shadow-md: 0 4px 14px rgba(17, 17, 16, 0.06);
+  --shadow-lg: 0 12px 32px rgba(17, 17, 16, 0.08);
+  // Back-compat aliases (several component SCSS files still reference these)
+  --shadow-card: 0 1px 2px rgba(17, 17, 16, 0.04);
+  --shadow-elevated: 0 12px 32px rgba(17, 17, 16, 0.08);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius: 10px;
+  --radius-lg: 12px;
+
+  // Shadow aliases used by component styles
+  --shadow-1: 0 1px 2px rgba(17, 17, 16, 0.04);
+  --shadow-2: 0 4px 14px rgba(17, 17, 16, 0.06);
+
+  // Translucent chrome background (sticky top bar)
+  --topbar-bg: color-mix(in srgb, var(--bg) 80%, transparent);
 
   // Text/icon color that sits ON an --ink-colored surface (brand marks,
-  // primary buttons, user avatars). Must always contrast with --ink regardless
-  // of theme. In light mode --ink is near-black so on-ink is off-white; in
-  // dark mode --ink is near-white so on-ink flips to near-black.
-  --on-ink: #fafaf7;
+  // primary buttons, user avatars). Flips with theme so contrast is preserved.
+  --on-ink: #fcfcfb;
 
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  // Typography: Inter Tight for UI, JetBrains Mono for numeric / data
+  --font-sans: "Inter Tight", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; // kept as alias; design has no serif
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  // Density (default = comfortable)
+  --pad-card: 14px;
+  --pad-card-y: 12px;
+  --gap-row: 10px;
+  --gap-col: 10px;
+  --kpi-value: 28px;
+  --kpi-value-lh: 1.05;
 }
 
-// DARK theme — deep ink with warm highlights; triggered by [data-theme="dark"] on <html>
+[data-density="compact"] {
+  --pad-card: 12px;
+  --pad-card-y: 11px;
+  --gap-row: 10px;
+  --gap-col: 10px;
+  --kpi-value: 24px;
+}
+
+// DARK theme — deep warm-black with teal accent (design uses teal, not indigo, in dark)
 [data-theme="dark"] {
-  --bg: #0a0a0a;
-  --surface: #141413;
-  --surface-2: #1c1c1b;
-  --border: #262624;
-  --border-strong: #38383540;
-  --ink: #fafaf7;
-  --ink-muted: #d6d3d1;
-  --muted: #a8a29e;
-  --accent: #60a5fa;
-  --accent-hover: #93c5fd;
-  --accent-bg: #1e293b;
-  --accent-fg: #93c5fd;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
+  --bg: #0b0b0a;
+  --surface: #131311;
+  --surface-2: #1a1a17;
+  --surface-3: #1f1e1b;
+  --border: #262522;
+  --border-strong: #35342f;
+  --ink: #f6f5f0;
+  --ink-2: #e9e7e0;
+  --ink-muted: #c3bfb2;
+  --muted: #8f8a7c;
+  --muted-2: #5a574d;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --accent: #4ec7b8;
+  --accent-hover: #6fd5c7;
+  --accent-bg: #0e302d;
+  --accent-soft: #0e302d;
+  --accent-fg: #8fe0d3;
 
-  --topbar-bg: rgba(10, 10, 10, 0.78);
+  --c-cat-1: #4ec7b8;
+  --c-cat-2: #c98bc8;
+  --c-cat-3: #e8b556;
+  --c-cat-4: #e07e70;
+  --c-cat-5: #88b689;
+  --c-cat-6: #8ea1dc;
+  --c-cat-7: #d69270;
+  --c-cat-8: #a8a69e;
+  --c-cat-9: #d99bb6;
 
-  // Dark mode: --ink is near-white, so on-ink flips to near-black
-  --on-ink: #0a0a0a;
+  --success: #3dd38a;
+  --success-soft: #0f2a1d;
+  --warning: #e8a33d;
+  --warning-soft: #2a1f0a;
+  --danger: #ef6354;
+  --danger-soft: #2a1310;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  --topbar-bg: color-mix(in srgb, var(--bg) 78%, transparent);
+
+  --on-ink: #0b0b0a;
 }
 
 // ------------------------------------------------------------
@@ -178,8 +249,8 @@ input, select, textarea {
 // Editorial utility classes (used across components)
 // ------------------------------------------------------------
 .font-display {
-  font-family: var(--font-serif);
-  font-variation-settings: 'opsz' 144, 'SOFT' 0;
+  font-family: var(--font-sans);
+  font-weight: 500;
   letter-spacing: -0.02em;
 }
 
@@ -190,13 +261,13 @@ input, select, textarea {
 }
 
 .label-micro {
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: 10px;
   line-height: 14px;
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--muted);
-  font-family: var(--font-sans);
 }
 
 .hairline {

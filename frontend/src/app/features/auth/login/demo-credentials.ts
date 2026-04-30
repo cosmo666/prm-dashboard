@@ -1,7 +1,7 @@
 /**
  * Demo credentials shown on the login page, keyed by tenant slug.
- * Mirrors database/init/04-seed-employees.sql — update together if the
- * seed users change. Password is `admin123` for every seed user.
+ * Mirrors data/master/employees.csv — update together if the seed users
+ * change. Password is `admin123` for every seed user.
  */
 
 export interface DemoUser {
@@ -38,7 +38,7 @@ export function credentialsFor(slug: string | null | undefined): readonly DemoUs
 
 /**
  * Airport (IATA) codes each seeded tenant operates at. Mirrors the admin
- * user's airport assignments in database/init/04-seed-employees.sql —
+ * user's airport assignments in data/master/employee_airports.csv —
  * update together if the seed changes. Rendered in the login page's
  * brand panel footer strip so the "Stations" line flips when you switch
  * tenants via the dev picker.

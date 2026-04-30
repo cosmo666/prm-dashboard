@@ -24,7 +24,7 @@ interface DevTenant {
   name: string;
 }
 
-// Hardcoded to the three seed tenants from database/init/03-seed-tenants.sql.
+// Hardcoded to the three seed tenants in data/master/tenants.csv.
 // A new real tenant arrives via subdomain in production and doesn't need this
 // dev affordance.
 const DEV_TENANTS: readonly DevTenant[] = [

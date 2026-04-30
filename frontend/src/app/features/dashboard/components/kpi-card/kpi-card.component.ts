@@ -8,6 +8,7 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
   imports: [CommonModule, DecimalPipe, TooltipDirective],
   template: `
     <article class="kpi" [class.kpi--loading]="loading()"
+             [class.kpi--spark]="!loading() && sparkPath()"
              [appTooltip]="tooltip()" [tooltipPosition]="'bottom'">
       <header class="kpi__head">
         <span class="kpi__label">{{ label() }}</span>
@@ -44,6 +45,21 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
             <div class="subtext">{{ subtext() }}</div>
           }
         </footer>
+
+        @if (sparkPath(); as p) {
+          <div class="kpi__spark" aria-hidden="true">
+            <svg viewBox="0 0 100 32" preserveAspectRatio="none">
+              <defs>
+                <linearGradient [attr.id]="'kpi-spark-grad-' + sparkId()" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" [attr.stop-color]="sparkColor()" stop-opacity="0.22"/>
+                  <stop offset="100%" [attr.stop-color]="sparkColor()" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path [attr.d]="sparkArea()" [attr.fill]="'url(#kpi-spark-grad-' + sparkId() + ')'" stroke="none"/>
+              <path [attr.d]="p" fill="none" [attr.stroke]="sparkColor()" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        }
       }
     </article>
   `,
@@ -52,23 +68,23 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
 
     .kpi {
       height: 100%;
-      padding: 16px 16px 14px;
-      background: var(--surface);
+      padding: 14px 16px 12px;
+      background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-md);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       gap: 8px;
       position: relative;
       overflow: hidden;
-      transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+      min-height: 120px;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
     }
 
     .kpi:hover {
       border-color: var(--border-strong);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 14px rgba(12, 12, 12, 0.04);
+      box-shadow: var(--shadow-1);
     }
 
     .kpi:focus-visible {
@@ -79,19 +95,18 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
 
     .kpi__head {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
+      align-items: center;
+      gap: 8px;
     }
 
     .kpi__label {
-      font-family: var(--font-sans);
-      font-size: 11px;
+      font-family: var(--font-mono);
+      font-size: 10px;
       font-weight: 500;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
       color: var(--muted);
-      line-height: 1.3;
+      line-height: 1.2;
     }
 
     .kpi__accent {
@@ -99,38 +114,30 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
       height: 6px;
       border-radius: 50%;
       flex-shrink: 0;
-      margin-top: 5px;
     }
 
-    .accent--blue   { background: var(--accent); }
-    .accent--teal   { background: var(--success); }
-    .accent--amber  { background: var(--warning); }
-    .accent--plum   { background: var(--accent-plum, #7c3aed); }
-    .accent--green  { background: var(--success); }
+    .accent--blue   { background: var(--c-cat-1, var(--accent)); }
+    .accent--teal   { background: var(--c-cat-5, var(--success)); }
+    .accent--amber  { background: var(--c-cat-3, var(--warning)); }
+    .accent--plum   { background: var(--c-cat-2, #7c3aed); }
+    .accent--green  { background: var(--c-cat-4, var(--success)); }
 
-    // Dashboard-style numeric display — IBM Plex Sans, semibold, tabular figures.
-    // Intentionally NOT Fraunces serif because editorial serif numbers are
-    // harder to scan in dense operational dashboards.
     .kpi__value {
       font-family: var(--font-sans);
       font-size: 28px;
-      line-height: 1.1;
+      line-height: 1.05;
       font-weight: 600;
       color: var(--ink);
-      letter-spacing: -0.02em;
+      letter-spacing: -0.025em;
       font-variant-numeric: tabular-nums;
       font-feature-settings: 'tnum' 1, 'zero' 1;
-      margin: 2px 0;
-      animation: kpiValueEnter 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      margin: 0;
+      animation: kpiValueEnter 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
     @media (prefers-reduced-motion: reduce) {
       .kpi { transition: none; }
-      .kpi:hover { transform: none; }
-      .kpi__value,
-      .delta,
-      .kpi__skeleton-value,
-      .kpi__skeleton-foot { animation: none !important; }
+      .kpi__value, .delta, .kpi__skeleton-value, .kpi__skeleton-foot { animation: none !important; }
     }
 
     @keyframes kpiValueEnter {
@@ -138,17 +145,11 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
       100% { opacity: 1; transform: translateY(0); }
     }
 
-    // Skeleton placeholders
     .kpi__skeleton-value {
-      height: 44px;
+      height: 36px;
       width: 60%;
       border-radius: 4px;
-      background: linear-gradient(
-        90deg,
-        var(--surface-2) 0%,
-        var(--border) 50%,
-        var(--surface-2) 100%
-      );
+      background: linear-gradient(90deg, var(--surface-2) 0%, var(--border) 50%, var(--surface-2) 100%);
       background-size: 400px 100%;
       animation: kpiShimmer 1.8s ease-in-out infinite;
       margin: 4px 0;
@@ -158,12 +159,7 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
       height: 16px;
       width: 40%;
       border-radius: 3px;
-      background: linear-gradient(
-        90deg,
-        var(--surface-2) 0%,
-        var(--border) 50%,
-        var(--surface-2) 100%
-      );
+      background: linear-gradient(90deg, var(--surface-2) 0%, var(--border) 50%, var(--surface-2) 100%);
       background-size: 400px 100%;
       animation: kpiShimmer 1.8s ease-in-out 150ms infinite;
     }
@@ -178,48 +174,62 @@ import { TooltipDirective } from '../../../../shared/directives/tooltip.directiv
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
-      min-height: 16px;
+      min-height: 18px;
     }
 
     .delta {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       padding: 2px 7px;
-      border-radius: 4px;
+      border-radius: 5px;
+      font-family: var(--font-mono);
       font-size: 11px;
-      font-weight: 500;
-      animation: kpiDeltaEnter 600ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      animation: kpiDeltaEnter 500ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
     }
 
     @keyframes kpiDeltaEnter {
-      0%   { opacity: 0; transform: translateY(4px); }
+      0%   { opacity: 0; transform: translateY(3px); }
       100% { opacity: 1; transform: translateY(0); }
     }
 
     .delta--up {
-      background: color-mix(in srgb, var(--success) 14%, transparent);
+      background: var(--success-soft);
       color: var(--success);
-      border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
     }
 
     .delta--down {
-      background: color-mix(in srgb, var(--danger) 14%, transparent);
+      background: var(--danger-soft);
       color: var(--danger);
-      border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
     }
 
     .delta__period {
-      font-size: 10px;
+      font-family: var(--font-sans);
+      font-size: 11px;
       color: var(--muted);
-      letter-spacing: 0.04em;
     }
 
     .subtext {
-      font-size: 11px;
-      color: var(--muted);
       font-family: var(--font-sans);
+      font-size: 11.5px;
+      color: var(--muted);
     }
+
+    // Sparkline — inline SVG footer strip
+    .kpi__spark {
+      height: 36px;
+      margin: 4px -4px -4px;
+    }
+
+    .kpi__spark svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .kpi--spark { min-height: 150px; }
   `],
 })
 export class KpiCardComponent {
@@ -230,8 +240,10 @@ export class KpiCardComponent {
   subtext = input<string>('');
   loading = input<boolean>(false);
   tooltip = input<string>('');
-  // accent color — maps to a small dot in the header
+  // accent color — maps to a small dot in the header AND the sparkline stroke
   accent = input<'blue' | 'teal' | 'amber' | 'plum' | 'green' | null>(null);
+  // Small trend series shown as a sparkline under the value
+  sparkData = input<number[] | null>(null);
 
   // Backwards compat — older callers pass `gradient` + `icon`
   gradient = input<'blue' | 'teal' | 'orange' | 'purple' | 'green' | null>(null);
@@ -251,4 +263,56 @@ export class KpiCardComponent {
     };
     return map[g] ?? 'blue';
   });
+
+  // CSS var for the sparkline stroke — matches the accent dot
+  sparkColor = computed<string>(() => {
+    const a = this.resolvedAccent();
+    const map: Record<string, string> = {
+      blue: 'var(--c-cat-1, #5b5bd6)',
+      teal: 'var(--c-cat-5, #2f9e6e)',
+      amber: 'var(--c-cat-3, #d4a017)',
+      plum: 'var(--c-cat-2, #8e4ec6)',
+      green: 'var(--c-cat-4, #e5684f)',
+    };
+    return (a && map[a]) || 'var(--accent)';
+  });
+
+  // Stable-per-instance id so SVG gradient defs don't collide across cards
+  private _id = Math.random().toString(36).slice(2, 8);
+  sparkId = computed<string>(() => this._id);
+
+  // Normalize sparkData into a viewBox-relative polyline path (100 wide × 32 tall).
+  // Pads ±5% vertically so the line never kisses the top/bottom edge.
+  sparkPath = computed<string | null>(() => {
+    const d = this.sparkData();
+    if (!d || d.length < 2) return null;
+    return this.buildPath(d, /*asArea*/ false);
+  });
+
+  sparkArea = computed<string>(() => {
+    const d = this.sparkData();
+    if (!d || d.length < 2) return '';
+    return this.buildPath(d, /*asArea*/ true);
+  });
+
+  private buildPath(d: readonly number[], asArea: boolean): string {
+    const min = Math.min(...d);
+    const max = Math.max(...d);
+    const pad = (max - min) * 0.1 || 1;
+    const lo = min - pad;
+    const hi = max + pad;
+    const w = 100;
+    const h = 32;
+    const step = d.length === 1 ? 0 : w / (d.length - 1);
+    const pts: string[] = [];
+    for (let i = 0; i < d.length; i++) {
+      const x = (i * step).toFixed(2);
+      const y = (h - ((d[i] - lo) / (hi - lo)) * h).toFixed(2);
+      pts.push(`${x},${y}`);
+    }
+    if (asArea) {
+      return `M${pts[0]} L${pts.slice(1).join(' L')} L${w},${h} L0,${h} Z`;
+    }
+    return `M${pts[0]} L${pts.slice(1).join(' L')}`;
+  }
 }

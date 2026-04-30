@@ -1,28 +1,4 @@
 services:
-  # MySQL is only used by the legacy data-export pipeline
-  # (tools/PrmDashboard.CsvExporter). Runtime services do NOT connect to it.
-  # Gated behind the `data-pipeline` profile so `docker compose up` doesn't
-  # start it; bring it up explicitly with:
-  #   docker compose --profile data-pipeline up mysql -d
-  mysql:
-    image: mysql:8.0
-    container_name: prm-mysql
-    profiles: ["data-pipeline"]
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./database/init:/docker-entrypoint-initdb.d
-      - mysql-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
   gateway:
     build:
       context: ./backend
@@ -146,5 +122,3 @@ services:
       gateway:
         condition: service_healthy
 
-volumes:
-  mysql-data:

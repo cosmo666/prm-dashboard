@@ -10,8 +10,7 @@
   - `PrmDashboard.PrmService/` — owns all 25 dashboard endpoints. Inherits from `BaseQueryService`; queries per-tenant `data/{slug}/prm_services.parquet` files via DuckDB.
   - `PrmDashboard.Gateway/` — Ocelot routing + subdomain → `X-Tenant-Slug` header middleware.
 - **Tools** under `backend/tools/`:
-  - `PrmDashboard.CsvExporter/` — one-shot legacy MySQL → CSV export (still uses `MySqlConnector` for the source DB).
-  - `PrmDashboard.ParquetBuilder/` — converts CSVs into the per-tenant Parquet layout under `data/`.
+  - `PrmDashboard.ParquetBuilder/` — converts CSVs under `data/` into sibling `*.parquet` files via embedded DuckDB. Run after editing any committed CSV seed file.
 
 Each service has its own `Program.cs`, `appsettings.json`, `appsettings.Development.json`, and `Dockerfile`.
 
@@ -136,7 +135,7 @@ Key invariants:
 - ❌ Raw SQL interpolation of caller-supplied values — always use parameters.
 - ❌ Swallowing exceptions silently — log and rethrow, or convert to a typed domain exception (`TenantParquetNotFoundException`) that the middleware maps to a status code.
 - ❌ Hardcoded tenant names, airport codes, or service types anywhere in the code.
-- ❌ EF Core, Pomelo, MySqlConnector, `DbContext`, `IQueryable`, or `OnModelCreating` in runtime services. (The `tools/PrmDashboard.CsvExporter` legacy data export is the only place `MySqlConnector` is allowed.)
+- ❌ EF Core, `DbContext`, `IQueryable`, or `OnModelCreating` anywhere. The runtime data layer is DuckDB over Parquet; there is no ORM in this project.
 - ❌ `_paths.TenantPrmServices(slug)` directly in service code — use `ResolveTenantParquet(slug)` from the base class so the existence check (→ 404) and quote-escape happen consistently.
 
 ## Dependencies (pinned)
@@ -157,9 +156,6 @@ Key invariants:
 
 <!-- Gateway -->
 <PackageReference Include="Ocelot" Version="23.2.0" />
-
-<!-- Tools only — NOT runtime -->
-<PackageReference Include="MySqlConnector" Version="2.3.7" />
 ```
 
 Never upgrade major versions without a dedicated task and testing.

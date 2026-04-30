@@ -18,9 +18,8 @@ public sealed record RefreshTokenEntry(int EmployeeId, string TenantSlug, DateTi
 public sealed record RefreshTokenIssued(string Token, DateTime ExpiresAt);
 
 /// <summary>
-/// In-memory refresh-token store. Singleton DI. Replaces the <c>refresh_tokens</c>
-/// MySQL table from the legacy AuthService. Process restart invalidates all tokens —
-/// an accepted POC compromise per the Phase 3 migration spec.
+/// In-memory refresh-token store. Singleton DI. Process restart invalidates all
+/// tokens — an accepted POC compromise; swap for a durable store before production.
 /// </summary>
 public sealed class InMemoryRefreshTokenStore
 {

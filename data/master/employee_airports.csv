@@ -1,0 +1,22 @@
+id,employee_id,airport_code,airport_name
+1,1,BLR,Kempegowda International Airport
+2,1,HYD,Rajiv Gandhi International Airport
+3,1,DEL,Indira Gandhi International Airport
+4,2,BLR,Kempegowda International Airport
+5,2,HYD,Rajiv Gandhi International Airport
+6,3,BLR,Kempegowda International Airport
+7,4,DEL,Indira Gandhi International Airport
+8,5,BLR,Kempegowda International Airport
+9,5,BOM,Chhatrapati Shivaji Maharaj International Airport
+10,5,MAA,Chennai International Airport
+11,6,BLR,Kempegowda International Airport
+12,6,BOM,Chhatrapati Shivaji Maharaj International Airport
+13,7,MAA,Chennai International Airport
+14,8,BOM,Chhatrapati Shivaji Maharaj International Airport
+15,9,SYD,Sydney Kingsford Smith Airport
+16,9,KUL,Kuala Lumpur International Airport
+17,9,JFK,John F. Kennedy International Airport
+18,10,SYD,Sydney Kingsford Smith Airport
+19,10,KUL,Kuala Lumpur International Airport
+20,11,JFK,John F. Kennedy International Airport
+21,12,KUL,Kuala Lumpur International Airport

@@ -8,6 +8,7 @@
       accent="blue"
       [delta]="totalDelta()"
       [deltaLabel]="prevPeriodLabel()"
+      [sparkData]="sparkTotal()"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Active Agents"
@@ -15,12 +16,14 @@
       [value]="activeAgents() | compactNumber"
       accent="teal"
       [subtext]="'Self · ' + selfAgents() + '   Outsourced · ' + outsourcedAgents()"
+      [sparkData]="sparkAgents()"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Avg Services / Agent / Day"
       tooltip="Average number of PRM services each agent handles per working day. Higher means better utilization; too high may indicate overload."
       [value]="(avgPerAgent() | number:'1.1-1') ?? ''"
       accent="amber"
+      [sparkData]="sparkPerAgent()"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Avg Duration (min)"
@@ -29,12 +32,14 @@
       accent="plum"
       [delta]="durationDelta()"
       [deltaLabel]="prevPeriodLabel()"
+      [sparkData]="sparkDuration()"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Fulfillment Rate"
       tooltip="Percentage of pre-requested PRM services that were actually fulfilled. 100% means every booked request was served."
       [value]="((fulfillmentRate() | number:'1.1-1') ?? '') + '%'"
       accent="green"
+      [sparkData]="sparkFulfillment()"
       [loading]="loading()"></app-kpi-card>
   </div>
 

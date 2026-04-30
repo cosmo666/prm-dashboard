@@ -2,7 +2,7 @@
 .fulfillment-content {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .row { display: grid; gap: 16px; }
@@ -14,12 +14,12 @@
 
 .row-charts-full {
   grid-template-columns: 1fr;
-  min-height: 340px;
+  min-height: 320px;
 }
 
 .row-charts-1-1 {
   grid-template-columns: 1fr 1fr;
-  min-height: 300px;
+  min-height: 260px;
 }
 
 @media (max-width: 1024px) {

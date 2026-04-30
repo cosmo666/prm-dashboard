@@ -1,20 +1,24 @@
 .insights-content {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .row { display: grid; gap: 16px; }
 
 .row-kpis {
   grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
 }
 
 .row-charts-6-4 {
   grid-template-columns: 3fr 2fr;
-  min-height: 320px;
+  min-height: 260px;
 }
 
+// Section labels separate the Insights tab's three thematic groupings.
+// Horizontal rule + generous top padding visually detach the label from the row
+// above; the flex-column gap handles the space below.
 .section-label {
   font-family: var(--font-sans);
   font-size: 11px;
@@ -22,7 +26,8 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
-  padding-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 
 @media (max-width: 1200px) {

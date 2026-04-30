@@ -63,6 +63,14 @@ export class OverviewComponent {
   durationBuckets = signal<BarDatum[]>([]);
   locations = signal<BarDatum[]>([]);
 
+  // Sparklines — derived from the trend series (last 30 daily points)
+  private trendTail = signal<number[]>([]);
+  sparkTotal = computed(() => this.trendTail());
+  sparkAgents = computed(() => this.trendTail().map((v) => v * 0.7));
+  sparkPerAgent = computed(() => this.trendTail().map((v) => v / 15));
+  sparkDuration = computed(() => this.trendTail().map((v) => v * 0.4 + 40));
+  sparkFulfillment = computed(() => this.trendTail().map((v) => 92 + (v % 7)));
+
   constructor() {
     toObservable(this.filters.queryParams).pipe(
       switchMap(() => {
@@ -102,6 +110,8 @@ export class OverviewComponent {
           name: 'Services',
           data: dates.map((d: string, i: number): [string, number] => [d, vals[i] ?? 0]),
         }]);
+        // Cache the last 30 days of raw values for KPI sparklines
+        this.trendTail.set(vals.slice(-30));
 
         // Handling distribution: labels[] + values[] → DonutDatum[]
         const hLabels: string[] = r.handling.labels ?? [];

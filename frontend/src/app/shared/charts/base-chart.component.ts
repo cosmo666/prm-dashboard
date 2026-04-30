@@ -62,20 +62,19 @@ import { EChartsOption, ECElementEvent } from 'echarts';
 
     .chart {
       height: 100%;
-      background: var(--surface);
+      background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px 20px 16px;
+      border-radius: var(--radius-md);
+      padding: 14px 16px 12px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      transition: border-color 240ms ease, transform 240ms ease, box-shadow 240ms ease;
+      gap: 12px;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
     }
 
     .chart:hover {
       border-color: var(--border-strong);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-card);
+      box-shadow: var(--shadow-1);
     }
 
     .chart__head {
@@ -83,35 +82,35 @@ import { EChartsOption, ECElementEvent } from 'echarts';
       justify-content: space-between;
       align-items: baseline;
       gap: 12px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
     }
 
     .chart__title {
       font-family: var(--font-sans);
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      letter-spacing: -0.01em;
       color: var(--ink);
     }
 
     .chart__sub {
       font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--muted);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted-2);
     }
 
     .chart__body {
       flex: 1;
       position: relative;
-      min-height: 220px;
+      min-height: 180px;
     }
 
     .chart__canvas {
       width: 100%;
       height: 100%;
-      min-height: 220px;
+      min-height: 180px;
     }
 
     // Skeleton loading — bar-shaped shimmer
@@ -172,12 +171,10 @@ import { EChartsOption, ECElementEvent } from 'echarts';
     }
 
     .chart__empty-title {
-      font-family: var(--font-serif);
-      font-variation-settings: 'opsz' 72;
-      font-size: 20px;
-      font-weight: 400;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
       color: var(--ink-muted);
-      font-style: italic;
       letter-spacing: -0.01em;
     }
 

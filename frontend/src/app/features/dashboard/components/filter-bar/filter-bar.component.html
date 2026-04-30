@@ -1,3 +1,73 @@
+@if (inline()) {
+  <!-- Inline mode: single compact row used inside the tabs/control row. -->
+  <div class="filter-inline">
+    <label class="fb-pill" [class.is-active]="filters.airline().length">
+      <span class="fb-pill__label">Airline</span>
+      <span class="fb-pill__val">{{ airlineDisplay() }}</span>
+      <svg class="fb-pill__caret" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
+        <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <mat-select
+        class="fb-pill__select"
+        aria-label="Airline"
+        [multiple]="true"
+        [ngModel]="filters.airline()"
+        (ngModelChange)="setAirline($event)"
+        panelClass="fb-panel">
+        @for (a of airlines(); track a) {
+          <mat-option [value]="a">{{ a }}</mat-option>
+        }
+      </mat-select>
+    </label>
+
+    <label class="fb-pill" [class.is-active]="filters.service().length">
+      <span class="fb-pill__label">Service</span>
+      <span class="fb-pill__val">{{ serviceDisplay() }}</span>
+      <svg class="fb-pill__caret" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
+        <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <mat-select
+        class="fb-pill__select"
+        aria-label="Service"
+        [multiple]="true"
+        [ngModel]="filters.service()"
+        (ngModelChange)="setService($event)"
+        panelClass="fb-panel">
+        @for (s of services(); track s) {
+          <mat-option [value]="s">{{ s }}</mat-option>
+        }
+      </mat-select>
+    </label>
+
+    <label class="fb-pill" [class.is-active]="filters.handledBy().length && filters.handledBy().length !== 2">
+      <span class="fb-pill__label">Handled by</span>
+      <span class="fb-pill__val">{{ handledByDisplay() }}</span>
+      <svg class="fb-pill__caret" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
+        <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <mat-select
+        class="fb-pill__select"
+        aria-label="Handled by"
+        [multiple]="true"
+        [ngModel]="filters.handledBy()"
+        (ngModelChange)="setHandledBy($event)"
+        panelClass="fb-panel">
+        <mat-option value="SELF">Self</mat-option>
+        <mat-option value="OUTSOURCED">Outsourced</mat-option>
+      </mat-select>
+    </label>
+
+    <app-date-range-picker aria-label="Date range"></app-date-range-picker>
+
+    @if (filters.hasAnyFilter()) {
+      <button type="button" class="fb-inline-clear" (click)="clearAll()" aria-label="Clear all active filters" appTooltip="Clear all filters">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+          <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    }
+  </div>
+} @else {
 <div class="filter-bar">
   <div class="filter-bar__head">
     <div class="label-micro">Filters</div>
@@ -107,3 +177,4 @@
     </div>
   }
 </div>
+}

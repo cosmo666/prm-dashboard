@@ -1,19 +1,19 @@
 <app-top-bar [showBack]="true"></app-top-bar>
 
 <main class="dashboard">
-  <!-- Page header: serif title + date range summary -->
+  <!-- Page header: eyebrow + LIVE pill + sans title + meta block -->
   <header class="page-head">
     <div class="page-head__left">
-      <div class="eyebrow">
-        <span class="eyebrow__rule"></span>
-        <span class="eyebrow__text">PRM Analytics</span>
+      <div class="eyebrow-row">
+        <div class="eyebrow">
+          <span class="eyebrow__dot"></span>
+          <span class="eyebrow__text">PRM Analytics</span>
+        </div>
+        <span class="live-pill">LIVE</span>
       </div>
-      <h1 class="page-head__title">
-        Passenger <em>Services</em>
-      </h1>
+      <h1 class="page-head__title">Passenger Services</h1>
       @if (filterSummary()) {
         <div class="page-head__summary">
-          <span class="summary-dot"></span>
           <span class="summary-text">{{ filterSummary() }}</span>
         </div>
       }
@@ -33,28 +33,46 @@
     </div>
   </header>
 
-  <app-filter-bar></app-filter-bar>
+  <!-- Control row: tabs (left) + inline filters (right) -->
+  <div class="control-row" role="tablist" aria-label="Dashboard tabs">
+    <div class="control-row__tabs">
+      @for (t of tabLabels; track t; let i = $index) {
+        <button
+          type="button"
+          class="tab-pill"
+          [class.is-active]="activeTab() === i"
+          [attr.aria-selected]="activeTab() === i"
+          role="tab"
+          (click)="onTabChange(i)">
+          {{ t }}
+        </button>
+      }
+    </div>
+    <div class="control-row__filters">
+      <app-filter-bar [inline]="true"></app-filter-bar>
+    </div>
+  </div>
 
   <mat-tab-group
     [selectedIndex]="activeTab()"
     (selectedIndexChange)="onTabChange($event)"
-    class="dashboard-tabs"
+    class="dashboard-tabs dashboard-tabs--headless"
     animationDuration="200ms"
     mat-stretch-tabs="false"
     mat-align-tabs="start">
-    <mat-tab label="Overview">
+    <mat-tab>
       @if (activeTab() === 0) { <app-overview /> }
     </mat-tab>
-    <mat-tab label="Top 10">
+    <mat-tab>
       @if (activeTab() === 1) { <app-top10 /> }
     </mat-tab>
-    <mat-tab label="Service Breakup">
+    <mat-tab>
       @if (activeTab() === 2) { <app-service-breakup /> }
     </mat-tab>
-    <mat-tab label="Fulfillment">
+    <mat-tab>
       @if (activeTab() === 3) { <app-fulfillment /> }
     </mat-tab>
-    <mat-tab label="Insights">
+    <mat-tab>
       @if (activeTab() === 4) { <app-insights /> }
     </mat-tab>
   </mat-tab-group>

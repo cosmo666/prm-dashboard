@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -22,6 +22,9 @@ import { PrmDataService } from '../../services/prm-data.service';
 export class FilterBarComponent implements OnInit {
   filters = inject(FilterStore);
   private dataSvc = inject(PrmDataService);
+
+  /** When true, render as a single compact row (tabs+filters control row). */
+  inline = input<boolean>(false);
 
   airlines = signal<string[]>([]);
   services = signal<string[]>([]);
@@ -51,5 +54,25 @@ export class FilterBarComponent implements OnInit {
     if (v === 'SELF') return 'Self';
     if (v === 'OUTSOURCED') return 'Outsourced';
     return v;
+  }
+
+  /** Compact trigger display for inline-mode filter pills. */
+  airlineDisplay(): string {
+    const v = this.filters.airline();
+    if (!v.length) return 'All airlines';
+    if (v.length === 1) return v[0];
+    return `${v.length} selected`;
+  }
+  serviceDisplay(): string {
+    const v = this.filters.service();
+    if (!v.length) return 'All services';
+    if (v.length === 1) return v[0];
+    return `${v.length} selected`;
+  }
+  handledByDisplay(): string {
+    const v = this.filters.handledBy();
+    if (!v.length) return 'Both';
+    if (v.length === 2) return 'Both';
+    return this.handledByLabel(v[0]);
   }
 }

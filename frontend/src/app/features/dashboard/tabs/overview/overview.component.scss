@@ -1,25 +1,25 @@
-// Overview tab layout — 8pt rhythm
+// Overview tab layout
 .overview-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
-.row { display: grid; gap: 12px; }
+.row { display: grid; gap: 14px; }
 
 .row-kpis {
   grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 
 .row-charts-2-1 {
   grid-template-columns: 2fr 1fr;
-  min-height: 280px;
+  min-height: 260px;
 }
 
 .row-charts-1-1-1 {
   grid-template-columns: 1fr 1fr 1fr;
-  min-height: 260px;
+  min-height: 240px;
 }
 
 @media (max-width: 1280px) {

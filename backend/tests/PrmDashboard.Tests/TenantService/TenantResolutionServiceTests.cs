@@ -43,18 +43,12 @@ public class TenantResolutionServiceTests : IAsyncLifetime
                     SELECT {TenantId}::INTEGER AS id,
                            'Active Co'::VARCHAR AS name,
                            '{ActiveSlug}'::VARCHAR AS slug,
-                           'mysql-host'::VARCHAR AS db_host,
-                           3306::INTEGER AS db_port,
-                           'active_db'::VARCHAR AS db_name,
-                           'root'::VARCHAR AS db_user,
-                           'rootpw'::VARCHAR AS db_password,
                            TRUE::BOOLEAN AS is_active,
                            TIMESTAMP '2026-01-01 00:00:00' AS created_at,
                            NULL::VARCHAR AS logo_url,
                            '#111111'::VARCHAR AS primary_color
                     UNION ALL
                     SELECT 99, 'Gone Co', '{InactiveSlug}',
-                           'mysql-host', 3306, 'gone_db', 'root', 'rootpw',
                            FALSE, TIMESTAMP '2026-01-01 00:00:00', NULL, '#222222'
                 ) TO '{tenantsPath.Replace("'", "''")}' (FORMAT 'parquet');
                 """;

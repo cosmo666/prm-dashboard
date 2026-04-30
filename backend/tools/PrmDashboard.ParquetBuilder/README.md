@@ -1,12 +1,10 @@
 # PrmDashboard.ParquetBuilder
 
-Phase 2 migration tool (see `docs/superpowers/specs/2026-04-20-mysql-to-duckdb-migration-design.md`).
-
-Walks a `data/` folder produced by `PrmDashboard.CsvExporter` (phase 1) and converts every `*.csv` into a sibling `*.parquet` using embedded DuckDB. Source CSVs are untouched.
+Walks the `data/` folder and converts every `*.csv` into a sibling `*.parquet` using embedded DuckDB. Source CSVs are untouched. Run this after editing any committed CSV under `data/` to refresh the matching Parquet file — the runtime services read Parquet, not CSV.
 
 ## Usage
 
-From the repo root, after phase 1 has populated `data/`:
+From the repo root:
 
 ```bash
 dotnet run --project backend/tools/PrmDashboard.ParquetBuilder -- --dir ./data
@@ -40,9 +38,9 @@ For each CSV the tool runs (via embedded DuckDB — no external binary required)
 COPY (SELECT * FROM read_csv_auto('file.csv')) TO 'file.parquet' (FORMAT 'parquet')
 ```
 
-DuckDB infers column types from the CSV header + sampled rows. The phase-1 exporter's deterministic formatting (ISO-8601 dates, invariant-culture numerics, `true`/`false` booleans, empty-cell-for-null) is designed so inference lands on the expected types: `INTEGER`, `DATE`, `TIMESTAMP`, `BOOLEAN`, `VARCHAR`.
+DuckDB infers column types from the CSV header + sampled rows. The committed CSVs use deterministic formatting (ISO-8601 dates, invariant-culture numerics, `true`/`false` booleans, empty-cell-for-null) so inference lands on the expected types: `INTEGER`, `DATE`, `TIMESTAMP`, `BOOLEAN`, `VARCHAR`.
 
-Compression: DuckDB default (`SNAPPY`). Row group size: DuckDB default (122,880 rows). No CLI flags to tune either — this is a migration tool with tight scope.
+Compression: DuckDB default (`SNAPPY`). Row group size: DuckDB default (122,880 rows). No CLI flags to tune either — this is a tight-scope utility.
 
 ## Verification
 
@@ -79,4 +77,4 @@ Yes. Existing `*.parquet` files are deleted before each conversion, then rewritt
 ## What the tool does NOT do
 
 - Does not modify source CSVs. The CSV set remains the human-readable source of truth; Parquet is the query format.
-- Does not clean up stale Parquet files whose source CSV has been removed. If you delete a tenant mid-migration, you'll need to remove its `data/{slug}/` directory yourself — phase 4 of the overall migration guides that cleanup.
+- Does not clean up stale Parquet files whose source CSV has been removed. If you delete a tenant, you'll need to remove its `data/{slug}/` directory yourself.

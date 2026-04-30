@@ -107,7 +107,7 @@ Never use:
 
 - **All API calls go through `ApiClient`** — NEVER inject `HttpClient` directly in a component or feature service
 - **`ApiClient` prepends base URL** (`/api`), passes `withCredentials: true` for refresh cookie, and lets the interceptor handle auth headers
-- **`PrmDataService` wraps all 19 PRM endpoints** — feature components inject it and call typed methods
+- **`PrmDataService` wraps all 25 PRM endpoints** — feature components inject it and call typed methods
 - **Use RxJS `Observable<T>`** for HTTP calls — subscribe in components via `forkJoin` or `async` pipe
 - **Always handle errors** — at minimum log and set a loading/error signal
 
