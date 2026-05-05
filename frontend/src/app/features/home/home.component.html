@@ -1,0 +1,23 @@
+<div class="home-shell">
+  <header class="top-bar">
+    <div class="brand">PRM Dashboard</div>
+    <div class="user-area">
+      <span *ngIf="(authStore.employee$ | async) as emp">{{ emp.name }}</span>
+      <button pButton class="p-button-text" icon="pi pi-moon" (click)="toggleTheme()" pTooltip="Toggle theme"></button>
+      <button pButton class="p-button-text" icon="pi pi-sign-out" (click)="logout()" pTooltip="Sign out"></button>
+    </div>
+  </header>
+
+  <main class="tiles">
+    <p-card *ngFor="let tile of tiles" (click)="go(tile)" [class.disabled]="!tile.route" class="tile-card">
+      <div class="tile-inner">
+        <i class="tile-icon {{ tile.icon }}"></i>
+        <div>
+          <h3>{{ tile.title }}</h3>
+          <p>{{ tile.description }}</p>
+          <small *ngIf="!tile.route" class="placeholder-note">(Not yet ported in Phase 0)</small>
+        </div>
+      </div>
+    </p-card>
+  </main>
+</div>
