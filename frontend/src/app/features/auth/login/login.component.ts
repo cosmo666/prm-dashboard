@@ -1,25 +1,27 @@
-import { Component, AfterViewInit, ElementRef, ViewChild, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, fromEvent } from 'rxjs';
-import { takeUntil, throttleTime } from 'rxjs/operators';
+import { Subject, interval } from 'rxjs';
+import { takeUntil, startWith } from 'rxjs/operators';
 import { AuthService } from 'src/app/core/auth/auth.service';
+import { TenantStore } from 'src/app/core/store/tenant.store';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
-export class LoginComponent implements AfterViewInit, OnDestroy {
+export class LoginComponent implements OnInit, OnDestroy {
   form: FormGroup;
   errorMessage: string | null = null;
   loading = false;
+  now = '';
 
-  @ViewChild('parallaxPanel', { static: false }) parallaxPanel?: ElementRef<HTMLElement>;
   private destroy$ = new Subject<void>();
 
   constructor(
     fb: FormBuilder,
+    public tenantStore: TenantStore,
     private auth: AuthService,
     private router: Router,
   ) {
@@ -29,7 +31,6 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  // Helpers used by template (avoid optional chaining — TS 3.4 incompatible).
   usernameHasError(): boolean {
     const c = this.form.get('username');
     return c !== null && c.touched && c.invalid;
@@ -40,12 +41,11 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
     return c !== null && c.touched && c.invalid;
   }
 
-  ngAfterViewInit(): void {
-    if (!this.parallaxPanel) { return; }
-    fromEvent<MouseEvent>(this.parallaxPanel.nativeElement, 'mousemove').pipe(
-      throttleTime(16),
-      takeUntil(this.destroy$),
-    ).subscribe(ev => this.applyParallax(ev));
+  ngOnInit(): void {
+    // Live-updating monospace clock in the footer — small "operations" detail.
+    interval(1000).pipe(startWith(0), takeUntil(this.destroy$)).subscribe(() => {
+      this.now = this.formatTime(new Date());
+    });
   }
 
   ngOnDestroy(): void {
@@ -67,21 +67,22 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
       err => {
         this.loading = false;
         this.errorMessage = err && err.status === 401
-          ? 'Invalid email or password'
-          : 'Login failed — please try again';
+          ? 'Invalid credentials'
+          : 'Sign-in failed. Please try again.';
       },
     );
   }
 
-  private applyParallax(ev: MouseEvent): void {
-    if (!this.parallaxPanel) { return; }
-    const panel = this.parallaxPanel.nativeElement;
-    const rect = panel.getBoundingClientRect();
-    const cx = (ev.clientX - rect.left) / rect.width;
-    const cy = (ev.clientY - rect.top) / rect.height;
-    const shape1 = panel.querySelector('.parallax-shape-1') as HTMLElement | null;
-    const shape2 = panel.querySelector('.parallax-shape-2') as HTMLElement | null;
-    if (shape1) { shape1.style.transform = 'translate(' + (cx * -20) + 'px, ' + (cy * -20) + 'px)'; }
-    if (shape2) { shape2.style.transform = 'translate(' + (cx * 30) + 'px, ' + (cy * 30) + 'px)'; }
+  private formatTime(d: Date): string {
+    const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
+    return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + ' UTC' + this.tzOffset(d);
+  }
+
+  private tzOffset(d: Date): string {
+    const offsetMin = -d.getTimezoneOffset();
+    const sign = offsetMin >= 0 ? '+' : '-';
+    const abs = Math.abs(offsetMin);
+    const h = Math.floor(abs / 60);
+    return sign + (h < 10 ? '0' + h : '' + h);
   }
 }

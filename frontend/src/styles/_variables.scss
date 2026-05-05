@@ -1,11 +1,84 @@
-:root {
-  --app-elev-1: 0 1px 2px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
-  --app-elev-2: 0 4px 8px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
-  --tenant-primary: #6750a4; /* default — overridden by TenantStore */
-  --font-family: 'Roboto', sans-serif;
-}
+// ─── Design tokens ─────────────────────────────────────────────────────────
+// "Operations Console" aesthetic: refined, technical, editorial.
+// Fira Sans for UI, Fira Code for data/identifiers/numerics.
 
-$breakpoint-mobile: 360px;
-$breakpoint-tablet: 768px;
-$breakpoint-desktop: 1024px;
-$breakpoint-wide: 1440px;
+// SCSS-only (compile-time) tokens — used inside @media, @include, etc.
+$breakpoint-xs:      360px;
+$breakpoint-sm:      640px;
+$breakpoint-md:      768px;
+$breakpoint-lg:      1024px;
+$breakpoint-xl:      1280px;
+$breakpoint-2xl:     1440px;
+
+$radius-button:      6px;
+$radius-card:        8px;
+$radius-modal:       12px;
+$radius-pill:        9999px;
+
+$motion-fast:        120ms;
+$motion-base:        180ms;
+$motion-slow:        280ms;
+$motion-ease:        cubic-bezier(0.4, 0, 0.2, 1);
+$motion-out:         cubic-bezier(0.16, 1, 0.3, 1); // expo-out, snappy enter
+$motion-in:          cubic-bezier(0.7, 0, 0.84, 0); // expo-in, fast exit
+
+// CSS custom properties — usable from components, switchable per theme.
+:root {
+  // Type stack
+  --font-sans: 'Fira Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  --font-mono: 'Fira Code', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  // Type scale (1rem = 16px)
+  --text-xs:    11px;
+  --text-sm:    13px;
+  --text-base:  14px;
+  --text-md:    15px;
+  --text-lg:    18px;
+  --text-xl:    24px;
+  --text-2xl:   32px;
+  --text-3xl:   44px;
+
+  --leading-tight:  1.2;
+  --leading-snug:   1.4;
+  --leading-normal: 1.55;
+  --leading-loose:  1.7;
+
+  --tracking-tight:  -0.012em;
+  --tracking-normal:  0em;
+  --tracking-wide:    0.04em;
+  --tracking-widest:  0.12em;
+
+  // Spacing scale (4px base — denser than Material's 16-base default)
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  24px;
+  --space-6:  32px;
+  --space-7:  48px;
+  --space-8:  64px;
+
+  // Radius
+  --radius-button: #{$radius-button};
+  --radius-card:   #{$radius-card};
+  --radius-modal:  #{$radius-modal};
+  --radius-pill:   #{$radius-pill};
+
+  // Elevation — subtle, surgical, NOT the Material 10-step ladder.
+  --elev-0: none;
+  --elev-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --elev-2: 0 4px 6px rgba(15, 23, 42, 0.05), 0 10px 15px rgba(15, 23, 42, 0.06);
+  --elev-3: 0 10px 25px rgba(15, 23, 42, 0.10), 0 20px 40px rgba(15, 23, 42, 0.06);
+  --elev-focus-primary: 0 0 0 3px rgba(37, 99, 235, 0.20);
+  --elev-focus-danger:  0 0 0 3px rgba(239, 68, 68, 0.20);
+
+  // Motion
+  --motion-fast: #{$motion-fast};
+  --motion-base: #{$motion-base};
+  --motion-slow: #{$motion-slow};
+  --motion-ease: #{$motion-ease};
+  --motion-out:  #{$motion-out};
+
+  // Per-tenant primary — overridden at runtime by TenantStore via inline style on :root
+  --tenant-primary: #2563EB;
+}

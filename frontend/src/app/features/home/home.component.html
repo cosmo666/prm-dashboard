@@ -1,23 +1,68 @@
 <div class="home-shell">
-  <header class="top-bar">
-    <div class="brand">PRM Dashboard</div>
-    <div class="user-area">
-      <span *ngIf="(authStore.employee$ | async) as emp">{{ emp.displayName }}</span>
-      <button pButton class="app-button-icon-flat" icon="pi pi-cog" (click)="toggleTheme()" pTooltip="Toggle theme"></button>
-      <button pButton class="app-button-icon-flat" icon="pi pi-sign-out" (click)="logout()" pTooltip="Sign out"></button>
+
+  <!-- ── Top bar ─────────────────────────────────────────────── -->
+  <header class="app-topbar">
+    <div class="topbar-brand">
+      <span class="brand-mark">P</span>
+      <span class="brand-name">PRM Dashboard</span>
+      <ng-container *ngIf="(tenantStore.tenant$ | async) as tenant">
+        <span class="brand-divider">/</span>
+        <span class="brand-tenant">{{ tenant.slug }}</span>
+      </ng-container>
+    </div>
+
+    <div class="topbar-actions">
+      <div class="topbar-user" *ngIf="(authStore.employee$ | async) as emp">
+        <span class="user-avatar">{{ initials(emp.displayName) }}</span>
+        <span class="user-meta">
+          <span class="user-name">{{ emp.displayName }}</span>
+          <span class="user-sub">{{ emp.airports.length }} airports</span>
+        </span>
+      </div>
+
+      <button pButton
+              class="app-button-icon-flat"
+              icon="pi pi-cog"
+              (click)="toggleTheme()"
+              pTooltip="Toggle theme"></button>
+
+      <button pButton
+              class="app-button-icon-flat"
+              icon="pi pi-sign-out"
+              (click)="logout()"
+              pTooltip="Sign out"></button>
     </div>
   </header>
 
-  <main class="tiles">
-    <p-card *ngFor="let tile of tiles" (click)="go(tile)" [class.disabled]="!tile.route" class="tile-card">
-      <div class="tile-inner">
-        <i class="tile-icon {{ tile.icon }}"></i>
-        <div>
-          <h3>{{ tile.title }}</h3>
-          <p>{{ tile.description }}</p>
-          <small *ngIf="!tile.route" class="placeholder-note">(Not yet ported in Phase 0)</small>
-        </div>
+  <!-- ── Page header ─────────────────────────────────────────── -->
+  <section class="home-header">
+    <span class="page-eyebrow">Workspace</span>
+    <h1 class="page-title">Choose a dashboard</h1>
+    <p class="page-subtitle">
+      One tile in Phase 0. The full operations suite ports next.
+    </p>
+  </section>
+
+  <!-- ── Tiles ───────────────────────────────────────────────── -->
+  <main class="tile-grid">
+    <article *ngFor="let tile of tiles"
+             class="tile-card"
+             [class.is-disabled]="!tile.route"
+             tabindex="0"
+             (click)="go(tile)"
+             (keyup.enter)="go(tile)">
+      <div class="tile-header">
+        <span class="tile-icon"><i [class]="tile.icon"></i></span>
+        <span class="tile-status">{{ tile.route ? 'Live' : 'Phase 1' }}</span>
       </div>
-    </p-card>
+      <div class="tile-body">
+        <h3 class="tile-title">{{ tile.title }}</h3>
+        <p class="tile-description">{{ tile.description }}</p>
+      </div>
+      <div class="tile-footer">
+        <span class="tile-meta">{{ tile.meta }}</span>
+        <span class="tile-arrow">→</span>
+      </div>
+    </article>
   </main>
 </div>

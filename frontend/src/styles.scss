@@ -1,23 +1,71 @@
-// PrimeNG 8.0.3 base structure first (uses .ui-* classes — primeng.min.css is
-// empty in 8.0.3; primeng.css is the actual structural file).
+// ─── Global stylesheet entry ──────────────────────────────────────────────
+// Order matters: PrimeNG/PrimeFlex first, then our design tokens, then
+// component partials, then PrimeNG overrides last so same-specificity wins.
+
 @import '~primeng/resources/primeng.css';
 @import '~primeflex/primeflex.css';
 
-// Our own foundation (variables, tokens, gradient mixins) — no PrimeNG-targeted
-// rules; safe to load before or after PrimeNG.
 @import 'styles/variables';
 @import 'styles/material-tokens';
-@import 'styles/kpi-gradients';
-@import 'styles/login-parallax';
-@import 'styles/form-field';
 
-// PrimeNG overrides AFTER primeng.css so same-specificity rules win.
+@import 'styles/form-field';
+@import 'styles/login-parallax';
+@import 'styles/top-bar';
+@import 'styles/tile-picker';
+@import 'styles/kpi-cards';
+
 @import 'styles/primeng-overrides';
+
+// ─── Base / reset ────────────────────────────────────────────────────────
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body {
   margin: 0;
   padding: 0;
-  font-family: var(--font-family);
-  background: var(--md-background);
-  color: var(--md-on-background);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  background: var(--app-bg);
+  color: var(--app-text-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv02' 1, 'cv03' 1, 'cv04' 1; // Fira Sans contextual alternates
+}
+
+// Tighter headings, slate ink.
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--app-text);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+}
+h1 { font-size: var(--text-2xl); font-weight: 700; }
+h2 { font-size: var(--text-xl); }
+h3 { font-size: var(--text-lg); }
+
+p { margin: 0; }
+
+// Selection
+::selection {
+  background: var(--app-primary-soft);
+  color: var(--app-primary-active);
+}
+
+// Focus default — visible ring without overriding our component-level focus styles.
+:focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+}
+
+// Reduced motion safety net
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

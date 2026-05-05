@@ -1,22 +1,52 @@
+// Component-scoped polish for the login page.
+// Layout primitives live in src/styles/_login-parallax.scss; here we tune
+// the form column inner content.
+
+:host { display: block; }
+
 .login-form {
   width: 100%;
-  max-width: 360px;
+  max-width: 400px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-
-  h1 { margin-bottom: 0.25rem; }
-  .subtitle { color: var(--md-on-surface-variant); margin-bottom: 2rem; }
-  .submit-btn { margin-top: 1rem; }
-  .error-banner {
-    color: var(--md-error);
-    background: var(--md-error-container);
-    padding: 0.5rem 0.75rem;
-    border-radius: 4px;
-    margin: 0.5rem 0;
-  }
 }
-.login-parallax-panel .parallax-content {
-  position: absolute;
-  bottom: 3rem; left: 3rem; right: 3rem;
-  z-index: 1;
+
+.login-title {
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--app-text);
+  margin-bottom: var(--space-2);
+}
+
+.login-subtitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--app-text-muted);
+  margin-bottom: var(--space-6);
+}
+
+.error-banner {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--app-danger);
+  background: var(--app-danger-soft);
+  border: 1px solid var(--app-danger);
+  border-radius: var(--radius-button);
+  padding: 8px 12px;
+  margin: var(--space-2) 0;
+  animation: shake 360ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+.submit-btn {
+  margin-top: var(--space-4);
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-3px); }
+  40%, 60% { transform: translateX(3px); }
 }

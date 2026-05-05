@@ -1,79 +1,365 @@
-// PrimeNG 8.0.3 uses .ui-* class prefix (jQuery-UI legacy). The `.p-*` prefix
-// only came in PrimeNG 9.0. PrimeNG 8 also doesn't honor CSS variables in its
-// compiled themes, so Material colors are pasted in as literal values.
+// ─── PrimeNG 8.0.3 overrides ──────────────────────────────────────────────
+// Targets the .ui-* class prefix (jQuery-UI legacy). Overrides nova-light
+// where it conflicts with our "Operations Console" design system.
+// Loaded AFTER ~primeng/resources/primeng.css and the nova-light theme link
+// so same-specificity rules win.
 
-// Buttons — Material-style: Roboto, semibold, uppercase, slight letter-spacing,
-// 4px corners, primary background.
+// ── Buttons ───────────────────────────────────────────────────────────────
 .ui-button {
-  font-family: var(--font-family);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.0892857143em;
-  border-radius: 4px;
-  background: var(--md-primary);
-  color: var(--md-on-primary);
-  border: 1px solid var(--md-primary);
-  padding: 0.5rem 1rem;
-  transition: background-color 0.15s ease-out, box-shadow 0.15s ease-out;
+  letter-spacing: var(--tracking-wide);
+  border-radius: var(--radius-button);
+  padding: 8px 16px;
+  min-height: 36px;
+  border: 1px solid var(--app-primary);
+  background: var(--app-primary);
+  color: var(--app-primary-on);
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    background var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-out),
+    box-shadow var(--motion-base) var(--motion-ease);
 
-  &:enabled:hover,
-  &:enabled:focus {
-    background: var(--md-primary);
-    filter: brightness(0.95);
-    box-shadow: var(--app-elev-1);
+  &:enabled:hover {
+    background: var(--app-primary-hover);
+    border-color: var(--app-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--elev-1);
+  }
+
+  &:enabled:active {
+    background: var(--app-primary-active);
+    border-color: var(--app-primary-active);
+    transform: translateY(0);
+    box-shadow: none;
+  }
+
+  &:enabled:focus,
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--elev-focus-primary);
   }
 
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.45;
     cursor: not-allowed;
-  }
-}
-
-// Topbar / inline icon buttons — text-style (transparent, primary color).
-// Mark with class="ui-button-text-only" or our custom class. PrimeNG 8 doesn't
-// have a built-in text variant, so we add one.
-.ui-button.ui-button-text-only-flat,
-.ui-button.app-button-icon-flat {
-  background: transparent;
-  border-color: transparent;
-  color: var(--md-on-surface);
-  padding: 0.5rem;
-
-  &:enabled:hover,
-  &:enabled:focus {
-    background: var(--md-surface-variant);
-    filter: none;
+    transform: none;
     box-shadow: none;
   }
-}
 
-// Cards
-.ui-card {
-  background: var(--md-surface);
-  color: var(--md-on-surface);
-  box-shadow: var(--app-elev-1);
-  border-radius: 8px;
-}
+  // pButton injects an icon+label span pair; control the inner spacing.
+  .ui-button-icon-left,
+  .ui-button-icon-right {
+    font-size: 14px;
+  }
 
-// Inputs
-.ui-inputtext {
-  font-family: var(--font-family);
-  border-radius: 4px;
-  border: 1px solid var(--md-outline);
-  padding: 0.5rem 0.75rem;
-  background: var(--md-surface);
-  color: var(--md-on-surface);
+  // Tall variant for primary CTAs (login Sign In etc.)
+  &.app-button-tall {
+    min-height: 44px;
+    padding: 10px 20px;
+    font-size: var(--text-base);
+    width: 100%;
+  }
 
-  &:enabled:focus {
-    border-color: var(--md-primary);
-    box-shadow: 0 0 0 1px var(--md-primary);
-    outline: none;
+  // Flat / icon-only variant — transparent background, no border
+  &.app-button-icon-flat {
+    min-height: 36px;
+    width: 36px;
+    padding: 0;
+    background: transparent;
+    border-color: transparent;
+    color: var(--app-text-muted);
+    box-shadow: none;
+
+    &:enabled:hover {
+      background: var(--app-bg-muted);
+      border-color: transparent;
+      color: var(--app-text);
+      transform: none;
+      box-shadow: none;
+    }
+
+    &:enabled:active {
+      background: var(--app-border);
+      border-color: transparent;
+      transform: none;
+    }
+
+    .ui-button-text { display: none; } // pButton always emits a label span
+  }
+
+  // Secondary / outline variant
+  &.app-button-outline {
+    background: transparent;
+    color: var(--app-primary);
+
+    &:enabled:hover {
+      background: var(--app-primary-softer);
+      color: var(--app-primary-hover);
+    }
   }
 }
 
-// Tabs — underline indicator in primary
-.ui-tabview .ui-tabview-nav li.ui-state-active a,
-.ui-tabview .ui-tabview-nav li.ui-state-active {
-  border-color: var(--md-primary);
-  color: var(--md-primary);
+// ── Inputs ────────────────────────────────────────────────────────────────
+.ui-inputtext {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: 400;
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-button);
+  padding: 8px 12px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease);
+  box-shadow: none;
+
+  &:enabled:hover { border-color: var(--app-border-strong); }
+
+  &:enabled:focus,
+  &:focus-visible {
+    outline: none;
+    border-color: var(--app-primary);
+    box-shadow: var(--elev-focus-primary);
+  }
+
+  &::placeholder { color: var(--app-text-faint); }
+}
+
+// Inside .app-form-field, inputs are the "underlined floating-label" style —
+// we strip the box border so only the .field-underline rail shows.
+.app-form-field .field-content > .ui-inputtext {
+  border: none;
+  border-radius: 0;
+  padding: 6px 0 8px;
+  background: transparent;
+
+  &:enabled:hover { border: none; }
+  &:enabled:focus,
+  &:focus-visible { border: none; box-shadow: none; }
+}
+
+// ── Card ──────────────────────────────────────────────────────────────────
+.ui-card {
+  background: var(--app-surface);
+  color: var(--app-text-body);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-1);
+
+  .ui-card-title {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: var(--text-md);
+    letter-spacing: var(--tracking-tight);
+    color: var(--app-text);
+  }
+
+  .ui-card-body { padding: var(--space-4); }
+  .ui-card-content { padding: 0; color: var(--app-text-body); }
+}
+
+// ── Dropdown / MultiSelect ────────────────────────────────────────────────
+.ui-dropdown,
+.ui-multiselect {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-button);
+  background: var(--app-surface);
+  color: var(--app-text);
+  min-height: 36px;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease);
+
+  &:not(.ui-state-disabled):hover { border-color: var(--app-border-strong); }
+
+  &.ui-state-focus {
+    outline: none;
+    border-color: var(--app-primary);
+    box-shadow: var(--elev-focus-primary);
+  }
+
+  .ui-dropdown-label,
+  .ui-multiselect-label { padding: 6px 12px; color: var(--app-text); }
+
+  .ui-dropdown-trigger,
+  .ui-multiselect-trigger { color: var(--app-text-muted); }
+}
+
+.ui-dropdown-panel,
+.ui-multiselect-panel {
+  background: var(--app-surface-elevated);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-3);
+  font-family: var(--font-sans);
+}
+
+.ui-dropdown-item,
+.ui-multiselect-item {
+  padding: 8px 12px;
+  font-size: var(--text-base);
+  color: var(--app-text-body);
+
+  &.ui-state-highlight {
+    background: var(--app-primary-softer);
+    color: var(--app-primary-hover);
+  }
+}
+
+// ── Calendar ──────────────────────────────────────────────────────────────
+.ui-calendar .ui-inputtext { padding: 8px 12px; }
+
+.ui-datepicker {
+  font-family: var(--font-sans);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-3);
+  background: var(--app-surface-elevated);
+
+  .ui-datepicker-header {
+    background: transparent;
+    border: none;
+    color: var(--app-text);
+    padding-bottom: var(--space-2);
+  }
+
+  td > a, td > span {
+    color: var(--app-text-body);
+    border-radius: var(--radius-button);
+
+    &.ui-state-active {
+      background: var(--app-primary);
+      color: var(--app-primary-on);
+    }
+    &:not(.ui-state-disabled):hover { background: var(--app-bg-muted); }
+  }
+}
+
+// ── Checkbox / InputSwitch ────────────────────────────────────────────────
+.ui-chkbox-box {
+  border: 1.5px solid var(--app-border-strong);
+  border-radius: 4px;
+  background: var(--app-surface);
+  transition: background var(--motion-base) var(--motion-ease),
+              border-color var(--motion-base) var(--motion-ease);
+
+  &.ui-state-active {
+    background: var(--app-primary);
+    border-color: var(--app-primary);
+  }
+}
+
+.ui-inputswitch {
+  .ui-inputswitch-slider {
+    background: var(--app-border-strong);
+    border-radius: var(--radius-pill);
+    transition: background var(--motion-base) var(--motion-ease);
+  }
+  &.ui-inputswitch-checked .ui-inputswitch-slider {
+    background: var(--app-primary);
+  }
+}
+
+// ── Tabview ───────────────────────────────────────────────────────────────
+.ui-tabview {
+  background: transparent;
+  border: none;
+
+  .ui-tabview-nav {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--app-border);
+    padding: 0;
+
+    li {
+      background: transparent !important;
+      border: none !important;
+      margin: 0 var(--space-2) 0 0;
+
+      a {
+        font-family: var(--font-sans);
+        font-weight: 500;
+        font-size: var(--text-sm);
+        letter-spacing: var(--tracking-wide);
+        color: var(--app-text-muted);
+        padding: 12px 16px;
+        border-bottom: 2px solid transparent;
+        transition: color var(--motion-base) var(--motion-ease),
+                    border-color var(--motion-base) var(--motion-ease);
+      }
+
+      &.ui-state-active a,
+      &.ui-tabview-selected a {
+        color: var(--app-primary);
+        border-bottom-color: var(--app-primary);
+      }
+
+      &:not(.ui-state-active):hover a { color: var(--app-text); }
+    }
+  }
+
+  .ui-tabview-panels { background: transparent; padding: var(--space-5) 0; }
+}
+
+// ── Dialog ────────────────────────────────────────────────────────────────
+.ui-dialog {
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-modal);
+  background: var(--app-surface-elevated);
+  box-shadow: var(--elev-3);
+
+  .ui-dialog-titlebar {
+    background: transparent;
+    border-bottom: 1px solid var(--app-border);
+    border-radius: var(--radius-modal) var(--radius-modal) 0 0;
+    padding: var(--space-4) var(--space-5);
+  }
+  .ui-dialog-title {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: var(--text-md);
+    letter-spacing: var(--tracking-tight);
+    color: var(--app-text);
+  }
+  .ui-dialog-content {
+    padding: var(--space-5);
+    color: var(--app-text-body);
+  }
+}
+.ui-widget-overlay { background: var(--app-overlay); }
+
+// ── Tooltip ───────────────────────────────────────────────────────────────
+.ui-tooltip {
+  .ui-tooltip-text {
+    background: #0F172A;
+    color: #F8FAFC;
+    border-radius: var(--radius-button);
+    padding: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    box-shadow: var(--elev-2);
+  }
+  .ui-tooltip-arrow { display: none; }
+}
+
+// ── Progressbar ───────────────────────────────────────────────────────────
+.ui-progressbar {
+  height: 4px;
+  background: var(--app-bg-muted);
+  border-radius: var(--radius-pill);
+  border: none;
+
+  .ui-progressbar-value {
+    background: var(--app-primary);
+    border-radius: var(--radius-pill);
+  }
 }

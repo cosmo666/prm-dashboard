@@ -1,33 +1,72 @@
 <div class="login-layout">
-  <div class="login-form-panel">
-    <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
-      <h1>PRM Dashboard</h1>
-      <p class="subtitle">Sign in to continue</p>
 
-      <app-form-field label="Username"
-                      [error]="usernameHasError() ? 'Username required' : undefined">
-        <input pInputText type="text" formControlName="username" autocomplete="username">
-      </app-form-field>
+  <!-- ── Form panel ────────────────────────────────────────────── -->
+  <section class="login-form-panel">
+    <header class="login-brand">
+      <span class="brand-mark">P</span>
+      <span class="brand-name">PRM Dashboard</span>
+      <ng-container *ngIf="(tenantStore.tenant$ | async) as tenant">
+        <span class="brand-divider">/</span>
+        <span class="brand-tenant">{{ tenant.slug }}</span>
+      </ng-container>
+    </header>
 
-      <app-form-field label="Password"
-                      [error]="passwordHasError() ? 'Password required' : undefined">
-        <input pInputText type="password" formControlName="password" autocomplete="current-password">
-      </app-form-field>
+    <div class="login-body">
+      <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
+        <h1 class="login-title">Sign in</h1>
+        <p class="login-subtitle">
+          Operations clarity, on every flight.
+        </p>
 
-      <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
+        <app-form-field label="Username"
+                        [error]="usernameHasError() ? 'Required' : undefined">
+          <input pInputText type="text" formControlName="username" autocomplete="username">
+        </app-form-field>
 
-      <button pButton type="submit" class="submit-btn"
-              [disabled]="form.invalid || loading"
-              [label]="loading ? 'Signing in…' : 'Sign in'"></button>
-    </form>
-  </div>
+        <app-form-field label="Password"
+                        [error]="passwordHasError() ? 'Required' : undefined">
+          <input pInputText type="password" formControlName="password" autocomplete="current-password">
+        </app-form-field>
 
-  <div class="login-parallax-panel" #parallaxPanel>
-    <div class="parallax-shape parallax-shape-1"></div>
-    <div class="parallax-shape parallax-shape-2"></div>
-    <div class="parallax-content">
-      <h2>Operations clarity for ground handling.</h2>
-      <p>Real-time PRM analytics across your network.</p>
+        <div class="error-banner" *ngIf="errorMessage" role="alert">
+          {{ errorMessage }}
+        </div>
+
+        <button pButton type="submit" class="app-button-tall submit-btn"
+                [disabled]="form.invalid || loading"
+                [label]="loading ? 'Signing in…' : 'Sign in'"></button>
+      </form>
     </div>
-  </div>
+
+    <footer class="login-footer">
+      <span class="login-footer-tag">v0.0.1 · phase 0</span>
+      <span class="login-footer-time">{{ now }}</span>
+    </footer>
+  </section>
+
+  <!-- ── Operations panel (dark) ───────────────────────────────── -->
+  <aside class="login-parallax-panel" #parallaxPanel>
+    <div class="panel-tag">Live · Operations</div>
+
+    <h2 class="panel-quote">
+      Reduce friction.<br>
+      <em>Move passengers.</em>
+    </h2>
+
+    <div class="panel-meta">
+      <div class="meta-cell">
+        <span class="meta-label">Tenant</span>
+        <span class="meta-value">{{ (tenantStore.tenant$ | async)?.slug || '—' }}</span>
+      </div>
+      <div class="meta-cell">
+        <span class="meta-label">Region</span>
+        <span class="meta-value">APAC · IND</span>
+      </div>
+      <div class="meta-cell">
+        <span class="meta-label">Build</span>
+        <span class="meta-value">8.2.14</span>
+      </div>
+    </div>
+  </aside>
+
 </div>
