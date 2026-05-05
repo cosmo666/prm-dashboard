@@ -1,0 +1,7 @@
+<div class="base-chart" [style.height.px]="height">
+  <div class="title" *ngIf="title">{{ title }}</div>
+  <div class="loading" *ngIf="loading"><p-progressSpinner></p-progressSpinner></div>
+  <div class="empty"   *ngIf="!loading && isEmpty">No data matches current filters</div>
+  <div class="echart"  *ngIf="!loading && !isEmpty"
+       echarts [options]="options" [autoResize]="true"></div>
+</div>

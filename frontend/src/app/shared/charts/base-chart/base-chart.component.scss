@@ -1,0 +1,16 @@
+.base-chart {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--md-surface);
+  border-radius: 4px;
+  box-shadow: var(--app-elev-1);
+  padding: 1rem;
+
+  .title { font-weight: 500; margin-bottom: 0.5rem; }
+  .echart { flex: 1; min-height: 0; }
+  .loading, .empty {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    color: var(--md-on-surface-variant);
+  }
+}
