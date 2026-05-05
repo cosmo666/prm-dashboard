@@ -1,0 +1,22 @@
+.login-form {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+
+  h1 { margin-bottom: 0.25rem; }
+  .subtitle { color: var(--md-on-surface-variant); margin-bottom: 2rem; }
+  .submit-btn { margin-top: 1rem; }
+  .error-banner {
+    color: var(--md-error);
+    background: var(--md-error-container);
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    margin: 0.5rem 0;
+  }
+}
+.login-parallax-panel .parallax-content {
+  position: absolute;
+  bottom: 3rem; left: 3rem; right: 3rem;
+  z-index: 1;
+}
