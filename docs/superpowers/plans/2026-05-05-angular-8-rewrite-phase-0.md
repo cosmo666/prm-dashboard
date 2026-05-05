@@ -4,9 +4,9 @@
 
 **Goal:** A runnable Angular 8 + PrimeNG app on the `angular-8-rewrite` branch with: login screen (parallax dark panel), home tile picker, theme toggle (light/dark via Material-3-themed PrimeNG), one chart wrapper proof, custom Material-style float-label form field, Karma + Jasmine wired with the existing sanity test ported, Node-12 Docker image, and `docker compose up` bringing up the full stack with the new frontend.
 
-**Architecture:** Replace `frontend/` content on the branch with a freshly-scaffolded Angular 8.3 project. Use NgModules (Core, Shared, Auth, Home, NotFound, Dashboard) replacing standalone components. Replace NgRx Signal Store with BehaviorSubject services (AuthStore, TenantStore in Phase 0). Replace Angular Material with PrimeNG 8.1.4 components themed to read as Material 3 (custom SCSS layer over `saga-blue`/`vela-blue`). All API contracts, JWT claims, subdomain tenancy, and backend code remain untouched.
+**Architecture:** Replace `frontend/` content on the branch with a freshly-scaffolded Angular 8 project. Use NgModules (Core, Shared, Auth, Home, NotFound, Dashboard) replacing standalone components. Replace NgRx Signal Store with BehaviorSubject services (AuthStore, TenantStore in Phase 0). Replace Angular Material with PrimeNG 8.0.3 components themed to read as Material 3 (custom SCSS layer over `saga-blue`/`vela-blue`). All API contracts, JWT claims, subdomain tenancy, and backend code remain untouched.
 
-**Tech Stack:** Angular 8.3.29 / TypeScript 3.5.3 / RxJS 6.5.5 / zone.js 0.9.1 / PrimeNG 8.1.4 / PrimeIcons 2.0.0 / PrimeFlex 1.3.1 / echarts 4.9.0 / ngx-echarts 5.2.2 / TSLint 5.15.0 / Karma 4.1 + Jasmine 3.4 / Node 12.22 / nginx alpine.
+**Tech Stack (must match user's existing host app):** Angular 8.2.14 / Angular CLI 8.3.3 / TypeScript 3.4.5 / RxJS 6.5.2 / zone.js 0.9.1 / PrimeNG 8.0.3 / PrimeIcons 2.0.0 / PrimeFlex 1.3.1 / ngx-bootstrap 5.1.0 / echarts 4.9.0 / ngx-echarts 5.2.2 / TSLint 5.15.0 / Karma 4.1 + Jasmine 3.4 / Node 12.22 / nginx alpine.
 
 **Reference spec:** [docs/superpowers/specs/2026-05-05-angular-8-primeng-rewrite-design.md](../specs/2026-05-05-angular-8-primeng-rewrite-design.md). Where the spec specifies file content (versions, code snippets, themes), this plan refers to spec sections rather than re-printing.
 
@@ -170,7 +170,7 @@ If `nvm` is missing, install via `nvm-windows` and run `nvm install 12.22.12` fi
 
 Run from repo root:
 ```powershell
-npx --package=@angular/cli@8.3.29 ng new frontend `
+npx --package=@angular/cli@8.3.3 ng new frontend `
   --routing=true --style=scss --strict=false --skip-git=true --skip-install=true
 ```
 
@@ -238,8 +238,8 @@ Expected: completes without errors. Some peer-dep warnings (PrimeNG 8 ↔ Angula
 
 - [ ] **Step 3: Verify `npm ls` minimal sanity**
 
-Run from `frontend/`: `npm ls @angular/core primeng echarts ngx-echarts`
-Expected: prints exactly `8.2.14`, `8.1.4`, `4.9.0`, `5.2.2`. If any version is wrong, fix `package.json` and rerun `npm install`.
+Run from `frontend/`: `npm ls @angular/core @angular/cli typescript rxjs primeng primeicons ngx-bootstrap echarts ngx-echarts`
+Expected: prints exactly `8.2.14`, `8.3.3`, `3.4.5`, `6.5.2`, `8.0.3`, `2.0.0`, `5.1.0`, `4.9.0`, `5.2.2`. If any version is wrong, fix `package.json` and rerun `npm install`. These pins are mandated by the user's existing host-app stack and must match exactly.
 
 - [ ] **Step 4: Commit lockfile**
 

@@ -67,9 +67,10 @@ Captured from the brainstorming dialogue (Q1–Q7).
 
 | Layer | Version |
 |---|---|
-| Angular | 8.3.x (latest 8.x minor — 8.3.29) |
-| TypeScript | 3.5.3 |
-| RxJS | 6.5.5 |
+| Angular | 8.2.14 (`@angular/*` — must match user's host app) |
+| Angular CLI | 8.3.3 |
+| TypeScript | 3.4.5 |
+| RxJS | 6.5.2 |
 | zone.js | 0.9.1 |
 | Node.js (build) | 12.22.x — pinned via `.nvmrc` |
 | Build tool | Angular CLI 8 (webpack 4 under the hood) |
@@ -78,9 +79,10 @@ Captured from the brainstorming dialogue (Q1–Q7).
 
 | Layer | Version |
 |---|---|
-| PrimeNG | 8.1.4 (last 8.x release) |
+| PrimeNG | 8.0.3 |
 | PrimeIcons | 2.0.0 |
 | PrimeFlex | 1.3.1 |
+| ngx-bootstrap | 5.1.0 |
 
 ### Charts
 
@@ -111,18 +113,19 @@ Captured from the brainstorming dialogue (Q1–Q7).
     "@angular/platform-browser": "8.2.14",
     "@angular/platform-browser-dynamic": "8.2.14",
     "@angular/router": "8.2.14",
-    "primeng": "8.1.4",
+    "primeng": "8.0.3",
     "primeicons": "2.0.0",
     "primeflex": "1.3.1",
+    "ngx-bootstrap": "5.1.0",
     "echarts": "4.9.0",
     "ngx-echarts": "5.2.2",
-    "rxjs": "6.5.5",
+    "rxjs": "6.5.2",
     "tslib": "1.10.0",
     "zone.js": "0.9.1"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "0.803.29",
-    "@angular/cli": "8.3.29",
+    "@angular-devkit/build-angular": "0.803.3",
+    "@angular/cli": "8.3.3",
     "@angular/compiler-cli": "8.2.14",
     "@angular/language-service": "8.2.14",
     "@types/jasmine": "3.3.16",
@@ -136,7 +139,7 @@ Captured from the brainstorming dialogue (Q1–Q7).
     "karma-jasmine": "2.0.1",
     "karma-jasmine-html-reporter": "1.4.0",
     "tslint": "5.15.0",
-    "typescript": "3.5.3"
+    "typescript": "3.4.5"
   }
 }
 ```
@@ -810,7 +813,7 @@ End state: first fully working dashboard tab. Forces shared infrastructure to be
 
 ### High-impact
 
-- **R1 — PrimeNG 8.1.4 component rough edges.** Some props and modes may be flaky vs newer versions.
+- **R1 — PrimeNG 8.0.3 component rough edges.** Some props and modes may be flaky vs newer versions.
   *Mitigation:* PrimeNG smoke screen page in Phase 0 — visual sanity of every component before committing to broad use.
 
 - **R2 — Custom `<app-form-field>` directive complexity.** Tracking focus / blur / value-presence / error across arbitrary `@ContentChild` PrimeNG controls is fiddly.
