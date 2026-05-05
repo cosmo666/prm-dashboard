@@ -47,7 +47,7 @@ export class AuthService {
 
   logout(): void {
     this.api.post('/auth/logout', {}).pipe(
-      catchError(() => { return throwError(null); })
+      catchError(() => throwError(null))
     ).subscribe({
       next: () => this.finishLogout(),
       error: () => this.finishLogout(),
