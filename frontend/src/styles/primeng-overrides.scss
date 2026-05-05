@@ -1,18 +1,79 @@
-/* Light + dark friendly button overrides — keep PrimeNG shape, Material colors */
-.p-button {
+// PrimeNG 8.0.3 uses .ui-* class prefix (jQuery-UI legacy). The `.p-*` prefix
+// only came in PrimeNG 9.0. PrimeNG 8 also doesn't honor CSS variables in its
+// compiled themes, so Material colors are pasted in as literal values.
+
+// Buttons — Material-style: Roboto, semibold, uppercase, slight letter-spacing,
+// 4px corners, primary background.
+.ui-button {
   font-family: var(--font-family);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.0892857143em;
   border-radius: 4px;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  border: 1px solid var(--md-primary);
+  padding: 0.5rem 1rem;
+  transition: background-color 0.15s ease-out, box-shadow 0.15s ease-out;
+
+  &:enabled:hover,
+  &:enabled:focus {
+    background: var(--md-primary);
+    filter: brightness(0.95);
+    box-shadow: var(--app-elev-1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
-.p-card {
+// Topbar / inline icon buttons — text-style (transparent, primary color).
+// Mark with class="ui-button-text-only" or our custom class. PrimeNG 8 doesn't
+// have a built-in text variant, so we add one.
+.ui-button.ui-button-text-only-flat,
+.ui-button.app-button-icon-flat {
+  background: transparent;
+  border-color: transparent;
+  color: var(--md-on-surface);
+  padding: 0.5rem;
+
+  &:enabled:hover,
+  &:enabled:focus {
+    background: var(--md-surface-variant);
+    filter: none;
+    box-shadow: none;
+  }
+}
+
+// Cards
+.ui-card {
+  background: var(--md-surface);
+  color: var(--md-on-surface);
   box-shadow: var(--app-elev-1);
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
-.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+// Inputs
+.ui-inputtext {
+  font-family: var(--font-family);
+  border-radius: 4px;
+  border: 1px solid var(--md-outline);
+  padding: 0.5rem 0.75rem;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+
+  &:enabled:focus {
+    border-color: var(--md-primary);
+    box-shadow: 0 0 0 1px var(--md-primary);
+    outline: none;
+  }
+}
+
+// Tabs — underline indicator in primary
+.ui-tabview .ui-tabview-nav li.ui-state-active a,
+.ui-tabview .ui-tabview-nav li.ui-state-active {
   border-color: var(--md-primary);
   color: var(--md-primary);
 }

@@ -16,7 +16,7 @@
 
       <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
 
-      <button pButton type="submit" class="p-button-raised submit-btn"
+      <button pButton type="submit" class="submit-btn"
               [disabled]="form.invalid || loading"
               [label]="loading ? 'Signing in…' : 'Sign in'"></button>
     </form>

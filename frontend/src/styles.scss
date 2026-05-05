@@ -1,11 +1,18 @@
+// PrimeNG 8.0.3 base structure first (uses .ui-* classes — primeng.min.css is
+// empty in 8.0.3; primeng.css is the actual structural file).
+@import '~primeng/resources/primeng.css';
+@import '~primeflex/primeflex.css';
+
+// Our own foundation (variables, tokens, gradient mixins) — no PrimeNG-targeted
+// rules; safe to load before or after PrimeNG.
 @import 'styles/variables';
 @import 'styles/material-tokens';
 @import 'styles/kpi-gradients';
 @import 'styles/login-parallax';
 @import 'styles/form-field';
+
+// PrimeNG overrides AFTER primeng.css so same-specificity rules win.
 @import 'styles/primeng-overrides';
-@import '~primeng/resources/primeng.min.css';
-@import '~primeflex/primeflex.css';
 
 html, body {
   margin: 0;

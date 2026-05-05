@@ -25,7 +25,7 @@ export class FormFieldComponent implements AfterContentInit, OnDestroy {
 
   ngAfterContentInit(): void {
     const inputEl = this.host.nativeElement.querySelector(
-      'input, textarea, select, .p-dropdown, .p-multiselect, .p-calendar'
+      'input, textarea, select, .ui-dropdown, .ui-multiselect, .ui-calendar'
     ) as HTMLElement | null;
     if (!inputEl) { return; }
 
