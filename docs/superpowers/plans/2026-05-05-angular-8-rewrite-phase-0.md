@@ -216,8 +216,8 @@ Use the Alpine base — `node:12.22.12` (the Debian default) is based on Stretch
 # Phase 0 dev container — runs npm install, ng build, ng test inside the container
 # so the host doesn't need Node 12. Alpine is used because Debian Stretch (the
 # default base for node:12.22.12) is EOL and its apt repos return 404.
-# TODO: pin to sha256 digest later (matches the rest of the repo's Dockerfiles).
-FROM node:12.22.12-alpine
+# Pinned to sha256 digest per the 2026-04-23 architecture decision.
+FROM node:12.22.12-alpine@sha256:d4b15b3d48f42059a15bd659be60afe21762aae9d6cbea6f124440895c27db68
 
 # chromium for Karma headless tests; python3/make/g++ in case node-sass needs to
 # build from source (the prebuilt musl binary covers most cases).
