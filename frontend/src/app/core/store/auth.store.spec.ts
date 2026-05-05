@@ -4,11 +4,13 @@ describe('AuthStore', () => {
   let store: AuthStore;
 
   const sampleEmployee: Employee = {
-    id: 'e1',
-    name: 'Alice',
+    id: 1,
+    displayName: 'Alice',
     email: 'alice@example.com',
-    tenantSlug: 'acme',
-    airports: ['DEL', 'BOM'],
+    airports: [
+      { code: 'DEL', name: 'Indira Gandhi International Airport' },
+      { code: 'BOM', name: 'Chhatrapati Shivaji International Airport' },
+    ],
   };
 
   beforeEach(() => { store = new AuthStore(); });
@@ -16,7 +18,7 @@ describe('AuthStore', () => {
   it('starts with null token, null employee', () => {
     expect(store.accessTokenSnapshot).toBeNull();
     expect(store.employeeSnapshot).toBeNull();
-    expect(store.airportsSnapshot).toEqual([]);
+    expect(store.airportCodesSnapshot).toEqual([]);
   });
 
   it('setAccessToken updates snapshot and stream', (done) => {
@@ -32,7 +34,7 @@ describe('AuthStore', () => {
   it('setEmployee exposes airports through derived snapshot', () => {
     store.setEmployee(sampleEmployee);
     expect(store.employeeSnapshot).toEqual(sampleEmployee);
-    expect(store.airportsSnapshot).toEqual(['DEL', 'BOM']);
+    expect(store.airportCodesSnapshot).toEqual(['DEL', 'BOM']);
   });
 
   it('clear resets all fields', () => {
@@ -41,7 +43,7 @@ describe('AuthStore', () => {
     store.clear();
     expect(store.accessTokenSnapshot).toBeNull();
     expect(store.employeeSnapshot).toBeNull();
-    expect(store.airportsSnapshot).toEqual([]);
+    expect(store.airportCodesSnapshot).toEqual([]);
   });
 
   it('isAuthenticatedSnapshot is true only when both token and employee present', () => {

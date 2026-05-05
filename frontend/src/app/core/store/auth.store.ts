@@ -2,12 +2,18 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
 
-export interface Employee {
-  id: string;
+export interface AirportInfo {
+  code: string;
   name: string;
-  email: string;
-  tenantSlug: string;
-  airports: string[];
+}
+
+// Mirrors backend EmployeeDto (PrmDashboard.Shared/DTOs/AuthDtos.cs).
+// tenantSlug lives in the JWT claims, not the EmployeeDto, so it isn't on this type.
+export interface Employee {
+  id: number;
+  displayName: string;
+  email: string | null;
+  airports: AirportInfo[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -18,8 +24,13 @@ export class AuthStore {
   accessToken$: Observable<string | null> = this._accessToken$.asObservable();
   employee$: Observable<Employee | null> = this._employee$.asObservable();
 
-  airports$: Observable<string[]> = this._employee$.pipe(
+  airports$: Observable<AirportInfo[]> = this._employee$.pipe(
     map(emp => (emp ? emp.airports : [])),
+    shareReplay(1)
+  );
+
+  airportCodes$: Observable<string[]> = this._employee$.pipe(
+    map(emp => (emp ? emp.airports.map(a => a.code) : [])),
     shareReplay(1)
   );
 
@@ -33,9 +44,13 @@ export class AuthStore {
 
   get accessTokenSnapshot(): string | null { return this._accessToken$.value; }
   get employeeSnapshot(): Employee | null { return this._employee$.value; }
-  get airportsSnapshot(): string[] {
+  get airportsSnapshot(): AirportInfo[] {
     const emp = this._employee$.value;
     return emp ? emp.airports : [];
+  }
+  get airportCodesSnapshot(): string[] {
+    const emp = this._employee$.value;
+    return emp ? emp.airports.map(a => a.code) : [];
   }
   get isAuthenticatedSnapshot(): boolean {
     return this._accessToken$.value !== null && this._employee$.value !== null;

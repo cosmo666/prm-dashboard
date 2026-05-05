@@ -635,6 +635,23 @@ server {
   root /usr/share/nginx/html;
   index index.html;
 
+  # Proxy /api/* to the gateway. MUST come before the SPA fallback so XHR
+  # calls don't get rewritten to index.html. Forwards the original Host so
+  # the gateway's subdomain -> X-Tenant-Slug middleware sees the tenant
+  # subdomain rather than the compose service name.
+  location /api/ {
+    proxy_pass http://gateway:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_read_timeout 60s;
+    proxy_connect_timeout 5s;
+  }
+
   location / { try_files $uri $uri/ /index.html; }
 
   location ~* \.(js|css|woff2|woff|ttf|svg|png|jpg|jpeg|gif|ico)$ {

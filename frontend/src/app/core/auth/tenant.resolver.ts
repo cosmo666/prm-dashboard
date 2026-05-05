@@ -14,7 +14,7 @@ export class TenantResolver implements Resolve<Tenant | null> {
       return of(this.store.tenantSnapshot);
     }
     const slug = this.extractSlugFromHost();
-    return this.api.get<Tenant>(`/tenant/config?slug=${slug}`).pipe(
+    return this.api.get<Tenant>(`/tenants/config?slug=${slug}`).pipe(
       tap(t => this.store.setTenant(t))
     );
   }

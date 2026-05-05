@@ -24,14 +24,14 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
     private router: Router,
   ) {
     this.form = fb.group({
-      email: ['', [Validators.required, Validators.email]],
+      username: ['', [Validators.required]],
       password: ['', [Validators.required]],
     });
   }
 
   // Helpers used by template (avoid optional chaining — TS 3.4 incompatible).
-  emailHasError(): boolean {
-    const c = this.form.get('email');
+  usernameHasError(): boolean {
+    const c = this.form.get('username');
     return c !== null && c.touched && c.invalid;
   }
 
@@ -57,9 +57,9 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
     if (this.form.invalid) { return; }
     this.loading = true;
     this.errorMessage = null;
-    const email = this.form.value.email;
+    const username = this.form.value.username;
     const password = this.form.value.password;
-    this.auth.login(email, password).subscribe(
+    this.auth.login(username, password).subscribe(
       () => {
         this.loading = false;
         this.router.navigate(['/home']);

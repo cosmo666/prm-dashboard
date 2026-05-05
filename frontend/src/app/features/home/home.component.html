@@ -2,7 +2,7 @@
   <header class="top-bar">
     <div class="brand">PRM Dashboard</div>
     <div class="user-area">
-      <span *ngIf="(authStore.employee$ | async) as emp">{{ emp.name }}</span>
+      <span *ngIf="(authStore.employee$ | async) as emp">{{ emp.displayName }}</span>
       <button pButton class="p-button-text" icon="pi pi-moon" (click)="toggleTheme()" pTooltip="Toggle theme"></button>
       <button pButton class="p-button-text" icon="pi pi-sign-out" (click)="logout()" pTooltip="Sign out"></button>
     </div>

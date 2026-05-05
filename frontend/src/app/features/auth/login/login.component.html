@@ -4,9 +4,9 @@
       <h1>PRM Dashboard</h1>
       <p class="subtitle">Sign in to continue</p>
 
-      <app-form-field label="Email"
-                      [error]="emailHasError() ? 'Valid email required' : undefined">
-        <input pInputText type="email" formControlName="email" autocomplete="email">
+      <app-form-field label="Username"
+                      [error]="usernameHasError() ? 'Username required' : undefined">
+        <input pInputText type="text" formControlName="username" autocomplete="username">
       </app-form-field>
 
       <app-form-field label="Password"
