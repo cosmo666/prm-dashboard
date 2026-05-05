@@ -210,26 +210,32 @@ The user does not have Node 12 on the host. All Phase 0 dev installs and tests r
 
 - [ ] **Step 1: Create `frontend/Dockerfile.dev`**
 
-```dockerfile
-# TODO: pin to sha256 digest later (matches the rest of the repo's Dockerfiles).
-FROM node:12.22.12
+Use the Alpine base — `node:12.22.12` (the Debian default) is based on Stretch, which is EOL and whose apt repos return 404. Alpine 3.x repos are still served and have everything we need.
 
-# Build deps for node-sass + Chromium for Karma headless tests
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+```dockerfile
+# Phase 0 dev container — runs npm install, ng build, ng test inside the container
+# so the host doesn't need Node 12. Alpine is used because Debian Stretch (the
+# default base for node:12.22.12) is EOL and its apt repos return 404.
+# TODO: pin to sha256 digest later (matches the rest of the repo's Dockerfiles).
+FROM node:12.22.12-alpine
+
+# chromium for Karma headless tests; python3/make/g++ in case node-sass needs to
+# build from source (the prebuilt musl binary covers most cases).
+RUN apk add --no-cache \
         chromium \
         python3 \
         make \
         g++ \
         ca-certificates \
-        fonts-liberation && \
-    rm -rf /var/lib/apt/lists/*
+        ttf-liberation \
+        font-noto
 
-ENV CHROME_BIN=/usr/bin/chromium
+# Karma's CHROME_BIN must point at the actual binary; alpine names it chromium-browser.
+ENV CHROME_BIN=/usr/bin/chromium-browser
 
 WORKDIR /app
 
-# Install global tools that are convenient inside the container
+# Pre-install the Angular CLI to match the locked version.
 RUN npm install -g @angular/cli@8.3.3
 ```
 

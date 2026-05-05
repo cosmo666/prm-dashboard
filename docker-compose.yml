@@ -122,3 +122,15 @@ services:
       gateway:
         condition: service_healthy
 
+  frontend-dev:
+    profiles: ["dev"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    image: prm-frontend-dev:local
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    entrypoint: []
+    command: sh
+
