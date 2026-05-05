@@ -28,7 +28,8 @@ frontend/                                                        # Replaced on b
 ├── karma.conf.js
 ├── proxy.conf.json                                              # Local dev → localhost:5000
 ├── proxy.conf.docker.json                                       # In-container → gateway:5000
-├── Dockerfile                                                   # Node 12 builder + nginx
+├── Dockerfile                                                   # Node 12 builder + nginx (production)
+├── Dockerfile.dev                                               # Node 12 + Chromium dev container (Task 2a)
 ├── nginx.conf
 └── src/
     ├── main.ts
@@ -157,28 +158,22 @@ Expected: one commit with `frontend/...` deletions.
 - Create: `frontend/` (everything Angular CLI emits)
 - Create: `frontend/.nvmrc`
 
-This task uses Angular CLI 8 globally (or via `npx`) on a Node 12 environment. **Do not** run on the host's Node 18.
+This task uses Angular CLI 8 on a Node 12 environment. The host has no Node 12 — we run the CLI inside a one-shot `node:12.22.12` container, since the Phase 0 dev container (Task 2a) doesn't exist yet (chicken-and-egg: scaffold must produce `frontend/` before Task 2a can build a `Dockerfile.dev` from it).
 
-- [ ] **Step 1: Switch to Node 12**
+- [ ] **Step 1: Run Angular CLI generator inside a one-shot Node 12 container**
 
-Run: `nvm use 12.22.12`
-Expected: `Now using node v12.22.12 (npm v6.x.x)`
-
-If `nvm` is missing, install via `nvm-windows` and run `nvm install 12.22.12` first.
-
-- [ ] **Step 2: Run Angular CLI generator**
-
-Run from repo root:
+Run from repo root (PowerShell):
 ```powershell
-npx --package=@angular/cli@8.3.3 ng new frontend `
+docker run --rm -v "${PWD}:/work" -w /work node:12.22.12 `
+  npx --package=@angular/cli@8.3.3 ng new frontend `
   --routing=true --style=scss --strict=false --skip-git=true --skip-install=true
 ```
 
-Expected: `frontend/` directory regenerated with the v8 CLI default scaffold (no `node_modules` yet, no git init).
+Expected: `frontend/` directory created with the v8 CLI default scaffold (no `node_modules` yet, no git init).
 
 The `--strict=false` is intentional — we'll enable strict in tsconfig manually in Task 4 (CLI 8's `--strict` flag generates incomplete strict config).
 
-- [ ] **Step 3: Pin Node version**
+- [ ] **Step 2: Pin Node version**
 
 Create `frontend/.nvmrc` containing exactly:
 
@@ -186,12 +181,14 @@ Create `frontend/.nvmrc` containing exactly:
 12.22.12
 ```
 
-- [ ] **Step 4: Verify scaffold structure**
+(Kept for documentation / future contributors with nvm — the Phase 0 workflow itself does not consume this file.)
+
+- [ ] **Step 3: Verify scaffold structure**
 
 Run: `Get-ChildItem frontend -Name`
 Expected: see `angular.json`, `package.json`, `tsconfig.json`, `tslint.json`, `src/`, `.gitignore`.
 
-- [ ] **Step 5: Commit scaffold**
+- [ ] **Step 4: Commit scaffold**
 
 ```powershell
 git add frontend
@@ -202,7 +199,120 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 ---
 
+### Task 2a: Set up Docker dev container for Phase 0
+
+**Files:**
+- Create: `frontend/Dockerfile.dev`
+- Modify: `docker-compose.yml` (add a `frontend-dev` service under a `dev` profile — separate from the existing production `frontend` service)
+- Modify: `frontend/karma.conf.js` (so headless Chromium runs cleanly in the container)
+
+The user does not have Node 12 on the host. All Phase 0 dev installs and tests run inside this container. This is independent of the production `frontend` service in compose (which is wired up later in Task 25 / Task 26 against a separate `Dockerfile`).
+
+- [ ] **Step 1: Create `frontend/Dockerfile.dev`**
+
+```dockerfile
+# TODO: pin to sha256 digest later (matches the rest of the repo's Dockerfiles).
+FROM node:12.22.12
+
+# Build deps for node-sass + Chromium for Karma headless tests
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        chromium \
+        python3 \
+        make \
+        g++ \
+        ca-certificates \
+        fonts-liberation && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV CHROME_BIN=/usr/bin/chromium
+
+WORKDIR /app
+
+# Install global tools that are convenient inside the container
+RUN npm install -g @angular/cli@8.3.3
+```
+
+- [ ] **Step 2: Add a `frontend-dev` service to `docker-compose.yml`**
+
+Add the following block to `docker-compose.yml` under `services:` (next to but **separate from** the existing production `frontend` service — do not modify that one):
+
+```yaml
+  frontend-dev:
+    profiles: ["dev"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    image: prm-frontend-dev:local
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    # Override entrypoint so `docker compose run` works simply
+    entrypoint: []
+    command: sh
+```
+
+The `profiles: ["dev"]` gate ensures `docker compose up` never auto-starts this container — it only runs when invoked explicitly via `docker compose run --rm frontend-dev …` or `docker compose --profile dev …`.
+
+- [ ] **Step 3: Build the dev image once**
+
+Run from worktree root:
+```powershell
+docker compose --profile dev build frontend-dev
+```
+
+Expected: builds the image. ~2–3 min first time.
+
+- [ ] **Step 4: Smoke test the container**
+
+Run from worktree root:
+```powershell
+docker compose run --rm frontend-dev node --version
+```
+Expected: `v12.22.12`.
+
+```powershell
+docker compose run --rm frontend-dev sh -c "ng version"
+```
+Expected: prints the Angular CLI 8.3.3 banner.
+
+- [ ] **Step 5: Configure Karma for headless Chromium**
+
+Edit `frontend/karma.conf.js` (scaffolded in Task 2) so it runs reliably inside the container:
+
+- Replace the `browsers: ['Chrome']` line with `browsers: ['ChromeHeadlessNoSandbox']`.
+- Inside the `config.set({ ... })` block, add a `customLaunchers` entry:
+
+```js
+customLaunchers: {
+  ChromeHeadlessNoSandbox: {
+    base: 'ChromeHeadless',
+    flags: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+  }
+}
+```
+
+This is what every subsequent test task assumes (`docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox`).
+
+- [ ] **Step 6: Commit**
+
+```powershell
+git add frontend/Dockerfile.dev frontend/karma.conf.js docker-compose.yml
+git commit -m "build(frontend): add Node 12 + Chromium dev container for Phase 0
+
+The user does not have Node 12 on the host. All Phase 0 dev installs
+and tests run inside this container via 'docker compose run --rm
+frontend-dev <cmd>'. Image is gated behind the 'dev' compose profile
+so it never auto-starts with 'docker compose up'.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+```
+
+---
+
 ### Task 3: Pin all dependency versions per spec
+
+> **Note on Phase 0 dev commands:** all `npm`, `ng`, `npx`, and `tsc` invocations in Tasks 3–24 and Task 27 must run **inside the dev container** set up in Task 2a. The convention is `docker compose run --rm frontend-dev <command>` from the worktree root. The PowerShell snippets below have been written in this form. The host does **not** need Node 12 installed.
 
 **Files:**
 - Modify: `frontend/package.json` (replace `dependencies` and `devDependencies` blocks entirely)
@@ -229,16 +339,16 @@ Also adjust:
 
 - [ ] **Step 2: Install dependencies**
 
-Run from `frontend/`:
+Run from the worktree root:
 ```powershell
-npm install
+docker compose run --rm frontend-dev npm install
 ```
 
 Expected: completes without errors. Some peer-dep warnings (PrimeNG 8 ↔ Angular 8) are normal — those are warnings, not failures.
 
 - [ ] **Step 3: Verify `npm ls` minimal sanity**
 
-Run from `frontend/`: `npm ls @angular/core @angular/cli typescript rxjs primeng primeicons ngx-bootstrap echarts ngx-echarts`
+Run from the worktree root: `docker compose run --rm frontend-dev npm ls @angular/core @angular/cli typescript rxjs primeng primeicons ngx-bootstrap echarts ngx-echarts`
 Expected: prints exactly `8.2.14`, `8.3.3`, `3.4.5`, `6.5.2`, `8.0.3`, `2.0.0`, `5.1.0`, `4.9.0`, `5.2.2`. If any version is wrong, fix `package.json` and rerun `npm install`. These pins are mandated by the user's existing host-app stack and must match exactly.
 
 - [ ] **Step 4: Commit lockfile**
@@ -280,7 +390,7 @@ Keep all other CLI-generated options (`baseUrl`, `outDir`, `sourceMap`, etc).
 
 - [ ] **Step 2: Run type-check to confirm strictness**
 
-Run from `frontend/`: `npx tsc --noEmit`
+Run from the worktree root: `docker compose run --rm frontend-dev npx tsc --noEmit`
 Expected: no errors (the scaffold is small enough to be strict-clean).
 
 - [ ] **Step 3: Commit**
@@ -653,7 +763,7 @@ html, body {
 
 - [ ] **Step 8: Compile-check**
 
-Run from `frontend/`: `npx ng build --configuration development --output-path=.tmp-build`
+Run from the worktree root: `docker compose run --rm frontend-dev npx ng build --configuration development --output-path=.tmp-build`
 Expected: succeeds. Confirms all SCSS imports resolve.
 Cleanup: `Remove-Item -Recurse -Force frontend/.tmp-build`
 
@@ -722,7 +832,7 @@ export class ApiClient {
 
 - [ ] **Step 2: Type-check**
 
-Run from `frontend/`: `npx tsc --noEmit`
+Run from the worktree root: `docker compose run --rm frontend-dev npx tsc --noEmit`
 Expected: no errors.
 
 - [ ] **Step 3: Commit**
@@ -807,7 +917,7 @@ describe('AuthStore', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run from `frontend/`: `npx ng test --watch=false --include=**/auth.store.spec.ts`
+Run from the worktree root: `docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox --include=**/auth.store.spec.ts`
 Expected: FAIL — `Cannot find module './auth.store'`
 
 - [ ] **Step 3: Write the implementation**
@@ -867,7 +977,7 @@ export class AuthStore {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx ng test --watch=false --include=**/auth.store.spec.ts`
+Run from the worktree root: `docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox --include=**/auth.store.spec.ts`
 Expected: 5 tests PASS.
 
 - [ ] **Step 5: Commit**
@@ -927,7 +1037,7 @@ describe('TenantStore', () => {
 
 - [ ] **Step 2: Run to confirm failure**
 
-Run: `npx ng test --watch=false --include=**/tenant.store.spec.ts`
+Run from the worktree root: `docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox --include=**/tenant.store.spec.ts`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implementation**
@@ -966,7 +1076,7 @@ export class TenantStore {
 
 - [ ] **Step 4: Run to confirm pass**
 
-Run: `npx ng test --watch=false --include=**/tenant.store.spec.ts`
+Run from the worktree root: `docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox --include=**/tenant.store.spec.ts`
 Expected: 3 tests PASS.
 
 - [ ] **Step 5: Commit**
@@ -1047,7 +1157,7 @@ describe('ThemeService', () => {
 
 - [ ] **Step 2: Run to confirm failure**
 
-Run: `npx ng test --watch=false --include=**/theme.service.spec.ts`
+Run from the worktree root: `docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox --include=**/theme.service.spec.ts`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implementation**
@@ -1099,7 +1209,7 @@ export class ThemeService {
 
 - [ ] **Step 4: Run to confirm pass**
 
-Run: `npx ng test --watch=false --include=**/theme.service.spec.ts`
+Run from the worktree root: `docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox --include=**/theme.service.spec.ts`
 Expected: 4 tests PASS.
 
 - [ ] **Step 5: Commit**
@@ -1188,7 +1298,7 @@ export class AuthService {
 
 - [ ] **Step 2: Type-check**
 
-Run: `npx tsc --noEmit`
+Run from the worktree root: `docker compose run --rm frontend-dev npx tsc --noEmit`
 Expected: no errors.
 
 - [ ] **Step 3: Commit**
@@ -1226,7 +1336,7 @@ Body of `intercept(req, next)` exactly per spec.
 
 - [ ] **Step 2: Type-check**
 
-Run: `npx tsc --noEmit`
+Run from the worktree root: `docker compose run --rm frontend-dev npx tsc --noEmit`
 Expected: no errors.
 
 - [ ] **Step 3: Commit**
@@ -1298,7 +1408,7 @@ export class TenantResolver implements Resolve<Tenant | null> {
 
 - [ ] **Step 3: Type-check**
 
-Run: `npx tsc --noEmit`
+Run from the worktree root: `docker compose run --rm frontend-dev npx tsc --noEmit`
 Expected: no errors.
 
 - [ ] **Step 4: Commit**
@@ -1342,7 +1452,7 @@ export class CoreModule {
 
 - [ ] **Step 2: Type-check + commit**
 
-Run: `npx tsc --noEmit`
+Run from the worktree root: `docker compose run --rm frontend-dev npx tsc --noEmit`
 Expected: no errors.
 
 ```powershell
@@ -1396,7 +1506,7 @@ export class SharedModule {}
 - [ ] **Step 2: Type-check + commit**
 
 ```powershell
-npx tsc --noEmit
+docker compose run --rm frontend-dev npx tsc --noEmit
 git add frontend/src/app/shared/shared.module.ts
 git commit -m "feat(shared): SharedModule re-exporting common PrimeNG modules
 
@@ -1495,7 +1605,7 @@ describe('FormFieldComponent', () => {
 
 - [ ] **Step 2: Run failing test**
 
-Run: `npx ng test --watch=false --include=**/form-field.component.spec.ts`
+Run from the worktree root: `docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox --include=**/form-field.component.spec.ts`
 Expected: FAIL — `Cannot find module './form-field.component'`.
 
 - [ ] **Step 3: Implementation — `.ts`**
@@ -1607,7 +1717,7 @@ export class SharedModule {}
 
 - [ ] **Step 7: Run tests**
 
-Run: `npx ng test --watch=false --include=**/form-field.component.spec.ts`
+Run from the worktree root: `docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox --include=**/form-field.component.spec.ts`
 Expected: 5 tests PASS.
 
 - [ ] **Step 8: Commit**
@@ -1789,7 +1899,7 @@ import { BarChartComponent } from './charts/bar-chart/bar-chart.component';
 
 - [ ] **Step 4: Run tests**
 
-Run: `npx ng test --watch=false --include=**/bar-chart.component.spec.ts`
+Run from the worktree root: `docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox --include=**/bar-chart.component.spec.ts`
 Expected: 2 tests PASS.
 
 - [ ] **Step 5: Commit**
@@ -1987,7 +2097,7 @@ export class AuthModule {}
 
 - [ ] **Step 4: Type-check**
 
-Run: `npx tsc --noEmit`
+Run from the worktree root: `docker compose run --rm frontend-dev npx tsc --noEmit`
 Expected: no errors.
 
 - [ ] **Step 5: Commit**
@@ -2493,7 +2603,7 @@ export class AppModule {}
 
 - [ ] **Step 4: Build to verify everything links**
 
-Run from `frontend/`: `npx ng build --configuration development`
+Run from the worktree root: `docker compose run --rm frontend-dev npx ng build --configuration development`
 Expected: build succeeds. Bundles emitted under `dist/frontend/`.
 
 - [ ] **Step 5: Commit**
@@ -2544,7 +2654,7 @@ describe('AppComponent', () => {
 
 - [ ] **Step 2: Run all tests**
 
-Run from `frontend/`: `npx ng test --watch=false`
+Run from the worktree root: `docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox`
 Expected: all suites pass. Total tests: ≥ 16 (auth.store: 5, tenant.store: 3, theme.service: 4, form-field: 5, bar-chart: 2, app: 2, plus any incidental scaffold tests). Allow up to ~20.
 
 - [ ] **Step 3: Commit**
@@ -2565,6 +2675,10 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 - Create: `frontend/nginx.conf`
 - Create: `frontend/proxy.conf.json`
 - Create: `frontend/proxy.conf.docker.json`
+
+**Note:** This is the **production** image (multi-stage Node 12 builder + nginx runtime). It is independent of `frontend/Dockerfile.dev` from Task 2a — that one is the local-dev container used to run npm/ng/test commands; this one is what `docker compose up frontend` serves. The two coexist; do not delete or merge them.
+
+The `npm ci && ng build` invocations inside this `Dockerfile` run during the image build (i.e. inside the builder stage), so they do **not** need to be wrapped in `docker compose run --rm frontend-dev …` — they are already running inside a Node 12 container by virtue of being a Docker `RUN` step.
 
 - [ ] **Step 1: Resolve Node 12 + nginx digests**
 
@@ -2658,7 +2772,9 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ### Task 26: Update `docker-compose.yml`
 
 **Files:**
-- Modify: `docker-compose.yml` (only the `frontend` service block)
+- Modify: `docker-compose.yml` (only the production `frontend` service block)
+
+**Note:** the `frontend-dev` service added in Task 2a is independent and lives under the `dev` profile — keep it intact. This task only touches the production `frontend` service (no profile, runs as part of `docker compose up`).
 
 - [ ] **Step 1: Replace the `frontend` service block**
 
@@ -2720,23 +2836,23 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 - [ ] **Step 1: Lint passes**
 
-Run from `frontend/`: `npm run lint`
+Run from the worktree root: `docker compose run --rm frontend-dev npm run lint`
 Expected: no errors. Warnings are acceptable.
 
 - [ ] **Step 2: All tests pass**
 
-Run from `frontend/`: `npm test -- --watch=false`
+Run from the worktree root: `docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox`
 Expected: ≥ 16 tests pass. No failures.
 
 - [ ] **Step 3: Production build clean**
 
-Run from `frontend/`: `npm run build -- --configuration production`
+Run from the worktree root: `docker compose run --rm frontend-dev npm run build -- --configuration production`
 Expected: build succeeds. Initial bundle warning if > 2MB but < 5MB error budget.
 
 - [ ] **Step 4: Docker image builds**
 
 Run: `docker build -t prm-frontend:v8-phase0 ./frontend`
-Expected: success.
+Expected: success. (This is the **production** image build via `frontend/Dockerfile`, not the dev container.)
 
 - [ ] **Step 5: docker compose up succeeds**
 
