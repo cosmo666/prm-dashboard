@@ -25,14 +25,15 @@ import { FormFieldComponent } from './components/form-field/form-field.component
 import { BaseChartComponent } from './charts/base-chart/base-chart.component';
 import { BarChartComponent } from './charts/bar-chart/bar-chart.component';
 
-// NgxEchartsModule.forRoot is called here so a single SharedModule import
-// gives consumers the chart directive ready to render. Importing SharedModule
-// in multiple lazy-loaded feature modules will re-run forRoot in each lazy
-// injector — acceptable for the POC (echarts core is loaded once via the
-// dynamic import factory).
+// NgxEchartsModule.forRoot is called once at AppModule level so the echarts
+// factory provider lives in the root injector. SharedModule only re-exports
+// the bare NgxEchartsModule (its directive) so lazy feature modules that
+// import SharedModule resolve the existing root-injector provider rather
+// than instantiating their own chart factory per lazy injector.
 @NgModule({
   imports: [
-    NgxEchartsModule.forRoot({ echarts: () => import('echarts') }),
+    CommonModule,
+    NgxEchartsModule,
     ProgressSpinnerModule,
   ],
   declarations: [

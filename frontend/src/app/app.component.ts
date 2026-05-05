@@ -2,9 +2,7 @@ import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  template: '<router-outlet></router-outlet>',
+  styles: [':host { display: block; min-height: 100vh; }'],
 })
-export class AppComponent {
-  title = 'frontend';
-}
+export class AppComponent {}
