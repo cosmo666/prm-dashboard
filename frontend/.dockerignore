@@ -1,0 +1,10 @@
+node_modules
+dist
+.angular
+.vscode
+*.log
+.DS_Store
+coverage
+e2e
+karma.conf.js
+tsconfig.spec.json
