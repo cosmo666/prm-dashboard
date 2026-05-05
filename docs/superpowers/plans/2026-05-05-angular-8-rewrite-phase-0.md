@@ -396,8 +396,10 @@ Keep all other CLI-generated options (`baseUrl`, `outDir`, `sourceMap`, etc).
 
 - [ ] **Step 2: Run type-check to confirm strictness**
 
-Run from the worktree root: `docker compose run --rm frontend-dev npx tsc --noEmit`
+Run from the worktree root: `docker compose run --rm frontend-dev npx tsc --noEmit -p tsconfig.app.json`
 Expected: no errors (the scaffold is small enough to be strict-clean).
+
+The `-p tsconfig.app.json` is required: without it, `tsc` walks every package under `node_modules/@types` (including the `undici-types` package transitively pulled in by `@types/node`), which uses modern TS syntax that TypeScript 3.4.5 can't parse. `tsconfig.app.json` scopes the type-check to `src/**/*.ts` and `types: []`, which is the same scope `ng build` uses.
 
 - [ ] **Step 3: Commit**
 

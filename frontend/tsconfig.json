@@ -11,6 +11,10 @@
     "moduleResolution": "node",
     "importHelpers": true,
     "target": "es2015",
+    "strict": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
     "typeRoots": [
       "node_modules/@types"
     ],
