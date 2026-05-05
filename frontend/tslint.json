@@ -1,5 +1,10 @@
 {
   "extends": "tslint:recommended",
+  "_documentation": {
+    "variable-name.allow-leading-underscore": "Set in commit 2e45fdd to allow the BehaviorSubject convention used in AuthStore/TenantStore/ThemeService (private _employee$, _accessToken$, etc). Removing this option would require renaming all such fields.",
+    "no-non-null-assertion": "Kept ON despite the ! operator being convenient — AuthStore/TenantStore expose typed snapshots and helpers; non-null assertions usually mean a missing helper, not a real invariant.",
+    "max-line-length-140": "Set above the 80/100 default to leave room for Material/PrimeNG class-list strings in templates without forcing awkward line breaks."
+  },
   "rules": {
     "array-type": false,
     "arrow-parens": false,
