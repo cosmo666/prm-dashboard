@@ -4,7 +4,7 @@
 
 **Goal:** A runnable Angular 8 + PrimeNG app on the `angular-8-rewrite` branch with: login screen (parallax dark panel), home tile picker, theme toggle (light/dark via Material-3-themed PrimeNG), one chart wrapper proof, custom Material-style float-label form field, Karma + Jasmine wired with the existing sanity test ported, Node-12 Docker image, and `docker compose up` bringing up the full stack with the new frontend.
 
-**Architecture:** Replace `frontend/` content on the branch with a freshly-scaffolded Angular 8 project. Use NgModules (Core, Shared, Auth, Home, NotFound, Dashboard) replacing standalone components. Replace NgRx Signal Store with BehaviorSubject services (AuthStore, TenantStore in Phase 0). Replace Angular Material with PrimeNG 8.0.3 components themed to read as Material 3 (custom SCSS layer over `saga-blue`/`vela-blue`). All API contracts, JWT claims, subdomain tenancy, and backend code remain untouched.
+**Architecture:** Replace `frontend/` content on the branch with a freshly-scaffolded Angular 8 project. Use NgModules (Core, Shared, Auth, Home, NotFound, Dashboard) replacing standalone components. Replace NgRx Signal Store with BehaviorSubject services (AuthStore, TenantStore in Phase 0). Replace Angular Material with PrimeNG 8.0.3 components themed to read as Material 3 (custom SCSS layer over `nova-light`/`nova-dark`). All API contracts, JWT claims, subdomain tenancy, and backend code remain untouched.
 
 **Tech Stack (must match user's existing host app):** Angular 8.2.14 / Angular CLI 8.3.3 / TypeScript 3.4.5 / RxJS 6.5.2 / zone.js 0.9.1 / PrimeNG 8.0.3 / PrimeIcons 2.0.0 / PrimeFlex 1.3.1 / ngx-bootstrap 5.1.0 / echarts 4.9.0 / ngx-echarts 5.2.2 / TSLint 5.15.0 / Karma 4.1 + Jasmine 3.4 / Node 12.22 / nginx alpine.
 
@@ -50,8 +50,8 @@ frontend/                                                        # Replaced on b
     ├── assets/
     │   ├── fonts/                                               # Roboto via Google Fonts CDN, no local files
     │   └── themes/
-    │       ├── saga-blue/theme.css                              # Copy from primeng/resources/themes
-    │       └── vela-blue/theme.css
+    │       ├── nova-light/theme.css                              # Copy from primeng/resources/themes
+    │       └── nova-dark/theme.css
     └── app/
         ├── app.module.ts
         ├── app-routing.module.ts
@@ -453,17 +453,17 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 **Files:**
 - Modify: `frontend/src/index.html`
-- Create: `frontend/src/assets/themes/saga-blue/theme.css`
-- Create: `frontend/src/assets/themes/vela-blue/theme.css`
+- Create: `frontend/src/assets/themes/nova-light/theme.css`
+- Create: `frontend/src/assets/themes/nova-dark/theme.css`
 - Modify: `frontend/angular.json` (add asset paths)
 
 - [ ] **Step 1: Copy PrimeNG theme stylesheets into `assets/themes/`**
 
 Run from `frontend/`:
 ```powershell
-New-Item -ItemType Directory -Force src\assets\themes\saga-blue, src\assets\themes\vela-blue | Out-Null
-Copy-Item node_modules\primeng\resources\themes\saga-blue\theme.css src\assets\themes\saga-blue\theme.css
-Copy-Item node_modules\primeng\resources\themes\vela-blue\theme.css src\assets\themes\vela-blue\theme.css
+New-Item -ItemType Directory -Force src\assets\themes\nova-light, src\assets\themes\nova-dark | Out-Null
+Copy-Item node_modules\primeng\resources\themes\nova-light\theme.css src\assets\themes\nova-light\theme.css
+Copy-Item node_modules\primeng\resources\themes\nova-dark\theme.css src\assets\themes\nova-dark\theme.css
 ```
 
 Expected: two `theme.css` files copied, ~50 KB each.
@@ -485,7 +485,7 @@ Replace contents of `frontend/src/index.html`:
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/primeicons@2.0.0/primeicons.css">
-  <link id="app-theme" rel="stylesheet" href="assets/themes/saga-blue/theme.css">
+  <link id="app-theme" rel="stylesheet" href="assets/themes/nova-light/theme.css">
 </head>
 <body data-theme="light">
   <app-root></app-root>
@@ -1119,7 +1119,7 @@ describe('ThemeService', () => {
   beforeEach(() => {
     linkEl = document.createElement('link');
     linkEl.id = 'app-theme';
-    linkEl.href = 'assets/themes/saga-blue/theme.css';
+    linkEl.href = 'assets/themes/nova-light/theme.css';
     document.head.appendChild(linkEl);
     document.body.setAttribute('data-theme', 'light');
     localStorage.removeItem('app.theme');
@@ -1139,7 +1139,7 @@ describe('ThemeService', () => {
 
   it('setTheme("dark") swaps the stylesheet href and data-theme attribute', () => {
     service.setTheme('dark');
-    expect(linkEl.href).toContain('vela-blue/theme.css');
+    expect(linkEl.href).toContain('nova-dark/theme.css');
     expect(document.body.getAttribute('data-theme')).toBe('dark');
     expect(service.modeSnapshot).toBe('dark');
     expect(localStorage.getItem('app.theme')).toBe('dark');
@@ -1148,7 +1148,7 @@ describe('ThemeService', () => {
   it('setTheme("light") swaps back', () => {
     service.setTheme('dark');
     service.setTheme('light');
-    expect(linkEl.href).toContain('saga-blue/theme.css');
+    expect(linkEl.href).toContain('nova-light/theme.css');
     expect(document.body.getAttribute('data-theme')).toBe('light');
     expect(service.modeSnapshot).toBe('light');
   });
@@ -1192,8 +1192,8 @@ export class ThemeService {
     const link = document.getElementById('app-theme') as HTMLLinkElement | null;
     if (link) {
       link.href = mode === 'dark'
-        ? 'assets/themes/vela-blue/theme.css'
-        : 'assets/themes/saga-blue/theme.css';
+        ? 'assets/themes/nova-dark/theme.css'
+        : 'assets/themes/nova-light/theme.css';
     }
     document.body.setAttribute('data-theme', mode);
     localStorage.setItem(STORAGE_KEY, mode);
@@ -2821,7 +2821,7 @@ Browse to `http://localhost:4200`:
 - [ ] Move mouse over right panel — observe parallax shape transforms
 - [ ] Sign in with a known seed credential (per `data/master/employees.csv`)
 - [ ] Lands on `/home` showing the PRM Dashboard tile
-- [ ] Click theme toggle — page swaps from saga-blue to vela-blue
+- [ ] Click theme toggle — page swaps from nova-light to nova-dark
 - [ ] Click PRM Dashboard tile — falls through to home placeholder ("not yet ported")
 - [ ] Visit `http://localhost:4200/_smoke` — verify all PrimeNG components render
 - [ ] Visit `http://localhost:4200/__bogus__` — see 404 stub

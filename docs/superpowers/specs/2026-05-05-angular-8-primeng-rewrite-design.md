@@ -178,8 +178,8 @@ frontend/                                   # Replaced on the branch (preserved 
     │   └── environment.staging.ts
     ├── assets/
     │   └── themes/
-    │       ├── saga-blue/theme.css         # PrimeNG light theme (base)
-    │       └── vela-blue/theme.css         # PrimeNG dark theme (base)
+    │       ├── nova-light/theme.css         # PrimeNG light theme (base)
+    │       └── nova-dark/theme.css         # PrimeNG dark theme (base)
     └── app/
         ├── app.module.ts                   # Root NgModule
         ├── app-routing.module.ts           # Lazy routes via loadChildren
@@ -447,8 +447,8 @@ Registered in `AppModule.providers`:
    setTheme(mode: 'light' | 'dark'): void {
      const link = document.getElementById('app-theme') as HTMLLinkElement;
      link.href = mode === 'dark'
-       ? 'assets/themes/vela-blue/theme.css'
-       : 'assets/themes/saga-blue/theme.css';
+       ? 'assets/themes/nova-dark/theme.css'
+       : 'assets/themes/nova-light/theme.css';
      this._mode$.next(mode);
      localStorage.setItem('app.theme', mode);
    }
@@ -720,7 +720,7 @@ End state: runnable app with login + home (placeholder) + theme toggle + one cha
 - Update `docker-compose.yml` frontend service block
 - TSLint + codelyzer config
 - `tsconfig.json` with `strict: true`
-- PrimeNG theme baseline (`saga-blue` + `vela-blue` stylesheets)
+- PrimeNG theme baseline (`nova-light` + `nova-dark` stylesheets)
 - Material 3 token mapping in `_material-tokens.scss`
 - Gradient KPI mixin in `_kpi-gradients.scss`
 - Parallax login styles in `_login-parallax.scss`
