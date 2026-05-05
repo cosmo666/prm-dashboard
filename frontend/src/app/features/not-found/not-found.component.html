@@ -1,5 +1,39 @@
-<div class="not-found">
-  <h1>404 — Not found</h1>
-  <p>The page you're looking for doesn't exist.</p>
-  <a pButton routerLink="/home" label="Go home"></a>
-</div>
+<section class="not-found">
+  <div class="not-found-grid"></div>
+
+  <div class="not-found-frame">
+    <div class="nf-row nf-row-meta">
+      <span class="nf-status">FLT-404</span>
+      <span class="nf-divider">·</span>
+      <span class="nf-route">{{ attemptedPath }}</span>
+    </div>
+
+    <h1 class="nf-headline">
+      Flight diverted.
+    </h1>
+
+    <p class="nf-body">
+      We can't locate the page you requested. The route may have been
+      retired, never existed, or you arrived ahead of schedule.
+    </p>
+
+    <div class="nf-actions">
+      <a pButton routerLink="/home" class="app-button-tall" label="Return to base"></a>
+    </div>
+
+    <dl class="nf-trace">
+      <div>
+        <dt>Status</dt>
+        <dd>404</dd>
+      </div>
+      <div>
+        <dt>Path</dt>
+        <dd>{{ attemptedPath }}</dd>
+      </div>
+      <div>
+        <dt>Time</dt>
+        <dd>{{ now }}</dd>
+      </div>
+    </dl>
+  </div>
+</section>

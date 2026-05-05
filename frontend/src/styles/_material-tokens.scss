@@ -1,15 +1,18 @@
 // ─── Semantic color tokens (light + dark) ─────────────────────────────────
 // Slate-based scale + indigo primary + amber accent.
-// Per-tenant primaryColor overrides --app-primary at runtime via inline style.
+// --app-primary is the only "primary" token that's set directly. Hover,
+// active, soft, softer, and on-primary are DERIVED via color-mix() so that
+// a per-tenant primaryColor override on :root cascades through every variant
+// without needing a JS step to compute hover/active hex values.
 
 :root {
   // Brand
-  --app-primary:           #2563EB;  // indigo-600
-  --app-primary-hover:     #1D4ED8;  // indigo-700
-  --app-primary-active:    #1E40AF;  // indigo-800
-  --app-primary-soft:      #DBEAFE;  // indigo-100 — bg tint
-  --app-primary-softer:    #EFF6FF;  // indigo-50  — hover bg
-  --app-primary-on:        #FFFFFF;  // text on primary fill
+  --app-primary:           #2563EB;  // base. Overridden at runtime by AppComponent for per-tenant.
+  --app-primary-hover:     color-mix(in srgb, var(--app-primary) 88%, #000);
+  --app-primary-active:    color-mix(in srgb, var(--app-primary) 76%, #000);
+  --app-primary-soft:      color-mix(in srgb, var(--app-primary) 16%, #fff);
+  --app-primary-softer:    color-mix(in srgb, var(--app-primary)  6%, #fff);
+  --app-primary-on:        #FFFFFF;
 
   // Accent (rare — primary CTA only)
   --app-accent:            #F97316;
@@ -48,11 +51,14 @@
 }
 
 [data-theme="dark"] {
+  // In dark mode default to a lighter primary that has stronger contrast on
+  // dark surfaces. A tenant override via :root inline style still wins (higher
+  // specificity), which is intentional — branding > theme contrast.
   --app-primary:           #3B82F6;
-  --app-primary-hover:     #60A5FA;
-  --app-primary-active:    #93C5FD;
-  --app-primary-soft:      #1E3A8A;
-  --app-primary-softer:    #1E293B;
+  --app-primary-hover:     color-mix(in srgb, var(--app-primary) 84%, #fff);
+  --app-primary-active:    color-mix(in srgb, var(--app-primary) 70%, #fff);
+  --app-primary-soft:      color-mix(in srgb, var(--app-primary) 22%, #0B1220);
+  --app-primary-softer:    color-mix(in srgb, var(--app-primary) 12%, #0B1220);
   --app-primary-on:        #0F172A;
 
   --app-accent:            #FB923C;
@@ -66,7 +72,7 @@
   --app-danger:            #F87171;
   --app-danger-soft:       #7F1D1D;
 
-  --app-bg:                #0B1220;  // deeper than slate-900 — operations console
+  --app-bg:                #0B1220;
   --app-bg-muted:          #111827;
   --app-surface:           #1E293B;
   --app-surface-elevated:  #243042;

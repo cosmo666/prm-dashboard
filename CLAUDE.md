@@ -17,12 +17,14 @@ Multi-tenant PRM (Passenger with Reduced Mobility) analytics POC for airport gro
 | Auth | `BCrypt.Net-Next` (password hashing), `System.IdentityModel.Tokens.Jwt` (JWT) |
 | Refresh-token store | `InMemoryRefreshTokenStore` (AuthService) — process-local, forgotten on restart |
 | API Gateway | Ocelot (latest for .NET 8) |
-| Frontend framework | Angular 17+ (standalone components, no NgModules) |
-| UI library | Angular Material 3 (custom theme) |
-| Charts | Apache ECharts via `ngx-echarts` |
-| Frontend state | NgRx Signal Store (`@ngrx/signals`) |
+| Frontend framework | **Angular 8.2.14** (NgModules, lazy-loaded feature modules) — must match user's host app |
+| Frontend CLI / build | Angular CLI 8.3.3, webpack 4 under the hood, TypeScript 3.4.5, RxJS 6.5.2 |
+| UI library | **PrimeNG 8.0.3** (`.ui-*` class prefix — NOT `.p-*`) + PrimeIcons 2.0.0 + PrimeFlex 1.3.1 + ngx-bootstrap 5.1.0 |
+| Charts | echarts 4.9.0 via ngx-echarts 5.2.2 + resize-observer-polyfill 1.5.1 |
+| Frontend state | **Plain RxJS BehaviorSubject services** (AuthStore, TenantStore, ThemeService) — NO NgRx, NO signals |
+| Frontend design system | "Operations Console" — Fira Sans (UI) + Fira Code (data/IDs/numerics), indigo `#2563EB` primary, slate ramp, `--app-*` semantic tokens |
 | Seed data format | CSV committed under `data/` — refresh the sibling Parquet via `tools/PrmDashboard.ParquetBuilder` |
-| Container orchestration | Docker Compose |
+| Container orchestration | Docker Compose. Frontend served by nginx:alpine (digest-pinned). Phase-0 dev container = `node:12.22.12-alpine` + chromium for headless tests |
 
 **Shared library** (`backend/src/PrmDashboard.Shared/`) holds the DuckDB abstractions (`IDuckDbContext`, `TenantParquetPaths`, `DataPathOptions`, `DataPathValidator`), DTOs, and pure helper functions. All 4 microservices reference it. Never add business logic there — just data shapes.
 
@@ -54,17 +56,43 @@ backend/
 data/                                       # Committed: CSVs are the human-readable seed, Parquet is the query format
   master/                                  # tenants.{csv,parquet}, employees.{csv,parquet}, employee_airports.{csv,parquet}
   {tenant-slug}/                           # prm_services.{csv,parquet} — one folder per tenant
-frontend/                                   # Angular 17 SPA (lazy-loaded features, standalone components)
-  src/app/
-    core/                                  # Singletons: auth, api, theme, progress, stores (Tenant/Auth/Filter/Navigation)
-    features/auth/login/                   # Login page (split layout, mouse-parallax dark panel)
-    features/home/                         # Home with PRM Dashboard tile
-    features/dashboard/                    # 4-tab dashboard (Overview, Top 10, Service Breakup, Fulfillment)
-    features/not-found/                    # Editorial 404 — "Flight diverted"
-    shared/charts/                         # ECharts wrapper components (6 chart types)
-    shared/components/                     # TopBar, AirportSelector, ProgressBar
-    shared/directives/                     # [appTooltip] — replaces matTooltip
-    shared/pipes/                          # CompactNumberPipe (15.2k / 1.5M / —)
+frontend/                                   # Angular 8 SPA (NgModules, lazy-loaded feature modules)
+  Dockerfile                               # Multi-stage: node:12.22.12-alpine → nginx:alpine (digest pinned)
+  Dockerfile.dev                           # Phase 0 dev container (Node 12 + chromium + Angular CLI 8.3.3)
+  nginx.conf                               # /api/* proxied to gateway:8080 with X-Tenant-Slug from subdomain
+  src/
+    index.html                             # Loads Fira Sans + Fira Code from Google Fonts; <link id="app-theme">
+    styles.scss                            # Imports primeng.css → tokens → partials → primeng-overrides
+    styles/
+      _variables.scss                      # SCSS + CSS custom-property tokens (motion, spacing, radius)
+      _material-tokens.scss                # Semantic --app-* (light + dark); color-mix() derives hover/active
+      _form-field.scss                     # <app-form-field> (floated label = UPPERCASE Fira Code on focus)
+      _login-parallax.scss                 # Login dark panel: animated grid + scan line, NOT radial blobs
+      _top-bar.scss                        # 56px topbar w/ brand mark + slug separator + user cluster
+      _tile-picker.scss                    # Tile cards w/ 2px primary left-edge accent (scaleY on hover)
+      _kpi-cards.scss                      # KPI system: mono number + 4px primary stripe (no rainbow gradients)
+      primeng-overrides.scss               # Comprehensive .ui-* overrides; loaded LAST so specificity wins
+    app/
+      app.component.ts                     # Subscribes to TenantStore.tenant$, sets --app-primary on :root
+      core/                                # Singletons: api, auth (service/guard/interceptor/resolver), store, theme
+        api/api.client.ts                  # Wraps HttpClient, prepends /api, withCredentials
+        auth/auth.service.ts               # /api/auth/{login,refresh,me,logout} ({username,password})
+        auth/auth.interceptor.ts           # Class-based; injects Bearer; auto-refresh on 401 (skip /auth/refresh)
+        auth/auth.guard.ts                 # CanActivate via AuthStore.isAuthenticatedSnapshot
+        auth/tenant.resolver.ts            # Resolve<Tenant> via /api/tenants/config?slug={slug}
+        store/auth.store.ts                # Employee + accessToken BehaviorSubjects (mirrors backend EmployeeDto)
+        store/tenant.store.ts              # Tenant BehaviorSubject (mirrors backend TenantConfigResponse)
+        theme/theme.service.ts             # nova-light <-> nova-dark stylesheet swap; persists to localStorage
+      features/auth/                       # Lazy: split-layout login (parallax dark panel + live UTC clock)
+      features/home/                       # Lazy: Workspace tile picker w/ avatar + airport count chip
+      features/dashboard/                  # Phase 1: not yet ported — see docs/superpowers/plans/
+      features/primeng-smoke/              # Lazy + dev-only: visual sanity check (env.smoke gate)
+      features/not-found/                  # Editorial "Flight diverted" 404 with mono trace footer
+      shared/
+        components/form-field/             # <app-form-field> (Material-style floated label + animated underline)
+        charts/base-chart/                 # Chart wrapper: loading + empty states (Phase 1 expands chart family)
+        charts/bar-chart/                  # echarts wrapper (proof of pattern; more wrappers in Phase 1)
+        shared.module.ts                   # Re-exports common PrimeNG modules + ngx-echarts directive
 docs/
   e2e-checklist.md                         # Manual verification scenarios
   superpowers/specs/                       # Archived design specs (historical project record)
@@ -83,15 +111,20 @@ dotnet build                               # Build all projects
 dotnet run --project src/PrmDashboard.AuthService   # Run a single service locally
 ```
 
-**Frontend** (Phase 7+):
+**Frontend** (all commands run inside the dev container — host has no Node 12):
 
 ```bash
-cd frontend
-npm install
-npm start                                  # Dev server on :4200
-npm run build                              # Production build
-npm test                                   # Karma + Jasmine
+# from the worktree root
+docker compose --profile dev build frontend-dev          # one-time image build (~3 min)
+docker compose run --rm frontend-dev npm install         # 5–10 min cold (Windows bind-mount)
+docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox
+docker compose run --rm frontend-dev npm run lint        # tslint, must pass before commit
+docker compose run --rm frontend-dev npm run build       # development build
+docker compose run --rm frontend-dev npx ng build --configuration=production  # prod build
+docker compose run --rm frontend-dev npx tsc --noEmit -p tsconfig.app.json    # strict type-check (use -p)
 ```
+
+**Why the dev container:** the user's host has Node 22, not 12. Node 22 cannot run Angular CLI 8. Don't suggest `npm install` / `ng serve` on the host — always go through `docker compose run --rm frontend-dev`.
 
 **Full stack:**
 
@@ -165,14 +198,19 @@ docker compose restart auth tenant prm
 - One class per file (except DTO files which group related records per the plan)
 - `Convert.ToInt32(reader.GetValue(N))` / `Convert.ToDouble(...)` for scalar reads — never raw `(int)` / `(long)` casts (DuckDB.NET may return Int64 or BigInteger for what looks like an int)
 
-**Frontend (Angular):**
+**Frontend (Angular 8):**
 
-- Standalone components only — no NgModules
-- NgRx Signal Store for shared state, component signals for local state
-- All API calls go through `ApiClient` (never direct `HttpClient`)
-- All charts wrap `BaseChartComponent`
-- Filters synced to URL query params via `FilterStore.queryParams()`
-- Lazy-load features via `loadComponent`
+- **NgModules only** — no standalone components (Angular 8 doesn't support them)
+- **Plain RxJS BehaviorSubject services** for shared state (AuthStore, TenantStore, ThemeService) — NO NgRx, NO signals (Angular 8 doesn't have signals)
+- **All API calls through `ApiClient`** (never direct `HttpClient`); paths begin `/auth/*`, `/tenants/*`, `/prm/*` — `ApiClient` prepends `/api`
+- **DTOs mirror backend records exactly.** Read `backend/src/PrmDashboard.Shared/DTOs/*.cs` before writing a frontend interface — `EmployeeDto`, `TenantConfigResponse`, etc. are authoritative. Field names are camelCase on the wire (ASP.NET default)
+- **All charts wrap `BaseChartComponent`** (in `shared/charts/base-chart/`); never put `[echarts]` directly in a feature component
+- **Lazy-load via function-form `loadChildren`:** `loadChildren: () => import('./features/x/x.module').then(m => m.XModule)`. String form is deprecated
+- **PrimeNG 8.0.3 uses `.ui-*` CSS classes** (NOT `.p-*` — that came in PrimeNG 9). PrimeNG themes don't honor CSS variables (those came in 11+); override colors by writing `.ui-button { background: var(--app-primary); }` etc. in `primeng-overrides.scss`. Memory: `primeng_8_class_prefix.md`
+- **Design system:** "Operations Console" — Fira Sans (UI) + Fira Code (data, identifiers, KPI numerics, floated form labels). Indigo `#2563EB` primary, slate ramp, surgical 4-step elevation. Tokens in `_variables.scss` + `_material-tokens.scss`. Memory: `design_direction.md`
+- **Per-tenant theming:** `AppComponent` subscribes to `TenantStore.tenant$` and sets `--app-primary` on `:root`. Hover/active/soft variants are derived via `color-mix()` so the override cascades automatically
+- **TypeScript 3.4.5 strict.** No optional chaining (`?.`), no nullish coalescing (`??`), no `import type`. Use `obj && obj.prop` and `obj || fallback`
+- **Type-check uses `-p tsconfig.app.json`** — bare `tsc --noEmit` walks `node_modules/@types` and chokes on `undici-types` (modern TS syntax)
 - Max 300 lines per file
 
 **Both:**
@@ -188,7 +226,7 @@ docker compose restart auth tenant prm
 
 - `architecture.md` — system architecture, component responsibilities, data flow (PRM-specific)
 - `dotnet-backend.md` — .NET 8 conventions, DuckDB + Parquet patterns, multi-tenant access, JWT auth, anti-patterns
-- `angular-frontend.md` — Angular 17 standalone-component conventions, NgRx Signal Store, ECharts wrappers, RBAC patterns
+- `angular-frontend.md` — Angular 8 NgModule conventions, BehaviorSubject stores, PrimeNG 8.0.3 `.ui-*` overrides, "Operations Console" design system, ECharts wrappers, RBAC patterns
 
 **Skills** (`.claude/skills/`):
 
@@ -229,9 +267,9 @@ When adding a new tenant, the flow is:
 - Do NOT use bash heredocs for file creation (Windows EEXIST bug — use the Write tool instead)
 - `dotnet`, `docker`, `gh`, `node`, `npm` all available on PATH
 
-## Current status
+## Current status (rewrite branch)
 
-POC feature-complete. Runtime data layer is DuckDB over per-tenant Parquet; seed CSVs + generated Parquet are committed under `data/`. **172/172 backend + 1/1 frontend tests passing.** Build clean.
+Phase 0 of the Angular 17 → Angular 8 rewrite is complete. Backend is unchanged — runtime data layer is DuckDB over per-tenant Parquet; seed CSVs + generated Parquet are committed under `data/`. **172/172 backend + 21/21 frontend tests passing.** Production build clean. Stack runs end-to-end via `docker compose up -d --build`. See `docs/superpowers/specs/2026-05-05-angular-8-primeng-rewrite-design.md` and `docs/superpowers/plans/2026-05-05-angular-8-rewrite-phase-0.md` for the rewrite scope and Phase 0 deliverables.
 
 ### Capability snapshot
 
@@ -243,8 +281,9 @@ POC feature-complete. Runtime data layer is DuckDB over per-tenant Parquet; seed
 | **PRM Service** | ✅ | 25 analytics endpoints over DuckDB; `BaseQueryService.BuildWhereClause`; `HhmmSql` time helpers; airport RBAC middleware |
 | **Gateway** | ✅ | Ocelot routing, subdomain → `X-Tenant-Slug` header, `depends_on: service_healthy` for auth/tenant/prm |
 | **Seed data** | ✅ | 3 tenants, 12 employees, ~20k PRM records across Dec 2025 – Mar 2026. Committed as CSVs under `data/`; Parquet refreshed via `PrmDashboard.ParquetBuilder` |
-| **Frontend** | ✅ | Angular 17 standalone, NgRx Signal Store, 5-tab dashboard, 6 ECharts wrappers, `@angular-eslint` lint gate, production build clean |
-| **Test coverage** | ✅ | 172 backend (unit + fixture-backed DuckDB + `WebApplicationFactory` middleware integration) + 1 frontend sanity test |
+| **Frontend (Phase 0)** | ✅ | Angular 8.2.14 + PrimeNG 8.0.3 (`.ui-*`), Plain RxJS BehaviorSubject stores, lazy-loaded NgModules, `app-form-field` w/ floated Fira-Code labels, "Operations Console" design system, dev container (Node 12 + chromium) for tests/builds, production nginx image w/ `/api` proxy + `X-Tenant-Slug` injection |
+| **Frontend (Phase 1)** | ⏳ | Dashboard tabs (Overview, Top 10, Service Breakup, Fulfillment, Insights) — not yet ported. See `docs/superpowers/plans/` for plan |
+| **Test coverage** | ✅ | 172 backend (unit + fixture-backed DuckDB + `WebApplicationFactory` middleware integration) + 21 frontend (Karma + Jasmine, headless Chromium) |
 
 ### Hardening (2026-04-22 → 2026-04-23)
 
@@ -257,4 +296,26 @@ Three-agent code review surfaced ~40 findings across backend / frontend / ops. H
 - **Frontend tooling:** `@angular-eslint@17` + `@typescript-eslint@7` + `eslint@8` wired up; scaffold spec replaced with a real sanity test; `forkJoin` results now type-inferred; `tailwindcss` + `postcss` dead deps removed; `pocToday: ''` in production falls back to real `new Date()`.
 - **Dead code:** `Employee.tenantId` removed, three copies of `EscapeSingleQuotes` consolidated to `TenantParquetPaths.EscapeSqlLiteral`.
 
-Last updated: 2026-04-23.
+### Phase 0 (Angular 8 rewrite, 2026-05-05)
+
+Foundation phase shipped on branch `angular-8-rewrite`. 27 tasks (commits `0d3afef` … `c371e39`). Highlights:
+
+- Pinned every dependency to the user's host-app stack: Angular 8.2.14 / CLI 8.3.3 / TS 3.4.5 / RxJS 6.5.2 / PrimeNG 8.0.3 / PrimeIcons 2.0.0 / ngx-bootstrap 5.1.0 / echarts 4.9.0 / ngx-echarts 5.2.2.
+- Plain RxJS BehaviorSubject stores replace NgRx Signal Store.
+- Custom `<app-form-field>` floated-label component (uppercase Fira Code labels on focus — distinguishing detail).
+- Dev container (`node:12.22.12-alpine` + chromium) runs all installs/tests/builds; host needs no Node 12.
+- Production nginx config injects `X-Tenant-Slug` from subdomain so `aeroground.localhost` works without changing the gateway.
+- Five integration bugs caught from browser-based smoke (DTO field renames, ocelot route plurals, login form validators) — see memory `phase0_dto_alignment_lessons.md`.
+- "Operations Console" design system (Fira Sans + Fira Code, slate ramp, indigo `#2563EB`, surgical 4-step elevation) replaces default PrimeNG 2019 look. Per-tenant primaryColor cascades through derived hover/active/soft variants via `color-mix()`.
+
+### Hardening (2026-04-22 → 2026-04-23, before rewrite)
+
+Three-agent code review surfaced ~40 findings across backend / frontend / ops. Highlights:
+
+- **Real bugs fixed:** HHMM heatmap `CAST` rounding silently dropped 23:59 data; `(int)total` cast silently truncating at scale; `WriteAsJsonAsync` clobbering `application/problem+json` content-type.
+- **Security:** `JwtStartupValidator` (length + placeholder + non-empty), slug path-traversal guard at `TenantParquetPaths.TenantPrmServices`, `ClockSkew = TimeSpan.Zero` on every validator, CORS empty-allowlist startup warning, non-root `USER app` in all backend Dockerfiles.
+- **Ops:** `backend/.dockerignore`, per-service `HEALTHCHECK` in Dockerfiles + compose, gateway `depends_on: service_healthy`, `ASPNETCORE_ENVIRONMENT` override-able via env, all Dockerfile base images pinned to sha256 digests.
+- **Test coverage:** 40 new backend tests — `WebApplicationFactory` integration for the 3 PrmService middlewares (8), `JwtStartupValidator` unit (9), `TenantParquetPaths` slug validation (22), heatmap-boundary regression (1).
+- *(Frontend ESLint tooling and dead-code cleanup from this hardening pass were obsoleted by the Angular 8 rewrite — TSLint is the lint engine on this branch.)*
+
+Last updated: 2026-05-05.
