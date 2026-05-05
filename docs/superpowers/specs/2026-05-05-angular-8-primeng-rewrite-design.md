@@ -119,6 +119,7 @@ Captured from the brainstorming dialogue (Q1–Q7).
     "ngx-bootstrap": "5.1.0",
     "echarts": "4.9.0",
     "ngx-echarts": "5.2.2",
+    "resize-observer-polyfill": "1.5.1",
     "rxjs": "6.5.2",
     "tslib": "1.10.0",
     "zone.js": "0.9.1"
