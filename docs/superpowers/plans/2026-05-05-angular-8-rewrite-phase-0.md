@@ -27,7 +27,7 @@ frontend/                                                        # Replaced on b
 ├── tslint.json                                                  # Replaces ESLint
 ├── karma.conf.js
 ├── proxy.conf.json                                              # Local dev → localhost:5000
-├── proxy.conf.docker.json                                       # In-container → gateway:5000
+├── proxy.conf.docker.json                                       # In-container → gateway:8080 (internal port)
 ├── Dockerfile                                                   # Node 12 builder + nginx (production)
 ├── Dockerfile.dev                                               # Node 12 + Chromium dev container (Task 2a)
 ├── nginx.conf
@@ -2717,7 +2717,7 @@ COPY --from=build /app/dist/frontend /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
-  CMD wget --quiet --spider http://localhost/ || exit 1
+  CMD wget --quiet --spider http://127.0.0.1/ || exit 1
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
@@ -2747,7 +2747,7 @@ Use the config from [spec §11 — nginx.conf](../specs/2026-05-05-angular-8-pri
 ```json
 {
   "/api": {
-    "target": "http://gateway:5000",
+    "target": "http://gateway:8080",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "info"
@@ -2799,7 +2799,7 @@ Locate the `frontend:` service in `docker-compose.yml` and replace it with:
       gateway:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --spider http://localhost/ || exit 1"]
+      test: ["CMD-SHELL", "wget --quiet --spider http://127.0.0.1/ || exit 1"]
       interval: 30s
       timeout: 3s
       retries: 3

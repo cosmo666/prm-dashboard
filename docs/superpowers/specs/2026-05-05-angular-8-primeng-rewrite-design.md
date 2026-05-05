@@ -129,8 +129,10 @@ Captured from the brainstorming dialogue (Q1–Q7).
     "@angular/cli": "8.3.3",
     "@angular/compiler-cli": "8.2.14",
     "@angular/language-service": "8.2.14",
+    "@types/echarts": "4.9.4",
     "@types/jasmine": "3.3.16",
     "@types/jasminewd2": "2.0.6",
+    "@types/zrender": "4.0.0",
     "codelyzer": "5.1.2",
     "jasmine-core": "3.4.0",
     "jasmine-spec-reporter": "4.2.1",
@@ -161,7 +163,7 @@ frontend/                                   # Replaced on the branch (preserved 
 ├── Dockerfile                              # node:12-alpine builder + nginx:alpine runtime
 ├── nginx.conf
 ├── proxy.conf.json                         # /api → localhost:5000 (local dev)
-├── proxy.conf.docker.json                  # /api → gateway:5000 (in-container dev)
+├── proxy.conf.docker.json                  # /api → gateway:8080 (in-container dev — gateway internal port)
 └── src/
     ├── main.ts
     ├── index.html                          # <link id="app-theme"> for runtime theme swap
@@ -618,7 +620,7 @@ COPY --from=build /app/dist/frontend /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
-  CMD wget --quiet --spider http://localhost/ || exit 1
+  CMD wget --quiet --spider http://127.0.0.1/ || exit 1
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
@@ -664,7 +666,7 @@ frontend:
     gateway:
       condition: service_healthy
   healthcheck:
-    test: ["CMD-SHELL", "wget --quiet --spider http://localhost/ || exit 1"]
+    test: ["CMD-SHELL", "wget --quiet --spider http://127.0.0.1/ || exit 1"]
     interval: 30s
     timeout: 3s
     retries: 3
