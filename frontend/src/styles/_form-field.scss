@@ -1,0 +1,48 @@
+.app-form-field {
+  position: relative;
+  margin-bottom: 1.25rem;
+
+  .field-label {
+    position: absolute;
+    top: 1rem;
+    left: 0.5rem;
+    pointer-events: none;
+    transition: transform 0.15s ease-out, color 0.15s ease-out, font-size 0.15s ease-out;
+    transform-origin: left top;
+    color: var(--md-on-surface-variant);
+    font-size: 1rem;
+  }
+
+  .field-content {
+    padding-top: 1.25rem;
+  }
+
+  .field-underline {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--md-outline);
+    transition: background-color 0.15s ease-out;
+  }
+
+  &.is-focused .field-underline   { background-color: var(--md-primary); }
+  &.has-error    .field-underline  { background-color: var(--md-error); }
+
+  &.is-floating .field-label,
+  &.is-focused .field-label,
+  &.has-value .field-label {
+    transform: translateY(-1rem) scale(0.85);
+    color: var(--md-primary);
+  }
+
+  &.has-error .field-label { color: var(--md-error); }
+
+  .field-hint, .field-error {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+  .field-hint  { color: var(--md-on-surface-variant); }
+  .field-error { color: var(--md-error); }
+}

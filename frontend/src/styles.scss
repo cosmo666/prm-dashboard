@@ -1,1 +1,16 @@
-/* You can add global styles to this file, and also import other style files */
+@import 'styles/variables';
+@import 'styles/material-tokens';
+@import 'styles/kpi-gradients';
+@import 'styles/login-parallax';
+@import 'styles/form-field';
+@import 'styles/primeng-overrides';
+@import '~primeng/resources/primeng.min.css';
+@import '~primeflex/primeflex.css';
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  background: var(--md-background);
+  color: var(--md-on-background);
+}

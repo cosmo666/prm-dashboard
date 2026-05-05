@@ -771,9 +771,9 @@ html, body {
 
 - [ ] **Step 8: Compile-check**
 
-Run from the worktree root: `docker compose run --rm frontend-dev npx ng build --configuration development --output-path=.tmp-build`
-Expected: succeeds. Confirms all SCSS imports resolve.
-Cleanup: `Remove-Item -Recurse -Force frontend/.tmp-build`
+Run from the worktree root: `docker compose run --rm frontend-dev npx ng build --output-path=.tmp-build`
+Expected: succeeds. Confirms all SCSS imports resolve. (Angular CLI 8 has no `development` configuration in the scaffold; the unsuffixed `ng build` is the dev build. The "caniuse-lite is outdated" warning is harmless.)
+Cleanup: `Remove-Item -Recurse -Force frontend/.tmp-build` (PowerShell) or `rm -rf frontend/.tmp-build` (Bash)
 
 - [ ] **Step 9: Commit**
 

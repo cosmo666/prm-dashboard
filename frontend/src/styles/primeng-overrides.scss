@@ -1,0 +1,18 @@
+/* Light + dark friendly button overrides — keep PrimeNG shape, Material colors */
+.p-button {
+  font-family: var(--font-family);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.0892857143em;
+  border-radius: 4px;
+}
+
+.p-card {
+  box-shadow: var(--app-elev-1);
+  border-radius: 4px;
+}
+
+.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  border-color: var(--md-primary);
+  color: var(--md-primary);
+}

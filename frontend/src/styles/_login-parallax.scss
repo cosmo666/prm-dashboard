@@ -1,0 +1,50 @@
+.login-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  .login-form-panel {
+    background: var(--md-surface);
+    color: var(--md-on-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .login-parallax-panel {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1c1b1f 0%, #381e72 100%);
+    color: white;
+
+    @media (max-width: 768px) { display: none; }
+
+    .parallax-shape {
+      position: absolute;
+      transition: transform 0.15s ease-out;
+      will-change: transform;
+      opacity: 0.6;
+    }
+
+    .parallax-shape-1 {
+      top: 10%;
+      left: 15%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, #d0bcff 0%, transparent 70%);
+    }
+
+    .parallax-shape-2 {
+      bottom: 20%;
+      right: 10%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, #efb8c8 0%, transparent 70%);
+    }
+  }
+}

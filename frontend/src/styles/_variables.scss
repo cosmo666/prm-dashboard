@@ -1,0 +1,11 @@
+:root {
+  --app-elev-1: 0 1px 2px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
+  --app-elev-2: 0 4px 8px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
+  --tenant-primary: #6750a4; /* default — overridden by TenantStore */
+  --font-family: 'Roboto', sans-serif;
+}
+
+$breakpoint-mobile: 360px;
+$breakpoint-tablet: 768px;
+$breakpoint-desktop: 1024px;
+$breakpoint-wide: 1440px;

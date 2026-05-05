@@ -1,0 +1,11 @@
+@mixin kpi-gradient($from, $to) {
+  background: linear-gradient(135deg, $from 0%, $to 100%);
+  color: white;
+  box-shadow: var(--app-elev-2);
+  border: none;
+}
+
+.kpi-card-purple { @include kpi-gradient(#6750a4, #9575cd); }
+.kpi-card-teal   { @include kpi-gradient(#00897b, #4dd0e1); }
+.kpi-card-orange { @include kpi-gradient(#f57c00, #ffb74d); }
+.kpi-card-red    { @include kpi-gradient(#d32f2f, #ef5350); }
