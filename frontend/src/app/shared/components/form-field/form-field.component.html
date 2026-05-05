@@ -1,0 +1,7 @@
+<label class="field-label">{{ label }}</label>
+<div class="field-content">
+  <ng-content></ng-content>
+</div>
+<div class="field-underline"></div>
+<div class="field-hint" *ngIf="hint && !error">{{ hint }}</div>
+<div class="field-error" *ngIf="error">{{ error }}</div>

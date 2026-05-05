@@ -18,12 +18,16 @@ import { CalendarModule } from 'primeng/calendar';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { TabViewModule } from 'primeng/tabview';
 
+import { FormFieldComponent } from './components/form-field/form-field.component';
+
 @NgModule({
+  declarations: [FormFieldComponent],
   exports: [
     CommonModule, FormsModule, ReactiveFormsModule, RouterModule,
     ButtonModule, InputTextModule, DropdownModule, MultiSelectModule,
     CardModule, MenuModule, TooltipModule, CheckboxModule, ProgressBarModule,
     ToastModule, DialogModule, CalendarModule, InputSwitchModule, TabViewModule,
+    FormFieldComponent,
   ],
 })
 export class SharedModule {}
