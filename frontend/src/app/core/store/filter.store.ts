@@ -161,7 +161,7 @@ export class FilterStore {
    * lands.
    */
   applyDefault(): void {
-    const anchorIso: string = (environment && environment.pocToday) || '';
+    const anchorIso: string = environment.pocToday || '';
     const anchor: Date = anchorIso ? new Date(anchorIso) : new Date();
     const yyyy = anchor.getUTCFullYear();
     const mm   = anchor.getUTCMonth();      // 0-indexed
