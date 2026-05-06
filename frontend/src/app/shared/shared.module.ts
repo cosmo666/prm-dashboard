@@ -25,6 +25,7 @@ import { NgxEchartsModule } from 'ngx-echarts';
 import { FormFieldComponent } from './components/form-field/form-field.component';
 import { BaseChartComponent } from './charts/base-chart/base-chart.component';
 import { BarChartComponent } from './charts/bar-chart/bar-chart.component';
+import { LineChartComponent } from './charts/line-chart/line-chart.component';
 import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-card.component';
 
 // NgxEchartsModule.forRoot is called once at AppModule level so the echarts
@@ -42,6 +43,7 @@ import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-
     FormFieldComponent,
     BaseChartComponent,
     BarChartComponent,
+    LineChartComponent,
     KpiCardComponent,
   ],
   exports: [
@@ -52,7 +54,8 @@ import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-
     ToastModule, DialogModule, CalendarModule, InputSwitchModule, TabViewModule,
     OverlayPanelModule,
     NgxEchartsModule,
-    FormFieldComponent, BaseChartComponent, BarChartComponent, KpiCardComponent,
+    FormFieldComponent, BaseChartComponent, BarChartComponent,
+    LineChartComponent, KpiCardComponent,
   ],
 })
 export class SharedModule {}
