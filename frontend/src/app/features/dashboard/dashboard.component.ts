@@ -40,6 +40,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
 
     this.filters.queryParams$.pipe(skip(1), debounceTime(150), takeUntil(this.destroy$)).subscribe(qp => {
+      // queryParamsHandling: '' (empty string) is Angular's documented "replace
+      // all" mode — required so cleared filters disappear from the URL instead
+      // of lingering. 'merge' would keep stale params; ''/undefined replaces.
       this.router.navigate([], { relativeTo: this.route, queryParams: qp, queryParamsHandling: '' });
     });
   }
