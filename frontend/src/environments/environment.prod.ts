@@ -3,4 +3,5 @@ export const environment = {
   apiBaseUrl: '/api',
   loggingEnabled: false,
   smoke: false,
+  pocToday: '',
 };

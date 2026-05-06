@@ -7,6 +7,9 @@ export const environment = {
   apiBaseUrl: '/api',
   loggingEnabled: true,
   smoke: true,
+  // Anchors date-preset calculations during the POC so seed data (Dec 2025 – Mar 2026) is in range.
+  // Empty string in production → callers fall back to real `new Date()`.
+  pocToday: '2026-03-31',
 };
 
 /*

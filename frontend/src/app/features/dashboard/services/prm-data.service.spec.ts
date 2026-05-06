@@ -28,7 +28,7 @@ describe('PrmDataService', () => {
         { provide: FilterStore, useValue: filterStub },
       ],
     });
-    service = TestBed.inject(PrmDataService);
+    service = TestBed.get(PrmDataService);
   });
 
   it('kpisSummary calls /prm/kpis/summary with airport+date params', () => {
@@ -44,7 +44,8 @@ describe('PrmDataService', () => {
     service.topAirlines(7).subscribe();
     const args = apiSpy.get.calls.mostRecent().args;
     expect(args[0]).toBe('/prm/rankings/airlines');
-    expect(args[1]['limit']).toBe('7');
+    const params = args[1] as { [key: string]: string };
+    expect(params['limit']).toBe('7');
   });
 
   it('filterOptions passes only airport', () => {
@@ -67,9 +68,9 @@ describe('PrmDataService', () => {
         { provide: FilterStore, useValue: emptyStub },
       ],
     });
-    const svc = TestBed.inject(PrmDataService);
+    const svc = TestBed.get(PrmDataService);
     let captured: any = null;
-    svc.filterOptions().subscribe((r) => { captured = r; });
+    svc.filterOptions().subscribe((r: any) => { captured = r; });
     expect(apiSpy.get).not.toHaveBeenCalled();
     expect(captured).toEqual({
       airlines: [], services: [], handledBy: [], flights: [],
