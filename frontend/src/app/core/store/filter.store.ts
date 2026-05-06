@@ -95,9 +95,13 @@ export class FilterStore {
   }
 
   setDateRange(preset: DatePreset, from: string, to: string): void {
-    this._datePreset$.next(preset);
+    // Order matters: write from/to BEFORE preset so any subscriber listening
+    // on datePreset$ (e.g. DateRangePicker.recomputeLabels) reads the fresh
+    // from/to snapshot via the synchronous next() chain. Reversing this
+    // produced a stale trigger label on preset change.
     this._dateFrom$.next(from);
     this._dateTo$.next(to);
+    this._datePreset$.next(preset);
   }
 
   setAirline(value: string | string[] | null): void  { this._airline$.next(this.normalize(value)); }
