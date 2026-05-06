@@ -1,0 +1,35 @@
+<div class="filter-bar">
+  <app-airport-selector class="fb-cell"></app-airport-selector>
+  <app-date-range-picker class="fb-cell"></app-date-range-picker>
+
+  <app-form-field label="Airline" class="fb-cell">
+    <p-multiSelect [options]="airlineOptions" [(ngModel)]="airline" (onChange)="setAirline($event)" [appendTo]="'body'" [filter]="true"></p-multiSelect>
+  </app-form-field>
+
+  <app-form-field label="Service" class="fb-cell">
+    <p-multiSelect [options]="serviceOptions" [(ngModel)]="service" (onChange)="setService($event)" [appendTo]="'body'" [filter]="true"></p-multiSelect>
+  </app-form-field>
+
+  <app-form-field label="Handled By" class="fb-cell">
+    <p-multiSelect [options]="handledByOptions" [(ngModel)]="handledBy" (onChange)="setHandledBy($event)" [appendTo]="'body'"></p-multiSelect>
+  </app-form-field>
+
+  <button type="button" class="ui-button ui-button-secondary fb-clear" (click)="clearAll()" *ngIf="airline.length || service.length || handledBy.length">
+    Clear
+  </button>
+</div>
+
+<div class="filter-chips" *ngIf="airline.length || service.length || handledBy.length">
+  <span class="filter-chip" *ngFor="let v of airline">
+    Airline: {{ v }}
+    <button type="button" class="filter-chip__close" (click)="removeAirline(v)" aria-label="Remove">×</button>
+  </span>
+  <span class="filter-chip" *ngFor="let v of service">
+    Service: {{ v }}
+    <button type="button" class="filter-chip__close" (click)="removeService(v)" aria-label="Remove">×</button>
+  </span>
+  <span class="filter-chip" *ngFor="let v of handledBy">
+    {{ handledByLabel(v) }}
+    <button type="button" class="filter-chip__close" (click)="removeHandledBy(v)" aria-label="Remove">×</button>
+  </span>
+</div>

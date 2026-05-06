@@ -1,0 +1,11 @@
+<app-form-field label="Airport">
+  <p-multiSelect
+    [options]="options"
+    [(ngModel)]="value"
+    (onChange)="onChange($event)"
+    [appendTo]="'body'"
+    [filter]="true"
+    [showHeader]="true"
+    selectedItemsLabel="{0} airports">
+  </p-multiSelect>
+</app-form-field>

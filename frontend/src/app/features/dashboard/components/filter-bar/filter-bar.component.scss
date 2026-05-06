@@ -1,0 +1,47 @@
+:host { display: block; }
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 12px 0;
+}
+
+.fb-cell {
+  flex: 0 1 220px;
+  min-width: 180px;
+}
+
+.fb-clear {
+  height: 36px;
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 0 12px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--app-primary-soft);
+  color: var(--app-primary);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+
+  &__close {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+  }
+}
