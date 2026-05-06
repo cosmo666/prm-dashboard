@@ -12,10 +12,16 @@ import {
 import { BarDatum } from 'src/app/shared/charts/horizontal-bar-chart/horizontal-bar-chart.component';
 import { SankeyChartNode, SankeyChartLink } from 'src/app/shared/charts/sankey-chart/sankey-chart.component';
 
+// Per-SSR-code palette. WCHR is the dominant primary (anchored to --app-primary
+// hex). Others use distinct hues so 9-segment stacks remain legible. Codes not
+// in this map fall back to slate gray (#94a3b8) at the call site. Verified
+// against the seed data's 9 distinct service codes (BLND, DPNA, MAAS, MEDA,
+// UMNR, WCHC, WCHR, WCHS, WCMP) plus DEAF for tenants that include it.
 const SSR_COLORS: { [code: string]: string } = {
   WCHR: '#2563EB',
   WCHC: '#1e3a8a',
   WCHS: '#3b82f6',
+  WCMP: '#6366f1',   // wheelchair-cabin/multi-purpose — indigo-ish, distinct from WCHR/WCHC/WCHS
   MAAS: '#0ea5e9',
   UMNR: '#8b5cf6',
   DPNA: '#a855f7',
