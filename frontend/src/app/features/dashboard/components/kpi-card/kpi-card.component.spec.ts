@@ -26,8 +26,8 @@ describe('KpiCardComponent', () => {
     const value = el.querySelector('.kpi-card__value') as HTMLElement;
     expect(label).not.toBeNull();
     expect(value).not.toBeNull();
-    expect(label.textContent!.trim()).toBe('Total PRM Services');
-    expect(value.textContent!.trim()).toBe('12,345');
+    expect((label.textContent || '').trim()).toBe('Total PRM Services');
+    expect((value.textContent || '').trim()).toBe('12,345');
   });
 
   it('shows skeleton when loading=true', () => {
@@ -90,6 +90,6 @@ describe('KpiCardComponent', () => {
 
     const subtext = el.querySelector('.kpi-card__subtext') as HTMLElement;
     expect(subtext).not.toBeNull();
-    expect(subtext.textContent!.trim()).toBe('8 self / 4 outsourced');
+    expect((subtext.textContent || '').trim()).toBe('8 self / 4 outsourced');
   });
 });

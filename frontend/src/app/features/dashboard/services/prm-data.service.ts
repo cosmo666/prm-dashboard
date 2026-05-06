@@ -71,8 +71,8 @@ export class PrmDataService {
     const prevFrom = new Date(prevEnd.getTime() - spanMs);
     const iso = (d: Date): string => d.toISOString().slice(0, 10);
     const params = this.params({ metric });
-    params['date_from'] = iso(prevFrom);
-    params['date_to']   = iso(prevEnd);
+    params.date_from = iso(prevFrom);
+    params.date_to   = iso(prevEnd);
     return this.api.get<DailyTrendResponse>('/prm/trends/daily', params);
   }
 

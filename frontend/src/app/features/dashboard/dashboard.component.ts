@@ -32,8 +32,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const dict: { [key: string]: string } = {};
         for (const k of Object.keys(params)) {
           const v = (params as any)[k];
-          if (typeof v === 'string') { dict[k] = v; }
-          else if (Array.isArray(v) && v.length > 0) { dict[k] = String(v[0]); }
+          if (typeof v === 'string') {
+            dict[k] = v;
+          } else if (Array.isArray(v) && v.length > 0) {
+            dict[k] = String(v[0]);
+          }
         }
         this.filters.hydrateFromQueryParams(dict);
       }

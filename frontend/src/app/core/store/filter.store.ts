@@ -23,15 +23,15 @@ export class FilterStore {
   private _flight$     = new BehaviorSubject<string>('');
   private _agentNo$    = new BehaviorSubject<string>('');
 
-  airport$:    Observable<string[]>    = this._airport$.asObservable();
-  datePreset$: Observable<DatePreset>  = this._datePreset$.asObservable();
-  dateFrom$:   Observable<string>      = this._dateFrom$.asObservable();
-  dateTo$:     Observable<string>      = this._dateTo$.asObservable();
-  airline$:    Observable<string[]>    = this._airline$.asObservable();
-  service$:    Observable<string[]>    = this._service$.asObservable();
-  handledBy$:  Observable<string[]>    = this._handledBy$.asObservable();
-  flight$:     Observable<string>      = this._flight$.asObservable();
-  agentNo$:    Observable<string>      = this._agentNo$.asObservable();
+  airport$: Observable<string[]> = this._airport$.asObservable();
+  datePreset$: Observable<DatePreset> = this._datePreset$.asObservable();
+  dateFrom$: Observable<string> = this._dateFrom$.asObservable();
+  dateTo$: Observable<string> = this._dateTo$.asObservable();
+  airline$: Observable<string[]> = this._airline$.asObservable();
+  service$: Observable<string[]> = this._service$.asObservable();
+  handledBy$: Observable<string[]> = this._handledBy$.asObservable();
+  flight$: Observable<string> = this._flight$.asObservable();
+  agentNo$: Observable<string> = this._agentNo$.asObservable();
 
   get airportSnapshot(): string[]      { return this._airport$.value; }
   get datePresetSnapshot(): DatePreset { return this._datePreset$.value; }
@@ -58,14 +58,14 @@ export class FilterStore {
       const flight     = vals[6] as string;
       const agentNo    = vals[7] as string;
       const params: { [key: string]: string } = {};
-      if (airport.length > 0)   { params['airport']    = airport.join(','); }
-      if (dateFrom)             { params['date_from']  = dateFrom; }
-      if (dateTo)               { params['date_to']    = dateTo; }
-      if (airline.length > 0)   { params['airline']    = airline.join(','); }
-      if (service.length > 0)   { params['service']    = service.join(','); }
-      if (handledBy.length > 0) { params['handled_by'] = handledBy.join(','); }
-      if (flight)               { params['flight']     = flight; }
-      if (agentNo)              { params['agent_no']   = agentNo; }
+      if (airport.length > 0)   { params.airport    = airport.join(','); }
+      if (dateFrom)             { params.date_from  = dateFrom; }
+      if (dateTo)               { params.date_to    = dateTo; }
+      if (airline.length > 0)   { params.airline    = airline.join(','); }
+      if (service.length > 0)   { params.service    = service.join(','); }
+      if (handledBy.length > 0) { params.handled_by = handledBy.join(','); }
+      if (flight)               { params.flight     = flight; }
+      if (agentNo)              { params.agent_no   = agentNo; }
       return params;
     }),
     shareReplay(1),
@@ -140,16 +140,16 @@ export class FilterStore {
    * unknown keys are ignored. CSVs are parsed via `parseCsv` (trims + drops empties).
    */
   hydrateFromQueryParams(params: { [key: string]: string }): void {
-    if (params['airport'])    { this._airport$.next(this.parseCsv(params['airport'])); }
-    if (params['date_from'])  { this._dateFrom$.next(params['date_from']); }
-    if (params['date_to'])    { this._dateTo$.next(params['date_to']); }
-    if (params['airline'])    { this._airline$.next(this.parseCsv(params['airline'])); }
-    if (params['service'])    { this._service$.next(this.parseCsv(params['service'])); }
-    if (params['handled_by']) { this._handledBy$.next(this.parseCsv(params['handled_by'])); }
-    if (params['flight'])     { this._flight$.next(params['flight']); }
-    if (params['agent_no'])   { this._agentNo$.next(params['agent_no']); }
+    if (params.airport)    { this._airport$.next(this.parseCsv(params.airport)); }
+    if (params.date_from)  { this._dateFrom$.next(params.date_from); }
+    if (params.date_to)    { this._dateTo$.next(params.date_to); }
+    if (params.airline)    { this._airline$.next(this.parseCsv(params.airline)); }
+    if (params.service)    { this._service$.next(this.parseCsv(params.service)); }
+    if (params.handled_by) { this._handledBy$.next(this.parseCsv(params.handled_by)); }
+    if (params.flight)     { this._flight$.next(params.flight); }
+    if (params.agent_no)   { this._agentNo$.next(params.agent_no); }
     // datePreset is UI sugar — hydrating dateFrom/dateTo + leaving preset='custom' is fine
-    if (params['date_from'] || params['date_to']) {
+    if (params.date_from || params.date_to) {
       this._datePreset$.next('custom');
     }
   }

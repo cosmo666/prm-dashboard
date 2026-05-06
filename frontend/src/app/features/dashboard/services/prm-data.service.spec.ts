@@ -45,7 +45,7 @@ describe('PrmDataService', () => {
     const args = apiSpy.get.calls.mostRecent().args;
     expect(args[0]).toBe('/prm/rankings/airlines');
     const params = args[1] as { [key: string]: string };
-    expect(params['limit']).toBe('7');
+    expect(params.limit).toBe('7');
   });
 
   it('filterOptions passes only airport', () => {
