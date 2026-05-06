@@ -18,6 +18,7 @@ import { DialogModule } from 'primeng/dialog';
 import { CalendarModule } from 'primeng/calendar';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { TabViewModule } from 'primeng/tabview';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { NgxEchartsModule } from 'ngx-echarts';
 
@@ -47,6 +48,7 @@ import { BarChartComponent } from './charts/bar-chart/bar-chart.component';
     CardModule, MenuModule, TooltipModule, CheckboxModule, ProgressBarModule,
     ProgressSpinnerModule,
     ToastModule, DialogModule, CalendarModule, InputSwitchModule, TabViewModule,
+    OverlayPanelModule,
     NgxEchartsModule,
     FormFieldComponent, BaseChartComponent, BarChartComponent,
   ],
