@@ -51,4 +51,28 @@ describe('HorizontalBarChartComponent', () => {
       expect(r.value).toBe(120);
     }
   });
+
+  it('renders single series when secondaryData is undefined (Phase 1 default)', () => {
+    const fixture = TestBed.createComponent(HorizontalBarChartComponent);
+    fixture.componentInstance.data = [{ label: 'AI', value: 100 }];
+    fixture.componentInstance.ngOnChanges();
+    const opts = fixture.componentInstance.options as any;
+    expect(opts.series.length).toBe(1);
+    expect(opts.legend).toBeUndefined();
+  });
+
+  it('renders two stacked series when secondaryData is provided (OQ-P2-1)', () => {
+    const fixture = TestBed.createComponent(HorizontalBarChartComponent);
+    fixture.componentInstance.data          = [{ label: 'AI102', value: 80 }, { label: 'UK990', value: 60 }];
+    fixture.componentInstance.secondaryData = [{ label: 'AI102', value: 20 }, { label: 'UK990', value: 40 }];
+    fixture.componentInstance.primaryLabel   = 'Serviced';
+    fixture.componentInstance.secondaryLabel = 'Requested (gap)';
+    fixture.componentInstance.ngOnChanges();
+    const opts = fixture.componentInstance.options as any;
+    expect(opts.series.length).toBe(2);
+    expect(opts.series[0].stack).toBe('rank');
+    expect(opts.series[1].stack).toBe('rank');
+    expect(opts.series[1].itemStyle.opacity).toBeCloseTo(0.30);
+    expect(opts.legend.data).toEqual(['Serviced', 'Requested (gap)']);
+  });
 });
