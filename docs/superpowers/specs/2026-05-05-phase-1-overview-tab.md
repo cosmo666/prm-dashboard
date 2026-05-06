@@ -29,9 +29,10 @@ The .NET 8 backend, the DuckDB-over-Parquet data layer, the JWT auth contract, t
 - Render the Overview dashboard end-to-end against a real backend, on a real seeded tenant (`aeroground`), in a real browser
 - Hydrate filter state from URL query params on entry; write changes back so reload + URL sharing both work
 - Multi-select airport (RBAC-scoped via `AuthStore.airportCodes$`), airline, service-type, handled-by, with a 16-preset date-range picker
-- 4 KPI cards with delta vs previous period and the design's mono-numeric value treatment (preserves the Phase 0 `_kpi-cards.scss` work)
-- 3 charts: Daily PRM Trend (line), Service Type Breakdown (donut), Top Airlines (horizontal bar) — each as a new wrapper around `BaseChartComponent`
-- All five HTTP calls run as a single `forkJoin` per filter change; loading state propagates correctly to all KPIs and charts
+- 5 KPI cards with delta vs previous period and the design's mono-numeric value treatment (preserves the Phase 0 `_kpi-cards.scss` work)
+- 3 charts: Daily PRM Trend (line, with period-over-period overlay), Service Type Breakdown (donut), Top Airlines (horizontal bar) — each as a new wrapper around `BaseChartComponent`
+- Chart-click drill-down: bar click on top-airlines toggles `FilterStore.airline`; donut segment click toggles `FilterStore.service`. Line-chart point click is a no-op (date click has no clear semantic)
+- All HTTP calls run per filter change; current + previous-period trend issued as a parallel pair so the line chart can render the PoP overlay; loading state propagates correctly to all KPIs and charts
 - Continue the Phase 0 testing discipline — each new component gets at least a sanity spec; total frontend test count goes from 21 → ~30
 - Maintain `ng build --configuration production` clean and `npm run lint` passing
 
@@ -40,8 +41,6 @@ The .NET 8 backend, the DuckDB-over-Parquet data layer, the JWT auth contract, t
 - Tabs 2–5 (Top 10, Service Breakup, Fulfillment, Insights) — Phases 2–5
 - Saved views, command palette, toast container — Phase 6
 - The `Insights` tab fully — Phase 5
-- Period-over-period overlays on the line chart — only the simple "vs prev period" KPI delta is in scope; the full PoP line chart can land in Phase 6 polish if there's time
-- Drill-downs from chart click → filter mutation (the Angular 17 source has them; defer to Phase 6 polish — too easy to subtly miswire and Phase 1 already has plenty)
 - Sparklines inside KPI cards (the Angular 17 source has 5 sparklines per card; mostly demo polish — defer)
 - Annotations on the line chart (`DEMO_ANNOTATIONS`) — Phase 6
 - E2E test framework (none today, none added)
@@ -64,7 +63,7 @@ Phase 1 introduces a small handful of new architectural decisions on top of Phas
 | P1-Q7 | What's the route hierarchy under `/dashboard`? | `/dashboard` lazy-loads `DashboardModule` → child route `/dashboard/overview` is the default; further tabs slot in as siblings (`/dashboard/top10`, etc.) | Reload preserves which tab the user was on; URL-shareable; matches Angular 17 |
 | P1-Q8 | Where does `PrmDataService` live? | `frontend/src/app/features/dashboard/services/prm-data.service.ts` — same path as Angular 17 — but **not** `providedIn: 'root'`. Provided by `DashboardModule` | Lazy injector boundary; not used outside the dashboard. Lazy-load isolation matches the Angular 17 structure |
 | P1-Q9 | How are date-range query-param keys formatted? | `date_from`, `date_to` (snake_case, matches the backend `PrmFilterParams.DateFrom` / `DateTo` binding from `[FromQuery]`) | Don't invent new param names; the backend already accepts these |
-| P1-Q10 | How do we wire the chart click events? | `(barClick)` / `(segmentClick)` / `(pointClick)` outputs on each chart wrapper, **but Phase 1 only wires the no-op handler** that logs to `console.debug`. Drill-down logic lands in Phase 6 | The Angular 17 source mutates `FilterStore` from chart clicks — easy to subtly break. Wire the events but don't act on them yet |
+| P1-Q10 | How do we wire the chart click events? | Chart wrappers emit typed `(barClick)` / `(segmentClick)` / `(pointClick)` outputs. `OverviewTabComponent` handlers mutate `FilterStore`: bar click → `filters.toggleAirline(category)`, donut segment click → `filters.toggleService(name)`. Line-chart point click is a no-op (date click has no clear drill-down semantic) | Drill-downs in scope per OQ-P1-2 resolution. The store mutation re-emits `queryParams$`, the URL updates, and the existing `forkJoin` subscription re-fetches every chart against the new filter — single round-trip loop reuses the URL-sync machinery already in place |
 
 ---
 
@@ -301,7 +300,9 @@ export class FilterStore {
   removeAirport(value: string): void { this._airport$.next(this._airport$.value.filter(v => v !== value)); }
   setDateRange(preset: DatePreset, from: string, to: string): void { /* ... */ }
   setAirline(v: string | string[] | null): void { /* ... */ }
+  toggleAirline(code: string): void { /* if present → remove; else → push. Drill-down from horizontal-bar click. */ }
   setService(v: string | string[] | null): void { /* ... */ }
+  toggleService(code: string): void { /* if present → remove; else → push. Drill-down from donut-segment click. */ }
   setHandledBy(v: string | string[] | null): void { /* ... */ }
   removeAirline(v: string): void { /* ... */ }
   removeService(v: string): void { /* ... */ }
@@ -443,7 +444,7 @@ The orchestrator. Subscribes to `filters.queryParams$`, on every emission:
 
 1. Set `loading$` to `true`
 2. `forkJoin` the five endpoints
-3. Subscribe `next:` (typed result), populate the 4 KPIs and 3 chart inputs, set `loading$` to `false`
+3. Subscribe `next:` (typed result), populate the 5 KPIs and 3 chart inputs (current trend + prev-period overlay for the line chart), set `loading$` to `false`
 4. Subscribe `error:`, log to `console.error`, set `loading$` to `false`, leave existing data in place
 
 ```ts
@@ -460,8 +461,11 @@ totalAgents$ = new BehaviorSubject<number>(0);
 agentsSelf$ = new BehaviorSubject<number>(0);
 agentsOutsourced$ = new BehaviorSubject<number>(0);
 
+avgServicesPerAgentPerDay$ = new BehaviorSubject<number>(0);
+
 // Chart state
 dailyTrend$ = new BehaviorSubject<DailyTrendResponse | null>(null);
+dailyTrendPrev$ = new BehaviorSubject<DailyTrendResponse | null>(null);  // PoP overlay (OQ-P1-3)
 serviceTypes$ = new BehaviorSubject<DonutDatum[]>([]);
 topAirlines$ = new BehaviorSubject<BarDatum[]>([]);
 
@@ -477,6 +481,10 @@ ngOnInit(): void {
       return forkJoin({
         kpis:      this.data.kpisSummary(),
         trend:     this.data.trendsDaily('count'),
+        // PoP overlay — second call shifts date_from/date_to to the previous comparable period.
+        // Backend has no `prev=true` flag on /prm/trends/daily (verified in TrendDtos.cs +
+        // TrendsController.cs); we issue a parallel request with shifted dates instead.
+        trendPrev: this.data.trendsDailyPrev('count'),
         services:  this.data.topServices(),
         airlines:  this.data.topAirlines(10),
         // filterOptions is fetched inside FilterBarComponent — separate concern
@@ -495,8 +503,11 @@ ngOnInit(): void {
       this.totalAgents$.next(r.kpis.totalAgents);
       this.agentsSelf$.next(r.kpis.agentsSelf);
       this.agentsOutsourced$.next(r.kpis.agentsOutsourced);
+      this.avgServicesPerAgentPerDay$.next(r.kpis.avgServicesPerAgentPerDay);
 
       this.dailyTrend$.next(r.trend);
+      // Prev-period overlay — null-safe; line chart hides the overlay if values is empty
+      this.dailyTrendPrev$.next(r.trendPrev && r.trendPrev.values && r.trendPrev.values.length > 0 ? r.trendPrev : null);
 
       // RankingsResponse → DonutDatum[]
       this.serviceTypes$.next((r.services.items || []).slice(0, 5).map(s => ({
@@ -516,22 +527,36 @@ ngOnInit(): void {
   });
 }
 
+// --- Drill-down handlers (OQ-P1-2) ---
+// Bar click on top-airlines → toggle that airline in FilterStore.
+// FilterStore mutation re-emits queryParams$, which triggers a fresh forkJoin
+// (the URL-sync subscription in DashboardComponent updates the URL in parallel).
+onAirlineBarClick(category: string): void {
+  if (category) { this.filters.toggleAirline(category); }
+}
+
+// Donut segment click on service-type breakdown → toggle that service in FilterStore.
+onServiceSegmentClick(name: string): void {
+  if (name) { this.filters.toggleService(name); }
+}
+
 ngOnDestroy(): void {
   this.destroy$.next();
   this.destroy$.complete();
 }
 ```
 
-### KPIs the user sees (4 cards)
+### KPIs the user sees (5 cards)
 
-| Card | Value | Delta | Subtext |
-|---|---|---|---|
-| **Total PRM Services** | `totalPrm` (compact-formatted: `15.2k`, `1.5M`) | `((totalPrm - prev) / prev) * 100` | "vs prev period" |
-| **Active Agents** | `totalAgents` | (none) | `Self · ${agentsSelf}   Outsourced · ${agentsOutsourced}` |
-| **Avg Duration (min)** | `avgDurationMinutes` (rounded to int) | `((avg - prev) / prev) * 100` | "vs prev period" |
-| **Fulfillment Rate** | `fulfillmentPct` (1 decimal, with `%`) | (none) | (none) |
+| Card | Binding | Value formatting | Delta | Subtext | Icon |
+|---|---|---|---|---|---|
+| **Total PRM Services** | `summary.totalPrm` | compact: `15.2k`, `1.5M` | `((totalPrm - totalPrmPrevPeriod) / totalPrmPrevPeriod) * 100` | "vs prev period" | `pi-chart-bar` |
+| **Active Agents** | `summary.totalAgents` | `toLocaleString()` | (none) | `Self · ${agentsSelf}   Outsourced · ${agentsOutsourced}` | `pi-user` |
+| **Avg svc / agent / day** | `summary.avgServicesPerAgentPerDay` | 1 decimal | `((avg - avgServicesPrevPeriod) / avgServicesPrevPeriod) * 100` | "vs prev period" | `pi-users` |
+| **Avg Duration (min)** | `summary.avgDurationMinutes` | rounded to int | `((avg - avgDurationPrevPeriod) / avgDurationPrevPeriod) * 100` | "vs prev period" | `pi-clock` |
+| **Fulfillment Rate** | `summary.fulfillmentPct` | 1 decimal + `%` | (none) | (none) | `pi-check-circle` |
 
-(The Angular 17 source has 5 KPI cards — "Avg Services / Agent / Day" is the fifth. We can ship 4 in Phase 1 and add the fifth in Phase 6 polish if there's room. Spec calls for 4; backend already returns the data, so adding the fifth later is a one-line change.)
+All five cards use the regular `.kpi-card` style (no `.kpi-card--hero` accent — the design's primary stripe is consistent across all five). `avgServicesPerAgentPerDay` is read directly from `KpiSummaryResponse` (verified in `backend/src/PrmDashboard.Shared/DTOs/KpiDtos.cs`) — no separate endpoint needed.
 
 ---
 
@@ -543,15 +568,17 @@ Each new wrapper follows the Phase 0 BarChart pattern: typed `@Input` data, buil
 
 - `@Input() title: string`
 - `@Input() subtitle: string`
-- `@Input() trend: DailyTrendResponse | null` — direct DTO consumption, no intermediate shape
+- `@Input() trend: DailyTrendResponse | null` — current period; direct DTO consumption, no intermediate shape
+- `@Input() secondarySeries: DailyTrendResponse | null = null` — **NEW** previous-period overlay (OQ-P1-3); when present, rendered as a dotted, faint line beneath the primary series. Hidden when `null` or when `values.length === 0`
 - `@Input() loading: boolean = false`
-- `@Output() pointClick = new EventEmitter<string>()` — emits the date label (no-op handler in Phase 1)
+- `@Output() pointClick = new EventEmitter<string>()` — emits the date label; no-op handler in `OverviewTabComponent` (date click has no clear drill-down semantic per OQ-P1-2)
 - Builds an echarts options object with:
-  - `xAxis: { type: 'category', data: trend.dates }`
+  - `xAxis: { type: 'category', data: trend.dates }` — the **current** period's date axis is the canonical x-axis. The PoP series is rendered point-for-point against the same x-positions (the consumer ensures `secondarySeries.values.length === trend.values.length`); we do not show the prev period's actual dates on the axis to avoid a confusing dual-axis read
   - `yAxis: { type: 'value' }`
-  - One `series` of type `'line'`, smooth, with an area gradient using `echarts.graphic.LinearGradient` (the v4 API — same as v5 but worth pinning)
+  - One primary `series` of type `'line'`, smooth, with an area gradient using `echarts.graphic.LinearGradient` (the v4 API — same as v5 but worth pinning)
+  - A second `series` of type `'line'` **only when `secondarySeries` is non-null** — same primary hue, `lineStyle: { type: 'dotted', opacity: 0.35 }`, no area fill, no markers, `showSymbol: false`. Legend label: `"Prev period"` with reduced opacity matching the line
   - A `markLine` for the average value (`trend.average`)
-  - `tooltip: { trigger: 'axis' }` with a custom HTML formatter that uses Fira Code for the value
+  - `tooltip: { trigger: 'axis' }` with a custom HTML formatter that uses Fira Code for the value; when the PoP overlay is active, the tooltip lists both `Current` and `Prev period` rows
 - Color comes from `--app-primary` resolved at options-build time via `getComputedStyle(document.documentElement).getPropertyValue('--app-primary')` — echarts can't read CSS vars directly
 
 ### `DonutChartComponent`
@@ -559,19 +586,21 @@ Each new wrapper follows the Phase 0 BarChart pattern: typed `@Input` data, buil
 - `@Input() title: string`
 - `@Input() data: DonutDatum[]` (`{ name: string; value: number; color?: string }`)
 - `@Input() loading: boolean = false`
-- `@Output() segmentClick = new EventEmitter<string>()`
+- `@Output() segmentClick = new EventEmitter<string>()` — emits the segment **name** (i.e. the service code) on click. `OverviewTabComponent` wires this to `filters.toggleService(name)` for the OQ-P1-2 drill-down
 - echarts pie chart with `radius: ['60%', '80%']` (donut hole), labels below, legend on the right
 - Default color palette is the design's slate ramp + accent colors from `_variables.scss` — read via `getComputedStyle` at build time
 - "Total" displayed in the center via a `graphic.text` element computed from `sum(data.values)`
+- **Tap target ≥44 px (OQ-P1-2 hard requirement).** Each segment must be at least ~44 px in its smallest dimension so chart clicks are reliable on touch. Achieved by the 60–80% radius ratio at the typical card height (320 px) — verify in browser smoke; if any segment is too thin (e.g. <2% of total), expand its hit area via `emphasis: { focus: 'series' }` and a per-segment `silent: false`
 
 ### `HorizontalBarChartComponent`
 
 - `@Input() title: string`
 - `@Input() data: BarDatum[]` (`{ label: string; value: number }`)
 - `@Input() loading: boolean = false`
-- `@Output() barClick = new EventEmitter<string>()`
+- `@Output() barClick = new EventEmitter<{ category: string; value: number }>()` — emits the bar's category (airline code/name) and value on click. `OverviewTabComponent` wires this to `filters.toggleAirline(category)` for the OQ-P1-2 drill-down
 - echarts bar chart with `xAxis: { type: 'value' }`, `yAxis: { type: 'category', data: labels, inverse: true }` (so the highest value is on top)
 - Limit to top 10 — if `data.length > 10`, slice; the consumer (Overview tab) already requests `limit=10` from the backend, but defense-in-depth
+- **Tap target ≥44 px (OQ-P1-2 hard requirement).** `barMaxWidth: 24` plus generous bar gaps make individual bars potentially narrow; widen the click area via the bar's full row height (set `barCategoryGap: '20%'` so the row hit area dominates the bar's drawn width)
 
 All three wrappers add to `SharedModule.declarations` and `SharedModule.exports` (Phase 0 already imports `NgxEchartsModule`).
 
@@ -633,7 +662,7 @@ Template:
 
 Note `*ngIf` and `[ngSwitch]` (Angular 8 control flow). Not `@if` / `@switch`.
 
-The caller pre-formats the value — we don't ship a `compactNumber` pipe in Phase 1. Inline formatting for the four KPIs:
+The caller pre-formats the value — we don't ship a `compactNumber` pipe in Phase 1. Inline formatting for the five KPIs:
 
 ```ts
 formatCount(n: number): string {
@@ -716,7 +745,7 @@ The Overview tab uses a 12-column PrimeFlex grid:
 
 | Row | Layout |
 |---|---|
-| 1 | 4 KPI cards, 3 columns each (`p-col-3`) on ≥ 1280 px; 2 cards per row at 768–1280 px; 1 card per row below |
+| 1 | 5 KPI cards in a CSS-grid container (`display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));` ≥ 1280 px; `repeat(3, 1fr)` at 768–1280 px wrapping cards 4–5; `1fr` below) — `_kpi-cards.scss` owns the breakpoints. PrimeFlex `p-col-*` doesn't divide 12 evenly by 5, so grid is preferred over a half-column hack |
 | 2 | Daily PRM Trend (line chart, `p-col-8`), Service Type Breakdown (donut, `p-col-4`) on ≥ 1024 px; stacked below |
 | 3 | Top Airlines (horizontal bar, `p-col-12`) — full-width |
 
@@ -736,9 +765,9 @@ The Overview tab uses a 12-column PrimeFlex grid:
 
 ### Open questions for the user
 
-- **OQ-P1-1** — The Angular 17 source has 5 KPI cards (Total PRM, Active Agents, Avg/Agent/Day, Avg Duration, Fulfillment). Phase 1 spec ships **4** (Total, Agents, Duration, Fulfillment) — dropping "Avg Services / Agent / Day". Backend `KpiSummaryResponse` already returns the data (`avgServicesPerAgentPerDay`), so adding the fifth card is a one-line cost. **Should we ship 5 in Phase 1, or hold for Phase 6 polish?** Defaulting to 4 to keep scope tight; happy to widen if user disagrees.
-- **OQ-P1-2** — Drill-down from chart click → filter mutation. Angular 17 source has it (click a service-type donut segment → set `filters.service`); Phase 1 spec defers to Phase 6. **Confirm.** Easy to add, but doubles the test surface and adds a Toast dependency.
-- **OQ-P1-3** — Period-over-period overlay on the line chart (the dashed previous-period line). Angular 17 has `DEMO_ANNOTATIONS`. Phase 1 ships only the `markLine` for the average. **Confirm.** Real PoP would need a second backend trip per filter change.
+- **OQ-P1-1 — RESOLVED (2026-05-06).** User decided to ship **5 KPI cards** in Phase 1. The 5th is `summary.avgServicesPerAgentPerDay`, mapped to a regular `.kpi-card` (not `.kpi-card--hero`). Backend `KpiSummaryResponse` already returns the field — no backend change. See §8 KPI table and §10 binding for the wired shape.
+- **OQ-P1-2 — RESOLVED (2026-05-06).** User decided to include drill-down in Phase 1. Click on top-airlines bar toggles `FilterStore.airline`; click on service-type donut segment toggles `FilterStore.service`. Line-chart point clicks: no drill-down (date click has no clear semantic). Tap target ≥44 px is a hard requirement — chart hit areas must be expanded if the data points are small (see §9 wrapper specs). Wiring goes through the existing `queryParams$` → `forkJoin` loop, so no new test surface beyond the chart wrapper outputs and the two `OverviewTabComponent` handlers.
+- **OQ-P1-3 — RESOLVED (2026-05-06).** User decided to include the period-over-period overlay on the trend line chart. Renders as a dotted line at 0.35 opacity in the same primary hue. Hidden when no prev-period data is available (very short ranges or first-month tenants). Backend has **no `prev=true` flag** on `/prm/trends/daily` (verified in `backend/src/PrmDashboard.Shared/DTOs/TrendDtos.cs` — `DailyTrendResponse(List<string> Dates, List<int> Values, double Average)` only — and `backend/src/PrmDashboard.PrmService/Controllers/TrendsController.cs`); we issue a parallel `trendsDailyPrev()` call with shifted `date_from`/`date_to` (resolved via the `from.AddDays(-1)` pattern that the backend `BaseQueryService.GetPrevPeriodStart` documents) instead of changing the backend.
 
 ---
 

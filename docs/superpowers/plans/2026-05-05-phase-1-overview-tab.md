@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** First fully working dashboard tab on `angular-8-rewrite`. The Overview tab renders against a real backend with URL-synced filters, RBAC-scoped airport selector, 16-preset date-range picker, 4 KPI cards, and 3 charts (line / donut / horizontal-bar). Acceptance is a real browser smoke pass — not just curl — against the full Docker stack.
+**Goal:** First fully working dashboard tab on `angular-8-rewrite`. The Overview tab renders against a real backend with URL-synced filters, RBAC-scoped airport selector, 16-preset date-range picker, 5 KPI cards, and 3 charts (line with PoP overlay / donut / horizontal-bar). Bar and donut clicks drill into `FilterStore` (toggle airline / service). Acceptance is a real browser smoke pass — not just curl — against the full Docker stack.
 
 **Reference spec:** [docs/superpowers/specs/2026-05-05-phase-1-overview-tab.md](../specs/2026-05-05-phase-1-overview-tab.md). Where the spec specifies behaviour, types, or design tokens, this plan refers to spec sections rather than re-printing.
 
@@ -177,7 +177,7 @@ Add a `// Source: backend/src/PrmDashboard.Shared/DTOs/<file>.cs` comment above 
 
 ```ts
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { ApiClient } from 'src/app/core/api/api.client';
 import { FilterStore } from 'src/app/core/store/filter.store';
 import {
@@ -188,7 +188,9 @@ import {
 } from './prm-dtos';
 
 /**
- * Phase 1: wraps the 5 endpoints needed for the Overview tab.
+ * Phase 1: wraps the 5 endpoints needed for the Overview tab. Adds a sixth
+ * call (`trendsDailyPrev`) for the period-over-period overlay on the trend
+ * line chart — see OQ-P1-3 in the spec.
  *
  * NOT @Injectable({ providedIn: 'root' }) — provided by DashboardModule
  * so the service lives in the lazy injector. See spec §4 P1-Q8.
@@ -226,6 +228,31 @@ export class PrmDataService {
 
   trendsDaily(metric: 'count' | 'duration' | 'agents' = 'count'): Observable<DailyTrendResponse> {
     return this.api.get<DailyTrendResponse>('/prm/trends/daily', this.params({ metric }));
+  }
+
+  /**
+   * Period-over-period overlay (OQ-P1-3). Backend has no `prev=true` flag on
+   * /prm/trends/daily — we shift the date_from/date_to to the previous comparable
+   * period and re-issue. Mirrors the backend's `BaseQueryService.GetPrevPeriodStart`
+   * convention: prev_end = from.AddDays(-1); prev_from = prev_end - (to - from).
+   * Returns null-equivalent (empty `values`) when from/to aren't both set.
+   */
+  trendsDailyPrev(metric: 'count' | 'duration' | 'agents' = 'count'): Observable<DailyTrendResponse> {
+    const fromIso = this.filters.dateFromSnapshot;
+    const toIso = this.filters.dateToSnapshot;
+    if (!fromIso || !toIso) {
+      return of({ dates: [], values: [], average: 0 } as DailyTrendResponse);
+    }
+    const from = new Date(fromIso);
+    const to = new Date(toIso);
+    const spanMs = to.getTime() - from.getTime();
+    const prevEnd = new Date(from.getTime() - 86400000);          // from - 1 day
+    const prevFrom = new Date(prevEnd.getTime() - spanMs);
+    const iso = (d: Date): string => d.toISOString().slice(0, 10);
+    const params = this.params({ metric });
+    params['date_from'] = iso(prevFrom);
+    params['date_to']   = iso(prevEnd);
+    return this.api.get<DailyTrendResponse>('/prm/trends/daily', params);
   }
 
   topAirlines(limit: number = 10): Observable<RankingsResponse> {
@@ -346,6 +373,7 @@ Key invariants the spec calls out:
 - `queryParams$` uses `shareReplay(1)` so multiple subscribers don't trigger redundant `combineLatest` recomputes
 - `setAirport` accepts `string | string[] | null` via the `normalize` helper (mirrors Angular 17 contract)
 - `toggleAirport` enforces the never-empty rule: if removing the code would empty the array, return without mutating
+- `toggleAirline(code)` and `toggleService(code)` — drill-down from chart clicks (OQ-P1-2). If `code` is in the current array, remove it; otherwise push it. **No** never-empty rule on these — empty array means "no filter", which is valid (and unlike airport, the backend doesn't 400 on an empty airline/service list)
 - `applyDefault()` calls `resolvePreset('mtd', POC_TODAY)` (the helper exists in Angular 17 source — port verbatim in T3)
 - `hydrateFromQueryParams(params)` parses CSVs via a private `parseCsv` helper
 
@@ -362,6 +390,8 @@ Date-preset enum values match backend wire format (snake_case): `today`, `yester
 - `toggleAirport(<last>)` is a no-op (never-empty rule)
 - `removeAirport('DEL')` filters out
 - `setAirline(['AI','BA'])` works
+- `toggleAirline('AI')` adds to empty list, `toggleAirline('AI')` again removes (no never-empty rule on airline)
+- `toggleService('WCHR')` adds to empty list, `toggleService('WCHR')` again removes (drill-down round-trip)
 - `clearSecondary()` empties airline/service/handledBy/flight/agentNo but keeps airport+date
 - `queryParams$` emits `{ airport: 'DEL', date_from: '...', date_to: '...' }` with `mtd` defaults
 - `queryParams$` omits keys for empty arrays
@@ -820,6 +850,8 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 Per spec [§10 — KPI card system](../specs/2026-05-05-phase-1-overview-tab.md#10-kpi-card-system--data-binding). Pure presentational — toggles `kpi-card--loading` and `is-up`/`is-down`/`is-flat` classes; styles already live in `_kpi-cards.scss` from Phase 0.
 
+The Overview tab renders **5 instances** of this component (OQ-P1-1 resolution): Total PRM Services, Active Agents, Avg svc / agent / day (`summary.avgServicesPerAgentPerDay`), Avg Duration (min), Fulfillment Rate. The component itself is generic — it doesn't know about any specific KPI; the binding lives in T9. Verify the component is purely input-driven (no card-specific switch statements inside).
+
 - [ ] **Step 2: Spec**
 
 `kpi-card.component.spec.ts`:
@@ -877,6 +909,12 @@ export class LineChartComponent implements OnChanges {
   @Input() title?: string;
   @Input() subtitle?: string;
   @Input() trend: DailyTrendResponse | null = null;
+  /**
+   * Period-over-period overlay (OQ-P1-3). When non-null and non-empty, the chart
+   * renders a second dotted line at 0.35 opacity in the primary hue. Hidden when
+   * null or when values.length === 0 (very short ranges or first-month tenants).
+   */
+  @Input() secondarySeries: DailyTrendResponse | null = null;
   @Input() loading = false;
   @Input() height = 320;
   @Output() pointClick = new EventEmitter<string>();
@@ -886,31 +924,56 @@ export class LineChartComponent implements OnChanges {
   ngOnChanges(): void {
     if (!this.trend) { this.options = null; return; }
     const primary = this.resolvePrimary();
-    this.options = {
-      tooltip: { trigger: 'axis' },
-      grid:    { left: 40, right: 20, top: 30, bottom: 40 },
-      xAxis: { type: 'category', data: this.trend.dates, axisLine: { lineStyle: { color: '#cbd5e1' }} },
-      yAxis: { type: 'value', splitLine: { lineStyle: { color: '#e2e8f0' }} },
-      series: [{
-        name: 'Services',
+    const hasPrev = !!(this.secondarySeries && this.secondarySeries.values && this.secondarySeries.values.length > 0);
+
+    const series: any[] = [{
+      name: 'Current',
+      type: 'line',
+      smooth: true,
+      symbol: 'circle',
+      symbolSize: 4,
+      data: this.trend.values,
+      itemStyle: { color: primary },
+      lineStyle:  { color: primary, width: 2 },
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: this.alphaHex(primary, 0.25) },
+          { offset: 1, color: this.alphaHex(primary, 0.0) },
+        ]),
+      },
+      markLine: {
+        symbol: 'none',
+        data: [{ yAxis: this.trend.average, lineStyle: { type: 'dashed', color: '#94a3b8' }, label: { formatter: `Avg ${this.trend.average.toFixed(0)}`, position: 'end' as const }}],
+      },
+    }];
+
+    if (hasPrev) {
+      // Render the prev-period values point-for-point against the current period's
+      // x-axis. The OverviewTabComponent ensures lengths align; if the prev array
+      // is shorter (e.g. month boundary), we right-pad with the last known value
+      // so the line spans the full axis without an abrupt drop.
+      const prev = this.secondarySeries!.values.slice(0, this.trend.values.length);
+      while (prev.length < this.trend.values.length) {
+        prev.push(prev[prev.length - 1] || 0);
+      }
+      series.push({
+        name: 'Prev period',
         type: 'line',
         smooth: true,
-        symbol: 'circle',
-        symbolSize: 4,
-        data: this.trend.values,
-        itemStyle: { color: primary },
-        lineStyle:  { color: primary, width: 2 },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: this.alphaHex(primary, 0.25) },
-            { offset: 1, color: this.alphaHex(primary, 0.0) },
-          ]),
-        },
-        markLine: {
-          symbol: 'none',
-          data: [{ yAxis: this.trend.average, lineStyle: { type: 'dashed', color: '#94a3b8' }, label: { formatter: `Avg ${this.trend.average.toFixed(0)}`, position: 'end' as const }}],
-        },
-      }],
+        showSymbol: false,
+        data: prev,
+        itemStyle: { color: primary, opacity: 0.35 },
+        lineStyle: { color: primary, width: 1.5, type: 'dotted', opacity: 0.35 },
+      });
+    }
+
+    this.options = {
+      tooltip: { trigger: 'axis' },
+      legend:  hasPrev ? { data: ['Current', 'Prev period'], right: 0, top: 0, textStyle: { color: '#64748b' }} : undefined,
+      grid:    { left: 40, right: 20, top: hasPrev ? 40 : 30, bottom: 40 },
+      xAxis: { type: 'category', data: this.trend.dates, axisLine: { lineStyle: { color: '#cbd5e1' }} },
+      yAxis: { type: 'value', splitLine: { lineStyle: { color: '#e2e8f0' }} },
+      series,
     };
   }
 
@@ -966,6 +1029,26 @@ describe('LineChartComponent', () => {
     fixture.componentInstance.ngOnChanges();
     expect(fixture.componentInstance.options).toBeNull();
   });
+
+  it('renders a single series when secondarySeries is null', () => {
+    const fixture = TestBed.createComponent(LineChartComponent);
+    fixture.componentInstance.trend = { dates: ['2026-04-01'], values: [10], average: 10 };
+    fixture.componentInstance.secondarySeries = null;
+    fixture.componentInstance.ngOnChanges();
+    expect((fixture.componentInstance.options!.series as any[]).length).toBe(1);
+  });
+
+  it('renders a dotted prev-period series when secondarySeries has values (OQ-P1-3)', () => {
+    const fixture = TestBed.createComponent(LineChartComponent);
+    fixture.componentInstance.trend = { dates: ['2026-04-01','2026-04-02'], values: [10, 12], average: 11 };
+    fixture.componentInstance.secondarySeries = { dates: ['2026-03-01','2026-03-02'], values: [8, 9], average: 8.5 };
+    fixture.componentInstance.ngOnChanges();
+    const series = fixture.componentInstance.options!.series as any[];
+    expect(series.length).toBe(2);
+    expect(series[1].name).toBe('Prev period');
+    expect(series[1].lineStyle.type).toBe('dotted');
+    expect(series[1].lineStyle.opacity).toBeCloseTo(0.35);
+  });
 });
 ```
 
@@ -979,11 +1062,13 @@ Add to declarations + exports.
 docker compose run --rm frontend-dev npx tsc --noEmit -p tsconfig.app.json
 docker compose run --rm frontend-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox --include=**/line-chart.component.spec.ts
 git add frontend/src/app/shared/charts/line-chart frontend/src/app/shared/shared.module.ts
-git commit -m "feat(charts): add LineChartComponent (smooth area line for daily trends)
+git commit -m "feat(charts): add LineChartComponent with PoP overlay support
 
 Wraps BaseChartComponent. Builds EChartOption from a DailyTrendResponse
 DTO directly (no intermediate shape). Resolves --app-primary at
 build time via getComputedStyle since echarts can't read CSS variables.
+Optional [secondarySeries] input renders a dotted, faint prev-period
+overlay (OQ-P1-3) — null-safe; hidden when no prev data.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
@@ -1008,7 +1093,11 @@ export class DonutChartComponent implements OnChanges {
   @Input() data: DonutDatum[] = [];
   @Input() loading = false;
   @Input() height = 320;
-  @Output() segmentClick = new EventEmitter<string>();
+  /**
+   * Emits the segment payload on click — `OverviewTabComponent` wires this to
+   * `filters.toggleService(name)` for the OQ-P1-2 drill-down.
+   */
+  @Output() segmentClick = new EventEmitter<{ name: string; value: number }>();
 
   options: EChartOption | null = null;
 
@@ -1024,6 +1113,7 @@ export class DonutChartComponent implements OnChanges {
         avoidLabelOverlap: true,
         itemStyle: { borderColor: '#fff', borderWidth: 2 },
         label: { show: false },
+        emphasis: { focus: 'series' },   // expands tap target — OQ-P1-2 hard requirement
         data: this.data.map(d => ({ name: d.name, value: d.value, itemStyle: d.color ? { color: d.color } : undefined })),
       } as any],
       graphic: [
@@ -1031,6 +1121,13 @@ export class DonutChartComponent implements OnChanges {
         { type: 'text', left: '35%', top: '60%', style: { text: 'TOTAL', textAlign: 'center', fontSize: 10, fill: '#64748b' }},
       ],
     };
+  }
+
+  /** echarts click handler — wired via [chartClick]="onChartClick($event)" through BaseChartComponent's pass-through. */
+  onChartClick(event: any): void {
+    if (event && event.data && typeof event.data.name === 'string') {
+      this.segmentClick.emit({ name: event.data.name, value: event.data.value });
+    }
   }
 }
 ```
@@ -1068,24 +1165,43 @@ export class HorizontalBarChartComponent implements OnChanges {
   @Input() data: BarDatum[] = [];
   @Input() loading = false;
   @Input() height = 380;
-  @Output() barClick = new EventEmitter<string>();
+  /**
+   * Emits the bar's category label and value on click — `OverviewTabComponent`
+   * wires this to `filters.toggleAirline(category)` for the OQ-P1-2 drill-down.
+   */
+  @Output() barClick = new EventEmitter<{ category: string; value: number }>();
 
   options: EChartOption | null = null;
+  /** Cached top-N slice so the click handler can map an index back to its label. */
+  private topRows: BarDatum[] = [];
 
   ngOnChanges(): void {
-    const top = this.data.slice(0, 10);
+    this.topRows = this.data.slice(0, 10);
     this.options = {
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }},
       grid:    { left: 100, right: 30, top: 20, bottom: 30 },
       xAxis:   { type: 'value' },
-      yAxis:   { type: 'category', data: top.map(d => d.label), inverse: true, axisLabel: { fontSize: 11 }},
+      yAxis:   { type: 'category', data: this.topRows.map(d => d.label), inverse: true, axisLabel: { fontSize: 11 }},
       series: [{
         type: 'bar',
-        data: top.map(d => d.value),
+        data: this.topRows.map(d => d.value),
         barMaxWidth: 24,
+        barCategoryGap: '20%',           // wider row hit area — OQ-P1-2 tap-target ≥44 px
         itemStyle: { color: this.resolvePrimary() },
+        emphasis: { focus: 'series' },   // visual feedback on hover/tap
       }],
     };
+  }
+
+  /** echarts click handler — wired via the BaseChartComponent pass-through. */
+  onChartClick(event: any): void {
+    if (!event) { return; }
+    // event.name is the y-axis category label (the airline) on a horizontal bar.
+    const category = (event.name as string) || (event.data && event.data.name);
+    if (category) {
+      const row = this.topRows.find(r => r.label === category);
+      this.barClick.emit({ category, value: row ? row.value : (event.value as number) || 0 });
+    }
   }
 
   private resolvePrimary(): string {
@@ -1127,34 +1243,47 @@ The complete implementation is in spec §8 — copy verbatim, then add `.html` a
 
 ```html
 <div class="overview" *ngIf="(loading$ | async) !== null">
-  <!-- Row 1: 4 KPI cards -->
+  <!-- Row 1: 5 KPI cards (OQ-P1-1 — added Avg svc / agent / day) -->
   <div class="p-grid kpi-row">
-    <div class="p-col-12 p-md-6 p-lg-3">
+    <div class="p-col-12 p-md-6 p-lg-2 p-xl-2">
       <app-kpi-card
         label="Total PRM Services"
+        icon="pi-chart-bar"
         [value]="formatCount(totalPrm$ | async)"
         [delta]="totalDelta$ | async"
         subtext="vs prev period"
         [loading]="loading$ | async"></app-kpi-card>
     </div>
-    <div class="p-col-12 p-md-6 p-lg-3">
+    <div class="p-col-12 p-md-6 p-lg-2 p-xl-2">
       <app-kpi-card
         label="Active Agents"
-        [value]="(totalAgents$ | async) ?? 0 | number"
+        icon="pi-user"
+        [value]="(totalAgents$ | async) || 0 | number"
         [subtext]="'Self · ' + (agentsSelf$ | async) + '   Outsourced · ' + (agentsOutsourced$ | async)"
         [loading]="loading$ | async"></app-kpi-card>
     </div>
-    <div class="p-col-12 p-md-6 p-lg-3">
+    <div class="p-col-12 p-md-6 p-lg-3 p-xl-3">
+      <app-kpi-card
+        label="Avg svc / agent / day"
+        icon="pi-users"
+        [value]="(avgServicesPerAgentPerDay$ | async) | number:'1.1-1'"
+        [delta]="avgServicesDelta$ | async"
+        subtext="vs prev period"
+        [loading]="loading$ | async"></app-kpi-card>
+    </div>
+    <div class="p-col-12 p-md-6 p-lg-2 p-xl-2">
       <app-kpi-card
         label="Avg Duration (min)"
+        icon="pi-clock"
         [value]="(avgDuration$ | async) | number:'1.0-0'"
         [delta]="durationDelta$ | async"
         subtext="vs prev period"
         [loading]="loading$ | async"></app-kpi-card>
     </div>
-    <div class="p-col-12 p-md-6 p-lg-3">
+    <div class="p-col-12 p-md-6 p-lg-3 p-xl-3">
       <app-kpi-card
         label="Fulfillment Rate"
+        icon="pi-check-circle"
         [value]="((fulfillmentPct$ | async) | number:'1.1-1') + '%'"
         [loading]="loading$ | async"></app-kpi-card>
     </div>
@@ -1165,18 +1294,18 @@ The complete implementation is in spec §8 — copy verbatim, then add `.html` a
     <div class="p-col-12 p-lg-8">
       <app-line-chart
         title="Daily PRM Trend"
-        subtitle="Count of unique services per day"
+        subtitle="Count of unique services per day (with previous-period overlay)"
         [trend]="dailyTrend$ | async"
-        [loading]="loading$ | async"
-        (pointClick)="onPointClick($event)"></app-line-chart>
+        [secondarySeries]="dailyTrendPrev$ | async"
+        [loading]="loading$ | async"></app-line-chart>
     </div>
     <div class="p-col-12 p-lg-4">
       <app-donut-chart
         title="Service Type Breakdown"
-        subtitle="Top 5 categories by volume"
+        subtitle="Top 5 categories by volume — click a segment to filter"
         [data]="serviceTypes$ | async"
         [loading]="loading$ | async"
-        (segmentClick)="onSegmentClick($event)"></app-donut-chart>
+        (segmentClick)="onServiceSegmentClick($event)"></app-donut-chart>
     </div>
   </div>
 
@@ -1187,11 +1316,13 @@ The complete implementation is in spec §8 — copy verbatim, then add `.html` a
         title="Top Airlines"
         [data]="topAirlines$ | async"
         [loading]="loading$ | async"
-        (barClick)="onBarClick($event)"></app-horizontal-bar-chart>
+        (barClick)="onAirlineBarClick($event)"></app-horizontal-bar-chart>
     </div>
   </div>
 </div>
 ```
+
+`(totalAgents$ | async) || 0` instead of `?? 0` — TS 3.4.5 + Angular 8 template compiler. The `||` is safe here because `0` is not a valid "active agents" sentinel (an empty filter that legitimately returns 0 agents still renders as `0` from the `| number` pipe — the `|| 0` only fires when the async pipe yields `null` mid-emit).
 
 **TS 3.4.5 caveat:** the template uses `??` in one place (`(totalAgents$ | async) ?? 0`). Angular's template compiler is permissive and accepts it (it's not Angular template syntax — it's a pipe-input default). However, Angular 8's template compiler may not. Test in T13; if it fails, replace with `(totalAgents$ | async) || 0`.
 
@@ -1207,12 +1338,23 @@ formatCount(n: number | null): string {
   return n.toLocaleString();
 }
 
-onPointClick(date: string): void   { console.debug('[overview] point click', date); }
-onSegmentClick(name: string): void { console.debug('[overview] segment click', name); }
-onBarClick(label: string): void    { console.debug('[overview] bar click', label); }
+// OQ-P1-2 drill-down handlers — bar/donut clicks toggle FilterStore;
+// the resulting URL change re-fires forkJoin, all charts re-render filtered.
+// Date click on the line chart has no clear semantic — no-op.
+onPointClick(_date: string): void { /* no-op — date click has no drill-down semantic */ }
+
+onSegmentClick(name: string): void {
+  // donut emits the segment name (= service code)
+  this.filters.toggleService(name);
+}
+
+onBarClick(payload: { category: string; value: number }): void {
+  // horizontal-bar emits { category, value }; category is the airline code/name
+  this.filters.toggleAirline(payload.category);
+}
 ```
 
-(Drill-down actions are deferred to Phase 6 per spec §13 OQ-P1-2.)
+`toggleService` / `toggleAirline` are mutators on `FilterStore` (see Task 2). They flip a value in / out of the array, push the merged URL via `Router.navigate([], { queryParams, queryParamsHandling: 'merge' })`, and emit on `queryParams$` — so the `forkJoin` re-fires and every sibling chart re-renders against the narrowed filter.
 
 - [ ] **Step 4: Spec**
 
@@ -1519,7 +1661,7 @@ Open `http://aeroground.localhost:4200`:
 
 - [ ] **Step 8: Browser smoke — KPI cards**
 
-- [ ] All 4 KPI cards render numeric values (not `—` or empty)
+- [ ] All 5 KPI cards render numeric values (not `—` or empty)
 - [ ] Loading skeletons appear during a filter change and resolve within ~500 ms
 - [ ] Total PRM Services delta arrow direction matches the math (set the date to "Last Month" and watch which way the delta points)
 - [ ] Active Agents subtext shows `Self · N   Outsourced · M`
@@ -1529,11 +1671,21 @@ Open `http://aeroground.localhost:4200`:
 - [ ] **Step 9: Browser smoke — charts**
 
 - [ ] Daily PRM Trend line chart renders with one series; smooth line; gradient area fill below; dashed average line
+- [ ] **PoP overlay (OQ-P1-3):** a fainter dotted line in the same primary hue at ~0.35 opacity sits beneath the current series; legend shows "Prev period" with reduced opacity. Set the date range to "Last 7 Days" — overlay appears. Set the range to "All time" or a span longer than the data — overlay vanishes (no prev period available)
 - [ ] Service Type Breakdown donut renders 5 segments; "TOTAL" label centered
 - [ ] Top Airlines horizontal bar chart renders bars sorted descending (largest at the top)
 - [ ] All chart accents use the tenant's `primaryColor` — log in as a different tenant subdomain (e.g. `gateway.localhost`) and observe the colors change
 - [ ] Hover over a chart → tooltip shows in mono font
 - [ ] Browser console has zero errors (some PrimeNG 8 deprecation warnings from upstream are tolerable; document if they appear)
+
+- [ ] **Step 9b: Browser smoke — drill-down (OQ-P1-2)**
+
+- [ ] Click a bar in **Top Airlines** → `?airline=<code>` appears in the URL; that bar gets a "selected" treatment (slightly thicker stroke or higher opacity)
+- [ ] Donut **Service Type** segments narrow accordingly (only that airline's services); KPI numbers shrink; trend line dips
+- [ ] Click the same bar again → airline removed from `?airline`; original full-tenant view restores
+- [ ] Click a **donut segment** → `?service=<code>` appears in the URL; bar chart re-renders with airlines filtered to that service
+- [ ] Click a **line-chart point** → nothing happens (date click has no drill-down semantic by spec §13 OQ-P1-2)
+- [ ] Tap target ≥ 44 px verified: hit even the thinnest bar / thinnest donut segment from a touch device emulator without missing
 
 - [ ] **Step 10: URL sync + reload**
 
