@@ -151,18 +151,24 @@ export class ServiceBreakupTabComponent implements OnInit, OnDestroy {
    * OQ-P3-3 drill-down dispatcher. Sankey nodes are passed by name; the
    * dispatcher infers which filter to mutate by inspecting the name.
    *
-   * - 'Self' / 'Outsourced' → setHandledBy
+   * Backend `prm_agent_type` values are uppercase in the seed data
+   * (`SELF`, `OUTSOURCED`) so node labels arrive uppercase. We compare
+   * case-insensitively via toUpperCase() so a future tenant with mixed
+   * casing still routes correctly.
+   *
+   * - 'SELF' / 'OUTSOURCED' (any case) → setHandledBy
    * - Service code (anything in monthlyMixKeys$) → toggleService
    * - 'Other flights' → no-op (pseudo-node, not a real flight)
    * - Otherwise → toggleFlight
    *
-   * R-P3-1 risk acknowledged: a tenant whose service code matches 'Self' or
-   * a flight number that matches an SSR code mis-routes. Pathological edge.
+   * R-P3-1 risk acknowledged: a tenant whose service code matches 'SELF'
+   * or a flight number matching an SSR code mis-routes. Pathological edge.
    */
   onSankeyNodeClick(name: string): void {
     if (!name) { return; }
-    if (name === 'Self' || name === 'Outsourced') {
-      this.filters.setHandledBy([name.toUpperCase()]);
+    const upper = name.toUpperCase();
+    if (upper === 'SELF' || upper === 'OUTSOURCED') {
+      this.filters.setHandledBy([upper]);
       return;
     }
     if (this.monthlyMixKeys$.value.indexOf(name) >= 0) {

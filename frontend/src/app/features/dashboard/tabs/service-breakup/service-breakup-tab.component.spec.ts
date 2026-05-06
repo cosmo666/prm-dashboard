@@ -45,14 +45,19 @@ describe('ServiceBreakupTabComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('onSankeyNodeClick routes "Self" to setHandledBy([SELF])', () => {
-    fixture.componentInstance.onSankeyNodeClick('Self');
+  it('onSankeyNodeClick routes uppercase "SELF" (data shape) to setHandledBy([SELF])', () => {
+    fixture.componentInstance.onSankeyNodeClick('SELF');
     expect(setHandledBySpy).toHaveBeenCalledWith(['SELF']);
   });
 
-  it('onSankeyNodeClick routes "Outsourced" to setHandledBy([OUTSOURCED])', () => {
-    fixture.componentInstance.onSankeyNodeClick('Outsourced');
+  it('onSankeyNodeClick routes uppercase "OUTSOURCED" to setHandledBy([OUTSOURCED])', () => {
+    fixture.componentInstance.onSankeyNodeClick('OUTSOURCED');
     expect(setHandledBySpy).toHaveBeenCalledWith(['OUTSOURCED']);
+  });
+
+  it('onSankeyNodeClick is case-insensitive on agent-type names (defensive)', () => {
+    fixture.componentInstance.onSankeyNodeClick('Self');
+    expect(setHandledBySpy).toHaveBeenCalledWith(['SELF']);
   });
 
   it('onSankeyNodeClick routes a known service code to toggleService', () => {
