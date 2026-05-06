@@ -1,0 +1,62 @@
+<div class="top10" *ngIf="(loading$ | async) !== null">
+  <section class="top10-section">
+    <header class="top10-section__head">
+      <h2 class="top10-section__title">Top 10 Airlines</h2>
+      <p class="top10-section__sub">By PRM service count — click a bar to filter</p>
+    </header>
+    <app-horizontal-bar-chart
+      [data]="topAirlines$ | async"
+      [loading]="loading$ | async"
+      (barClick)="onAirlineBarClick($event)"></app-horizontal-bar-chart>
+  </section>
+
+  <section class="top10-section">
+    <header class="top10-section__head">
+      <h2 class="top10-section__title">Top 10 Flights</h2>
+      <p class="top10-section__sub">Serviced vs requested — gap reveals fulfillment shortfall per flight</p>
+    </header>
+    <app-horizontal-bar-chart
+      [data]="topFlightsServiced$ | async"
+      [secondaryData]="topFlightsGap$ | async"
+      primaryLabel="Serviced"
+      secondaryLabel="Requested (gap)"
+      [loading]="loading$ | async"
+      (barClick)="onFlightBarClick($event)"></app-horizontal-bar-chart>
+  </section>
+
+  <section class="top10-section">
+    <header class="top10-section__head">
+      <h2 class="top10-section__title">Top 10 Agents</h2>
+      <p class="top10-section__sub">Click a row to filter the dashboard by that agent</p>
+    </header>
+    <p-table [value]="(topAgents$ | async) || []" [rows]="10" responsiveLayout="scroll" styleClass="agents-table">
+      <ng-template pTemplate="header">
+        <tr>
+          <th class="num">#</th>
+          <th class="mono">Agent</th>
+          <th>Name</th>
+          <th class="num">PRM</th>
+          <th class="num">Avg Duration</th>
+          <th>Top Service</th>
+          <th>Top Airline</th>
+          <th class="num">Avg / Day</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-agent>
+        <tr (click)="onAgentRowClick(agent)" [class.is-selected]="agent.agentNo === (filters.agentNo$ | async)">
+          <td class="mono num">{{ agent.rank }}</td>
+          <td class="mono">{{ agent.agentNo }}</td>
+          <td class="agent-name">{{ agent.agentName }}</td>
+          <td class="mono num">{{ agent.prmCount | number }}</td>
+          <td class="mono num">{{ agent.avgDurationMinutes | number:'1.0-0' }} min</td>
+          <td>{{ agent.topService }} <span class="mono muted">({{ agent.topServiceCount }})</span></td>
+          <td>{{ agent.topAirline }}</td>
+          <td class="mono num">{{ agent.avgPerDay | number:'1.1-1' }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="8" class="empty">No agents match current filters</td></tr>
+      </ng-template>
+    </p-table>
+  </section>
+</div>

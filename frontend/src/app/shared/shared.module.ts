@@ -19,6 +19,7 @@ import { CalendarModule } from 'primeng/calendar';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { TabViewModule } from 'primeng/tabview';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { TableModule } from 'primeng/table';
 
 import { NgxEchartsModule } from 'ngx-echarts';
 
@@ -56,7 +57,7 @@ import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-
     CardModule, MenuModule, TooltipModule, CheckboxModule, ProgressBarModule,
     ProgressSpinnerModule,
     ToastModule, DialogModule, CalendarModule, InputSwitchModule, TabViewModule,
-    OverlayPanelModule,
+    OverlayPanelModule, TableModule,
     NgxEchartsModule,
     FormFieldComponent, BaseChartComponent, BarChartComponent,
     LineChartComponent, DonutChartComponent, HorizontalBarChartComponent,
