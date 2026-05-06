@@ -1,0 +1,29 @@
+<article class="kpi-card" [class.kpi-card--loading]="loading">
+  <header class="kpi-card__head">
+    <span class="kpi-card__label">{{ label }}</span>
+    <i *ngIf="icon" class="kpi-card__icon pi" [class]="'pi ' + icon"></i>
+  </header>
+
+  <ng-container *ngIf="!loading; else skeleton">
+    <div class="kpi-card__value font-mono">{{ value }}</div>
+
+    <div *ngIf="delta !== null && delta !== undefined" class="kpi-card__delta" [class]="'kpi-card__delta ' + deltaClass">
+      <span class="kpi-card__delta-arrow" aria-hidden="true">
+        <i class="pi" [ngClass]="{
+          'pi-arrow-up':   deltaClass === 'is-up',
+          'pi-arrow-down': deltaClass === 'is-down',
+          'pi-minus':      deltaClass === 'is-flat'
+        }"></i>
+      </span>
+      <span class="kpi-card__delta-value font-mono">{{ formattedDelta }}</span>
+      <span class="kpi-card__delta-vs">vs prev period</span>
+    </div>
+
+    <div *ngIf="subtext" class="kpi-card__subtext">{{ subtext }}</div>
+  </ng-container>
+
+  <ng-template #skeleton>
+    <div class="kpi-skeleton-value"></div>
+    <div class="kpi-skeleton-foot"></div>
+  </ng-template>
+</article>

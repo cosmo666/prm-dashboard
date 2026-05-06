@@ -25,6 +25,7 @@ import { NgxEchartsModule } from 'ngx-echarts';
 import { FormFieldComponent } from './components/form-field/form-field.component';
 import { BaseChartComponent } from './charts/base-chart/base-chart.component';
 import { BarChartComponent } from './charts/bar-chart/bar-chart.component';
+import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-card.component';
 
 // NgxEchartsModule.forRoot is called once at AppModule level so the echarts
 // factory provider lives in the root injector. SharedModule only re-exports
@@ -41,6 +42,7 @@ import { BarChartComponent } from './charts/bar-chart/bar-chart.component';
     FormFieldComponent,
     BaseChartComponent,
     BarChartComponent,
+    KpiCardComponent,
   ],
   exports: [
     CommonModule, FormsModule, ReactiveFormsModule, RouterModule,
@@ -50,7 +52,7 @@ import { BarChartComponent } from './charts/bar-chart/bar-chart.component';
     ToastModule, DialogModule, CalendarModule, InputSwitchModule, TabViewModule,
     OverlayPanelModule,
     NgxEchartsModule,
-    FormFieldComponent, BaseChartComponent, BarChartComponent,
+    FormFieldComponent, BaseChartComponent, BarChartComponent, KpiCardComponent,
   ],
 })
 export class SharedModule {}
