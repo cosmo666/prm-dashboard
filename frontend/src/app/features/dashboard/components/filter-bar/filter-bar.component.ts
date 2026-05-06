@@ -1,8 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
-import { takeUntil, debounceTime } from 'rxjs/operators';
+import { of, Subject } from 'rxjs';
+import { takeUntil, debounceTime, switchMap } from 'rxjs/operators';
 import { FilterStore } from 'src/app/core/store/filter.store';
 import { PrmDataService } from '../../services/prm-data.service';
+import { FilterOptionsResponse } from '../../services/prm-dtos';
+
+const EMPTY_OPTIONS: FilterOptionsResponse = {
+  airlines: [], services: [], handledBy: [], flights: [],
+  minDate: null, maxDate: null,
+};
 
 interface Opt { label: string; value: string; }
 
@@ -33,23 +39,19 @@ export class FilterBarComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Re-fetch options when the airport set changes. Debounced so toggling
     // multiple airports in quick succession only triggers one round-trip.
+    // switchMap cancels any in-flight request when a newer airport$ emission
+    // arrives — guards against last-write-wins on stale responses.
     this.filters.airport$.pipe(
       debounceTime(150),
+      switchMap(airport => airport.length === 0 ? of(EMPTY_OPTIONS) : this.data.filterOptions()),
       takeUntil(this.destroy$),
-    ).subscribe(airport => {
-      if (airport.length === 0) {
-        this.airlineOptions = [];
-        this.serviceOptions = [];
-        return;
-      }
-      this.data.filterOptions().subscribe({
-        next: r => {
-          this.airlineOptions = (r.airlines || []).map(a => ({ label: a, value: a }));
-          this.serviceOptions = (r.services || []).map(s => ({ label: s, value: s }));
-        },
-        error: () => { /* leave previous options in place; surfaces via error toast in Phase 6 */ },
-      });
-    });
+    ).subscribe(
+      r => {
+        this.airlineOptions = (r.airlines || []).map(a => ({ label: a, value: a }));
+        this.serviceOptions = (r.services || []).map(s => ({ label: s, value: s }));
+      },
+      () => { /* leave previous options in place; surfaces via error toast in Phase 6 */ },
+    );
 
     // Two-way bindings — store → component
     this.filters.airline$.pipe(takeUntil(this.destroy$)).subscribe(v => this.airline = v);
