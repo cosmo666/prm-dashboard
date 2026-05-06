@@ -85,6 +85,32 @@ describe('FilterStore', () => {
     expect(store.serviceSnapshot).toEqual([]);
   });
 
+  // -------------------- toggleFlight / toggleAgentNo --------------------
+
+  it('toggleFlight sets value when current is empty', () => {
+    store.toggleFlight('AI102');
+    expect(store.flightSnapshot).toBe('AI102');
+  });
+
+  it('toggleFlight clears when called with the current value', () => {
+    store.toggleFlight('AI102');
+    store.toggleFlight('AI102');
+    expect(store.flightSnapshot).toBe('');
+  });
+
+  it('toggleFlight replaces when called with a different value', () => {
+    store.toggleFlight('AI102');
+    store.toggleFlight('UK990');
+    expect(store.flightSnapshot).toBe('UK990');
+  });
+
+  it('toggleAgentNo round-trips the same way', () => {
+    store.toggleAgentNo('AGT-007');
+    expect(store.agentNoSnapshot).toBe('AGT-007');
+    store.toggleAgentNo('AGT-007');
+    expect(store.agentNoSnapshot).toBe('');
+  });
+
   // -------------------- clearSecondary --------------------
 
   it('clearSecondary empties airline/service/handledBy/flight/agentNo but keeps airport+date', () => {

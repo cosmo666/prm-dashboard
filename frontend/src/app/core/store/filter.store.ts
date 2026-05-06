@@ -126,6 +126,16 @@ export class FilterStore {
     );
   }
 
+  /** Drill-down: flight bar click. Single-value — clicking the same value clears. */
+  toggleFlight(value: string): void {
+    this._flight$.next(this._flight$.value === value ? '' : value);
+  }
+
+  /** Drill-down: agent row click. Single-value. */
+  toggleAgentNo(value: string): void {
+    this._agentNo$.next(this._agentNo$.value === value ? '' : value);
+  }
+
   removeAirline(value: string): void   { this._airline$.next(this._airline$.value.filter(v => v !== value)); }
   removeService(value: string): void   { this._service$.next(this._service$.value.filter(v => v !== value)); }
   removeHandledBy(value: string): void { this._handledBy$.next(this._handledBy$.value.filter(v => v !== value)); }

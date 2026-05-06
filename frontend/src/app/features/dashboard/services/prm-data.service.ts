@@ -7,6 +7,8 @@ import {
   DailyTrendResponse,
   RankingsResponse,
   FilterOptionsResponse,
+  FlightRankingsResponse,
+  AgentRankingsResponse,
 } from './prm-dtos';
 
 /**
@@ -82,6 +84,14 @@ export class PrmDataService {
 
   topServices(): Observable<RankingsResponse> {
     return this.api.get<RankingsResponse>('/prm/rankings/services', this.params());
+  }
+
+  topFlights(limit: number = 10): Observable<FlightRankingsResponse> {
+    return this.api.get<FlightRankingsResponse>('/prm/rankings/flights', this.params({ limit }));
+  }
+
+  topAgents(limit: number = 10): Observable<AgentRankingsResponse> {
+    return this.api.get<AgentRankingsResponse>('/prm/rankings/agents', this.params({ limit }));
   }
 
   /**

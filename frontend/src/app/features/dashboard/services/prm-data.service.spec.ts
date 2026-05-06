@@ -53,6 +53,22 @@ describe('PrmDataService', () => {
     expect(apiSpy.get).toHaveBeenCalledWith('/prm/filters/options', { airport: 'DEL,BOM' });
   });
 
+  it('topFlights passes limit to /prm/rankings/flights', () => {
+    service.topFlights(5).subscribe();
+    const args = apiSpy.get.calls.mostRecent().args;
+    expect(args[0]).toBe('/prm/rankings/flights');
+    const params = args[1] as { [key: string]: string };
+    expect(params.limit).toBe('5');
+  });
+
+  it('topAgents passes limit to /prm/rankings/agents', () => {
+    service.topAgents(10).subscribe();
+    const args = apiSpy.get.calls.mostRecent().args;
+    expect(args[0]).toBe('/prm/rankings/agents');
+    const params = args[1] as { [key: string]: string };
+    expect(params.limit).toBe('10');
+  });
+
   it('filterOptions short-circuits when airportSnapshot is empty (no HTTP)', () => {
     const emptyStub: Partial<FilterStore> = {
       airportSnapshot: [],

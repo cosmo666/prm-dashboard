@@ -55,3 +55,29 @@ export interface FilterOptionsResponse {
   minDate: string | null;  // yyyy-mm-dd
   maxDate: string | null;
 }
+
+// ---------- Flight rankings (Top 10) ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/RankingDtos.cs
+export interface FlightRankingItem {
+  label: string;
+  servicedCount: number;
+  requestedCount: number;
+  percentage: number;
+}
+export interface FlightRankingsResponse { items: FlightRankingItem[]; }
+
+// ---------- Agent rankings (Top 10) ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/RankingDtos.cs
+export interface AgentRankingItem {
+  rank: number;
+  agentNo: string;
+  agentName: string;
+  prmCount: number;
+  avgDurationMinutes: number;
+  topService: string;
+  topServiceCount: number;
+  topAirline: string;
+  daysActive: number;
+  avgPerDay: number;
+}
+export interface AgentRankingsResponse { items: AgentRankingItem[]; }
