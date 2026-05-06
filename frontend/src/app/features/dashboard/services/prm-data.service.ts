@@ -84,10 +84,22 @@ export class PrmDataService {
     return this.api.get<RankingsResponse>('/prm/rankings/services', this.params());
   }
 
-  /** /prm/filters/options requires `?airport=...` (no other filters). */
+  /**
+   * /prm/filters/options requires a non-empty `?airport=...`. The selector
+   * invariant prevents the user from de-selecting the last airport, but
+   * programmatic resets / first-render-before-airports-loaded can hit the
+   * empty path — short-circuit to an empty options shape rather than 400.
+   */
   filterOptions(): Observable<FilterOptionsResponse> {
+    const codes = this.filters.airportSnapshot;
+    if (codes.length === 0) {
+      return of({
+        airlines: [], services: [], handledBy: [], flights: [],
+        minDate: null, maxDate: null,
+      } as FilterOptionsResponse);
+    }
     return this.api.get<FilterOptionsResponse>('/prm/filters/options', {
-      airport: this.filters.airportSnapshot.join(','),
+      airport: codes.join(','),
     });
   }
 }

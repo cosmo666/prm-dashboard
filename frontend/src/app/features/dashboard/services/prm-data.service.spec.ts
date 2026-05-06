@@ -51,4 +51,29 @@ describe('PrmDataService', () => {
     service.filterOptions().subscribe();
     expect(apiSpy.get).toHaveBeenCalledWith('/prm/filters/options', { airport: 'DEL,BOM' });
   });
+
+  it('filterOptions short-circuits when airportSnapshot is empty (no HTTP)', () => {
+    const emptyStub: Partial<FilterStore> = {
+      airportSnapshot: [],
+      dateFromSnapshot: '', dateToSnapshot: '',
+      airlineSnapshot: [], serviceSnapshot: [], handledBySnapshot: [],
+    };
+    TestBed.resetTestingModule();
+    apiSpy = jasmine.createSpyObj<ApiClient>('ApiClient', ['get', 'post', 'delete']);
+    TestBed.configureTestingModule({
+      providers: [
+        PrmDataService,
+        { provide: ApiClient, useValue: apiSpy },
+        { provide: FilterStore, useValue: emptyStub },
+      ],
+    });
+    const svc = TestBed.inject(PrmDataService);
+    let captured: any = null;
+    svc.filterOptions().subscribe((r) => { captured = r; });
+    expect(apiSpy.get).not.toHaveBeenCalled();
+    expect(captured).toEqual({
+      airlines: [], services: [], handledBy: [], flights: [],
+      minDate: null, maxDate: null,
+    });
+  });
 });
