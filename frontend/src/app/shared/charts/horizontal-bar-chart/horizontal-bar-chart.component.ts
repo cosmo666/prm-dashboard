@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
 import { EChartOption } from 'echarts';
+import { resolvePrimary } from '../resolve-primary';
 
 export interface BarDatum { label: string; value: number; }
 
@@ -29,7 +30,7 @@ export class HorizontalBarChartComponent implements OnChanges {
         data: this.topRows.map(d => d.value),
         barMaxWidth: 24,
         barCategoryGap: '20%',
-        itemStyle: { color: this.resolvePrimary() },
+        itemStyle: { color: resolvePrimary() },
         emphasis: { focus: 'series' },
       }] as any,
     };
@@ -42,11 +43,5 @@ export class HorizontalBarChartComponent implements OnChanges {
       const row = this.topRows.find(r => r.label === category);
       this.barClick.emit({ category, value: row ? row.value : (event.value as number) || 0 });
     }
-  }
-
-  private resolvePrimary(): string {
-    if (typeof document === 'undefined') { return '#2563EB'; }
-    const v = getComputedStyle(document.documentElement).getPropertyValue('--app-primary').trim();
-    return v || '#2563EB';
   }
 }

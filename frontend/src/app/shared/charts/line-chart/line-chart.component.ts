@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core
 import { EChartOption } from 'echarts';
 import * as echarts from 'echarts';
 import { DailyTrendResponse } from 'src/app/features/dashboard/services/prm-dtos';
+import { resolvePrimary } from '../resolve-primary';
 
 @Component({
   selector: 'app-line-chart',
@@ -25,7 +26,7 @@ export class LineChartComponent implements OnChanges {
 
   ngOnChanges(): void {
     if (!this.trend) { this.options = null; return; }
-    const primary = this.resolvePrimary();
+    const primary = resolvePrimary();
     const hasPrev = !!(this.secondarySeries && this.secondarySeries.values && this.secondarySeries.values.length > 0);
 
     const series: any[] = [{
@@ -81,12 +82,6 @@ export class LineChartComponent implements OnChanges {
       yAxis: { type: 'value', splitLine: { lineStyle: { color: '#e2e8f0' } } },
       series,
     };
-  }
-
-  private resolvePrimary(): string {
-    if (typeof document === 'undefined') { return '#2563EB'; }
-    const v = getComputedStyle(document.documentElement).getPropertyValue('--app-primary').trim();
-    return v || '#2563EB';
   }
 
   /** Crude alpha-blend for hex/oklch primary. echarts area gradients want hex/rgba. */

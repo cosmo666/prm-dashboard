@@ -44,4 +44,21 @@ describe('LineChartComponent', () => {
     expect(series[1].lineStyle.type).toBe('dotted');
     expect(series[1].lineStyle.opacity).toBeCloseTo(0.35);
   });
+
+  it('emits pointClick with the date when onChartClick fires (OQ-P1-2 contract)', () => {
+    const fixture = TestBed.createComponent(LineChartComponent);
+    let captured: string | null = null;
+    fixture.componentInstance.pointClick.subscribe((d: string) => { captured = d; });
+    fixture.componentInstance.onChartClick({ name: '2026-04-01', value: 10 });
+    expect(captured).toBe('2026-04-01');
+  });
+
+  it('does not emit pointClick when event payload lacks a name', () => {
+    const fixture = TestBed.createComponent(LineChartComponent);
+    const spy = jasmine.createSpy('pointClick');
+    fixture.componentInstance.pointClick.subscribe(spy);
+    fixture.componentInstance.onChartClick({});
+    fixture.componentInstance.onChartClick(null as any);
+    expect(spy).not.toHaveBeenCalled();
+  });
 });
