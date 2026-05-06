@@ -16,6 +16,12 @@ const baseRoutes: Routes = [
     canActivate: [AuthGuard],
     loadChildren: () => import('./features/home/home.module').then(m => m.HomeModule),
   },
+  {
+    path: 'dashboard',
+    canActivate: [AuthGuard],
+    loadChildren: () => import('./features/dashboard/dashboard.module').then(m => m.DashboardModule),
+    resolve: { tenant: TenantResolver },
+  },
 ];
 
 // _smoke route is gated on environment.smoke so production builds never register it.
