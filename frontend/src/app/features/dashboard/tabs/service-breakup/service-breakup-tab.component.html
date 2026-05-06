@@ -1,0 +1,54 @@
+<div class="sb" *ngIf="(loading$ | async) !== null">
+  <section class="sb-section">
+    <header class="sb-section__head">
+      <h2 class="sb-section__title">Service Flow</h2>
+      <p class="sb-section__sub">Agent type &rarr; Service &rarr; Flight. Click any node to drill down. Top 10 flights shown; rest grouped as "Other flights".</p>
+    </header>
+    <app-sankey-chart
+      [nodes]="sankeyNodes$ | async"
+      [links]="sankeyLinks$ | async"
+      [loading]="loading$ | async"
+      (nodeClick)="onSankeyNodeClick($event)"></app-sankey-chart>
+  </section>
+
+  <section class="sb-section">
+    <header class="sb-section__head">
+      <h2 class="sb-section__title">Service Mix Over Time</h2>
+      <p class="sb-section__sub">Stacked monthly counts by SSR code.</p>
+    </header>
+    <app-bar-chart
+      [data]="monthlyMix$ | async"
+      [stackedSeries]="monthlyMixStacked$ | async"
+      [stackKeys]="monthlyMixKeys$ | async"
+      [stackColors]="monthlyMixColors$ | async"
+      [loading]="loading$ | async"></app-bar-chart>
+  </section>
+
+  <section class="sb-section">
+    <header class="sb-section__head">
+      <h2 class="sb-section__title">Top Routes</h2>
+      <p class="sb-section__sub">Top 10 routes by PRM service count.</p>
+    </header>
+    <p-table [value]="(routes$ | async) || []" [rows]="10" responsiveLayout="scroll" styleClass="routes-table">
+      <ng-template pTemplate="header">
+        <tr>
+          <th class="mono">Departure</th>
+          <th class="mono">Arrival</th>
+          <th class="num">Count</th>
+          <th class="num">% of total</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-route>
+        <tr>
+          <td class="mono">{{ route.departure }}</td>
+          <td class="mono">{{ route.arrival }}</td>
+          <td class="mono num">{{ route.count | number }}</td>
+          <td class="mono num">{{ route.percentage | number:'1.1-1' }}%</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="4" class="empty">No routes match current filters</td></tr>
+      </ng-template>
+    </p-table>
+  </section>
+</div>
