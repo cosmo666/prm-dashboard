@@ -27,6 +27,7 @@ import { BaseChartComponent } from './charts/base-chart/base-chart.component';
 import { BarChartComponent } from './charts/bar-chart/bar-chart.component';
 import { LineChartComponent } from './charts/line-chart/line-chart.component';
 import { DonutChartComponent } from './charts/donut-chart/donut-chart.component';
+import { HorizontalBarChartComponent } from './charts/horizontal-bar-chart/horizontal-bar-chart.component';
 import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-card.component';
 
 // NgxEchartsModule.forRoot is called once at AppModule level so the echarts
@@ -46,6 +47,7 @@ import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-
     BarChartComponent,
     LineChartComponent,
     DonutChartComponent,
+    HorizontalBarChartComponent,
     KpiCardComponent,
   ],
   exports: [
@@ -57,7 +59,8 @@ import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-
     OverlayPanelModule,
     NgxEchartsModule,
     FormFieldComponent, BaseChartComponent, BarChartComponent,
-    LineChartComponent, DonutChartComponent, KpiCardComponent,
+    LineChartComponent, DonutChartComponent, HorizontalBarChartComponent,
+    KpiCardComponent,
   ],
 })
 export class SharedModule {}
