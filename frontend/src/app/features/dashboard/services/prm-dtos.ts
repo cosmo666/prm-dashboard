@@ -81,3 +81,31 @@ export interface AgentRankingItem {
   avgPerDay: number;
 }
 export interface AgentRankingsResponse { items: AgentRankingItem[]; }
+
+// ---------- Sankey (Service Breakup tab) ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/BreakdownDtos.cs
+export interface SankeyNode { name: string; value: number; }
+export interface SankeyLink { source: string; target: string; value: number; }
+export interface SankeyResponse { nodes: SankeyNode[]; links: SankeyLink[]; }
+
+// ---------- Service-type matrix (months × service-type) ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/BreakdownDtos.cs
+export interface ServiceTypeMatrixRow {
+  monthYear: string;
+  serviceCounts: { [service: string]: number };
+  total: number;
+}
+export interface ServiceTypeMatrixResponse {
+  serviceTypes: string[];
+  rows: ServiceTypeMatrixRow[];
+}
+
+// ---------- Route breakdown (Top routes) ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/BreakdownDtos.cs
+export interface RouteItem {
+  departure: string;
+  arrival: string;
+  count: number;
+  percentage: number;
+}
+export interface RouteBreakdownResponse { items: RouteItem[]; }

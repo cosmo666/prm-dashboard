@@ -69,6 +69,26 @@ describe('PrmDataService', () => {
     expect(params.limit).toBe('10');
   });
 
+  it('serviceBreakupSankey calls /prm/breakdowns/by-agent-type', () => {
+    service.serviceBreakupSankey().subscribe();
+    const args = apiSpy.get.calls.mostRecent().args;
+    expect(args[0]).toBe('/prm/breakdowns/by-agent-type');
+  });
+
+  it('serviceTypeMatrix calls /prm/breakdowns/by-service-type', () => {
+    service.serviceTypeMatrix().subscribe();
+    const args = apiSpy.get.calls.mostRecent().args;
+    expect(args[0]).toBe('/prm/breakdowns/by-service-type');
+  });
+
+  it('topRoutes passes limit to /prm/breakdowns/by-route', () => {
+    service.topRoutes(5).subscribe();
+    const args = apiSpy.get.calls.mostRecent().args;
+    expect(args[0]).toBe('/prm/breakdowns/by-route');
+    const params = args[1] as { [key: string]: string };
+    expect(params.limit).toBe('5');
+  });
+
   it('filterOptions short-circuits when airportSnapshot is empty (no HTTP)', () => {
     const emptyStub: Partial<FilterStore> = {
       airportSnapshot: [],

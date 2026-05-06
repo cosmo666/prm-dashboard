@@ -9,6 +9,9 @@ import {
   FilterOptionsResponse,
   FlightRankingsResponse,
   AgentRankingsResponse,
+  SankeyResponse,
+  ServiceTypeMatrixResponse,
+  RouteBreakdownResponse,
 } from './prm-dtos';
 
 /**
@@ -92,6 +95,18 @@ export class PrmDataService {
 
   topAgents(limit: number = 10): Observable<AgentRankingsResponse> {
     return this.api.get<AgentRankingsResponse>('/prm/rankings/agents', this.params({ limit }));
+  }
+
+  serviceBreakupSankey(): Observable<SankeyResponse> {
+    return this.api.get<SankeyResponse>('/prm/breakdowns/by-agent-type', this.params());
+  }
+
+  serviceTypeMatrix(): Observable<ServiceTypeMatrixResponse> {
+    return this.api.get<ServiceTypeMatrixResponse>('/prm/breakdowns/by-service-type', this.params());
+  }
+
+  topRoutes(limit: number = 10): Observable<RouteBreakdownResponse> {
+    return this.api.get<RouteBreakdownResponse>('/prm/breakdowns/by-route', this.params({ limit }));
   }
 
   /**
