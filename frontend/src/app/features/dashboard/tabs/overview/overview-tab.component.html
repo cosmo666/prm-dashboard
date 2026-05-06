@@ -1,0 +1,78 @@
+<div class="overview" *ngIf="(loading$ | async) !== null">
+  <!-- Row 1: 5 KPI cards (OQ-P1-1 — added Avg svc / agent / day) -->
+  <div class="p-grid kpi-row">
+    <div class="p-col-12 p-md-6 p-lg-2 p-xl-2">
+      <app-kpi-card
+        label="Total PRM Services"
+        icon="pi-chart-bar"
+        [value]="formatCount(totalPrm$ | async)"
+        [delta]="totalDelta$ | async"
+        subtext="vs prev period"
+        [loading]="loading$ | async"></app-kpi-card>
+    </div>
+    <div class="p-col-12 p-md-6 p-lg-2 p-xl-2">
+      <app-kpi-card
+        label="Active Agents"
+        icon="pi-user"
+        [value]="(totalAgents$ | async) || 0 | number"
+        [subtext]="'Self · ' + (agentsSelf$ | async) + '   Outsourced · ' + (agentsOutsourced$ | async)"
+        [loading]="loading$ | async"></app-kpi-card>
+    </div>
+    <div class="p-col-12 p-md-6 p-lg-3 p-xl-3">
+      <app-kpi-card
+        label="Avg svc / agent / day"
+        icon="pi-users"
+        [value]="(avgServicesPerAgentPerDay$ | async) | number:'1.1-1'"
+        [delta]="avgServicesDelta$ | async"
+        subtext="vs prev period"
+        [loading]="loading$ | async"></app-kpi-card>
+    </div>
+    <div class="p-col-12 p-md-6 p-lg-2 p-xl-2">
+      <app-kpi-card
+        label="Avg Duration (min)"
+        icon="pi-clock"
+        [value]="(avgDuration$ | async) | number:'1.0-0'"
+        [delta]="durationDelta$ | async"
+        subtext="vs prev period"
+        [loading]="loading$ | async"></app-kpi-card>
+    </div>
+    <div class="p-col-12 p-md-6 p-lg-3 p-xl-3">
+      <app-kpi-card
+        label="Fulfillment Rate"
+        icon="pi-check-circle"
+        [value]="((fulfillmentPct$ | async) | number:'1.1-1') + '%'"
+        [loading]="loading$ | async"></app-kpi-card>
+    </div>
+  </div>
+
+  <!-- Row 2: Daily trend (8) + Service-type donut (4) -->
+  <div class="p-grid chart-row">
+    <div class="p-col-12 p-lg-8">
+      <app-line-chart
+        title="Daily PRM Trend"
+        subtitle="Count of unique services per day (with previous-period overlay)"
+        [trend]="dailyTrend$ | async"
+        [secondarySeries]="dailyTrendPrev$ | async"
+        [loading]="loading$ | async"></app-line-chart>
+    </div>
+    <div class="p-col-12 p-lg-4">
+      <app-donut-chart
+        title="Service Type Breakdown"
+        subtitle="Top 5 categories by volume — click a segment to filter"
+        [data]="serviceTypes$ | async"
+        [loading]="loading$ | async"
+        (segmentClick)="onServiceSegmentClick($event)"></app-donut-chart>
+    </div>
+  </div>
+
+  <!-- Row 3: Top airlines (full width) -->
+  <div class="p-grid chart-row">
+    <div class="p-col-12">
+      <app-horizontal-bar-chart
+        title="Top Airlines"
+        [data]="topAirlines$ | async"
+        [loading]="loading$ | async"
+        (barClick)="onAirlineBarClick($event)"></app-horizontal-bar-chart>
+    </div>
+  </div>
+</div>

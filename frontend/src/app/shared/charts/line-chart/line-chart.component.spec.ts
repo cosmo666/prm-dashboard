@@ -50,7 +50,7 @@ describe('LineChartComponent', () => {
     let captured: string | null = null;
     fixture.componentInstance.pointClick.subscribe((d: string) => { captured = d; });
     fixture.componentInstance.onChartClick({ name: '2026-04-01', value: 10 });
-    expect(captured).toBe('2026-04-01');
+    expect(captured as string | null).toBe('2026-04-01');
   });
 
   it('does not emit pointClick when event payload lacks a name', () => {

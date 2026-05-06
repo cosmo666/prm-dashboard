@@ -1,0 +1,15 @@
+:host { display: block; }
+
+.overview { padding: 16px 0; }
+
+.kpi-row {
+  margin-bottom: 16px;
+}
+
+.chart-row {
+  margin-bottom: 16px;
+}
+
+.chart-row:last-child {
+  margin-bottom: 0;
+}
