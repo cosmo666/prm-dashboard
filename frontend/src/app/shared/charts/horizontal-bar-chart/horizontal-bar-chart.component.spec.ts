@@ -18,8 +18,8 @@ describe('HorizontalBarChartComponent', () => {
     ];
     fixture.componentInstance.ngOnChanges();
     expect(fixture.componentInstance.options).toBeTruthy();
-    expect((fixture.componentInstance.options!.yAxis as any).data).toEqual(['IndiGo', 'Air India']);
-    expect((fixture.componentInstance.options!.series as any[])[0].data).toEqual([120, 80]);
+    expect(((fixture.componentInstance.options as any).yAxis as any).data).toEqual(['IndiGo', 'Air India']);
+    expect(((fixture.componentInstance.options as any).series as any[])[0].data).toEqual([120, 80]);
   });
 
   it('clamps to top 10 even if more rows are passed (defense-in-depth)', () => {
@@ -28,7 +28,7 @@ describe('HorizontalBarChartComponent', () => {
     for (let i = 0; i < 15; i++) { rows.push({ label: 'X' + i, value: i }); }
     fixture.componentInstance.data = rows;
     fixture.componentInstance.ngOnChanges();
-    expect(((fixture.componentInstance.options!.yAxis as any).data as string[]).length).toBe(10);
+    expect((((fixture.componentInstance.options as any).yAxis as any).data as string[]).length).toBe(10);
   });
 
   it('emits barClick on onChartClick with category + value', () => {
@@ -44,8 +44,11 @@ describe('HorizontalBarChartComponent', () => {
 
     fixture.componentInstance.onChartClick({ name: 'IndiGo', value: 120 });
 
-    expect(received).not.toBeNull();
-    expect(received!.category).toBe('IndiGo');
-    expect(received!.value).toBe(120);
+    const r = received as { category: string; value: number } | null;
+    expect(r).not.toBeNull();
+    if (r) {
+      expect(r.category).toBe('IndiGo');
+      expect(r.value).toBe(120);
+    }
   });
 });

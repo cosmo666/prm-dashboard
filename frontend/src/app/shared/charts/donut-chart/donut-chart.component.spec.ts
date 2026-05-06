@@ -18,7 +18,7 @@ describe('DonutChartComponent', () => {
     ];
     fixture.componentInstance.ngOnChanges();
     expect(fixture.componentInstance.options).toBeTruthy();
-    const series = (fixture.componentInstance.options!.series as any[])[0];
+    const series = ((fixture.componentInstance.options as any).series as any[])[0];
     expect(series.type).toBe('pie');
     expect(series.data.length).toBe(2);
     expect(series.data[0].name).toBe('WCHR');
@@ -29,7 +29,7 @@ describe('DonutChartComponent', () => {
     fixture.componentInstance.data = [];
     fixture.componentInstance.ngOnChanges();
     expect(fixture.componentInstance.options).not.toBeNull();
-    const series = (fixture.componentInstance.options!.series as any[])[0];
+    const series = ((fixture.componentInstance.options as any).series as any[])[0];
     expect(series.data).toEqual([]);
   });
 
@@ -40,8 +40,11 @@ describe('DonutChartComponent', () => {
 
     fixture.componentInstance.onChartClick({ data: { name: 'WCHR', value: 60 } });
 
-    expect(received).not.toBeNull();
-    expect(received!.name).toBe('WCHR');
-    expect(received!.value).toBe(60);
+    const r = received as { name: string; value: number } | null;
+    expect(r).not.toBeNull();
+    if (r) {
+      expect(r.name).toBe('WCHR');
+      expect(r.value).toBe(60);
+    }
   });
 });
