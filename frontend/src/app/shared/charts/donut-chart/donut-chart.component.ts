@@ -20,20 +20,10 @@ export class DonutChartComponent implements OnChanges {
   ngOnChanges(): void {
     const total = this.data.reduce((a, b) => a + b.value, 0);
     this.options = {
-      // Tooltip pinned to the chart's top-left corner so it never overlaps
-      // the segment-value labels (which already show count + pct outside
-      // each slice). Keeps interaction feedback discoverable without
-      // duplicating visible information at the same position.
-      tooltip: {
-        trigger: 'item',
-        formatter: '{b}: {c} ({d}%)',
-        position: [8, 8],
-        backgroundColor: 'rgba(15, 23, 42, 0.92)',
-        borderColor: 'rgba(15, 23, 42, 0.92)',
-        textStyle: { color: '#f8fafc', fontSize: 11, fontFamily: '"Fira Sans", sans-serif' },
-        padding: [6, 10],
-        extraCssText: 'border-radius: 6px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);',
-      },
+      // Hover tooltip removed — the segment-value labels we paint outside
+      // each slice already show "{count} ({pct}%)" at all times, making
+      // a hover tooltip redundant and visually noisy.
+      tooltip: { show: false },
       // Legend at the top — horizontal — frees the donut to center
       // horizontally at exactly 50%. Layout matches main's pattern.
       legend: {
@@ -87,7 +77,17 @@ export class DonutChartComponent implements OnChanges {
           color: '#0f172a',
         },
         labelLine: { show: true, length: 6, length2: 4, smooth: true, lineStyle: { color: '#cbd5e1' } },
-        emphasis: { focus: 'series', label: { fontSize: 12, fontWeight: 'bold' } },
+        // Hover emphasis: keep the slice STATIC — no scale/expand — and
+        // don't restyle the label, otherwise the expanding slice clips its
+        // own value label and the connector line. A subtle border-tint on
+        // the hovered slice is enough hover feedback.
+        emphasis: {
+          scale: false,
+          scaleSize: 0,
+          focus: 'none',
+          label: { show: true, fontSize: 11, fontWeight: 'normal', color: '#0f172a' },
+          itemStyle: { borderColor: '#0f172a', borderWidth: 2 },
+        },
         data: this.data.map(d => ({
           name: d.name,
           value: d.value,

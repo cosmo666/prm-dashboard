@@ -63,9 +63,11 @@
 // rules with `::ng-deep` so the per-tenant `--app-primary` and slate ramp
 // cascade through. 36px height across every control. Soft surface bg,
 // hairline slate border, primary focus ring with 3px soft halo. Caret is a
-// subtle muted chevron via PrimeIcons' `pi pi-chevron-down`.
+// PrimeIcons chevron painted via the parent `::after` so the alignment is
+// independent of PrimeNG's default trigger box.
 :host ::ng-deep .filter-inline .ui-multiselect,
 :host ::ng-deep .filter-inline .ui-dropdown {
+  position: relative;
   display: flex;
   align-items: center;
   width: 100%;
@@ -93,17 +95,25 @@
   box-shadow: 0 0 0 3px var(--app-primary-soft, rgba(37, 99, 235, 0.16));
 }
 
+// Label container fills the pill horizontally; label text is vertically
+// centered via line-height matching the pill's content area (34px = 36px
+// pill - 2 × 1px border). Right-padding reserves room for the caret so
+// long values truncate before they collide with it.
 :host ::ng-deep .filter-inline .ui-multiselect-label-container,
 :host ::ng-deep .filter-inline .ui-multiselect-label,
 :host ::ng-deep .filter-inline .ui-dropdown-label {
-  height: 36px;
-  line-height: 24px;
-  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 32px 0 14px;
   font-size: 13px;
   font-weight: 500;
   color: var(--app-text, #0f172a);
   font-family: 'Fira Sans', sans-serif;
   background: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 // Empty-state placeholder — uppercase mono micro-label so each filter
@@ -118,39 +128,35 @@
   text-transform: uppercase;
 }
 
-// Caret triggers — render a clean chevron via PrimeIcons. Hide PrimeNG's
-// default caret span content via font-size:0 then place our own pseudo
-// element so we don't ship more SVGs.
+// Caret — hide PrimeNG's default trigger element entirely; we paint a
+// clean PrimeIcons chevron via the multiselect's parent ::after, anchored
+// at right: 14px and vertically centered. Independent of PrimeNG's
+// trigger geometry, so the chevron sits exactly at the right end of the
+// pill on a single baseline with the label text.
 :host ::ng-deep .filter-inline .ui-multiselect-trigger,
 :host ::ng-deep .filter-inline .ui-dropdown-trigger {
-  width: 32px;
-  height: 36px;
-  background: transparent;
-  border: 0;
-  color: var(--app-text-muted, #64748b);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0 8px 8px 0;
-  position: relative;
-
-  > * { display: none; }
-
-  &::after {
-    content: '';
-    width: 7px;
-    height: 7px;
-    border-right: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
-    transform: translateY(-2px) rotate(45deg);
-    transition: transform 200ms ease, color 160ms ease;
-  }
+  display: none !important;
 }
 
-:host ::ng-deep .filter-inline .ui-multiselect:hover .ui-multiselect-trigger,
-:host ::ng-deep .filter-inline .ui-dropdown:hover .ui-dropdown-trigger,
-:host ::ng-deep .filter-inline .ui-multiselect.ui-state-focus .ui-multiselect-trigger,
-:host ::ng-deep .filter-inline .ui-dropdown.ui-state-focus .ui-dropdown-trigger {
+:host ::ng-deep .filter-inline .ui-multiselect::after,
+:host ::ng-deep .filter-inline .ui-dropdown::after {
+  content: '\e902';            // pi-chevron-down (PrimeIcons 2.0.0)
+  font-family: 'primeicons';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--app-text-muted, #64748b);
+  pointer-events: none;
+  transition: color 160ms ease;
+}
+
+:host ::ng-deep .filter-inline .ui-multiselect:hover::after,
+:host ::ng-deep .filter-inline .ui-dropdown:hover::after,
+:host ::ng-deep .filter-inline .ui-multiselect.ui-state-focus::after,
+:host ::ng-deep .filter-inline .ui-dropdown.ui-state-focus::after {
   color: var(--app-primary, #2563EB);
 }
 
