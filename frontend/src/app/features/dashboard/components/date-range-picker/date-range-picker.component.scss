@@ -1,9 +1,15 @@
 :host { display: inline-block; }
 
+// Single-line pill matching the multiselect siblings: 36px tall, icon +
+// resolved range + chevron. The preset name (e.g. "Month to Date") shows
+// in the title attribute on hover and is also visible in the page-head
+// meta strip ("PRESET mtd") on the right, so we don't duplicate it inside
+// the pill.
 .range-btn {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  height: 36px;
   padding: 0 14px;
   background: var(--app-surface);
   border: 1px solid var(--app-border);
@@ -11,46 +17,24 @@
   cursor: pointer;
   color: var(--app-text);
   font-family: 'Fira Sans', sans-serif;
-  // Cap the width and force single-line layout so the date pill sits flush
-  // with the multiselect siblings instead of wrapping mid-word at narrow
-  // widths. Truncate via ellipsis if the resolved range gets too long.
-  max-width: 280px;
   white-space: nowrap;
 
-  &:hover { background: var(--app-bg-muted, #f8fafc); }
+  &:hover { background: var(--app-bg-muted, #f8fafc); border-color: var(--app-border-strong, #cbd5e1); }
+  &:focus-visible {
+    outline: none;
+    border-color: var(--app-primary, #2563EB);
+    box-shadow: 0 0 0 3px var(--app-primary-soft, rgba(37, 99, 235, 0.16));
+  }
 
-  &__icon { color: var(--app-text-muted, #64748b); flex-shrink: 0; font-size: 12px; }
+  &__icon  { color: var(--app-text-muted, #64748b); flex-shrink: 0; font-size: 13px; }
   &__caret { color: var(--app-text-muted, #64748b); flex-shrink: 0; font-size: 11px; }
 
-  // Two-line stack INSIDE the pill: small uppercase preset above the resolved
-  // range. Both clipped with ellipsis so the pill never grows past max-width.
-  &__text {
-    display: inline-flex;
-    flex-direction: column;
-    gap: 1px;
-    min-width: 0;
-    overflow: hidden;
-    line-height: 1.15;
-    flex: 1 1 auto;
-  }
-
-  &__label {
-    font-family: 'Fira Code', ui-monospace, monospace;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--app-text-muted, #64748b);
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
   &__range {
+    font-family: 'Fira Code', ui-monospace, monospace;
     font-size: 13px;
     font-weight: 500;
     color: var(--app-text, #0f172a);
-    overflow: hidden;
-    text-overflow: ellipsis;
+    letter-spacing: 0.01em;
   }
 }
 

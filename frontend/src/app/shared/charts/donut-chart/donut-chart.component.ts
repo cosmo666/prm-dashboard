@@ -20,13 +20,19 @@ export class DonutChartComponent implements OnChanges {
   ngOnChanges(): void {
     const total = this.data.reduce((a, b) => a + b.value, 0);
     this.options = {
-      // Tooltip sits above the slice and stays inside the chart so it
-      // doesn't cover the value labels we paint outside each segment.
+      // Tooltip pinned to the chart's top-left corner so it never overlaps
+      // the segment-value labels (which already show count + pct outside
+      // each slice). Keeps interaction feedback discoverable without
+      // duplicating visible information at the same position.
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)',
-        position: 'top',
-        confine: true,
+        position: [8, 8],
+        backgroundColor: 'rgba(15, 23, 42, 0.92)',
+        borderColor: 'rgba(15, 23, 42, 0.92)',
+        textStyle: { color: '#f8fafc', fontSize: 11, fontFamily: '"Fira Sans", sans-serif' },
+        padding: [6, 10],
+        extraCssText: 'border-radius: 6px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);',
       },
       // Legend at the top — horizontal — frees the donut to center
       // horizontally at exactly 50%. Layout matches main's pattern.
