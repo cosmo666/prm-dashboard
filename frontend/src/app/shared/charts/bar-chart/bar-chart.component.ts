@@ -36,6 +36,15 @@ export class BarChartComponent implements OnChanges {
   @Input() lineSeriesName = '';
   @Input() lineSeriesColor = '#dc2626';
 
+  // Optional second BAR series rendered side-by-side with the primary bars
+  // (echarts auto-groups bars when two `type: 'bar'` series share a category
+  // x-axis without a `stack` field). Used by Insights' "Self vs Outsourced
+  // Duration" chart. Mutually exclusive with `stackedSeries`; `lineSeries`
+  // can still overlay on top.
+  @Input() series2?: BarDatum[];
+  @Input() series2Name = 'Series 2';
+  @Input() series2Color = '#fb8c00';
+
   @Output() barClick = new EventEmitter<{ category: string; value: number }>();
 
   options: EChartOption | null = null;
@@ -48,6 +57,11 @@ export class BarChartComponent implements OnChanges {
     const hasStacked = keys.length > 0;
     const ls = this.lineSeries || [];
     const hasLine = ls.length > 0;
+    const s2 = this.series2 || [];
+    // Grouped-bars mode is only meaningful for the single-series API
+    // (stackedSeries owns its own multi-series shape). When both `series2` and
+    // `stackedSeries` are passed, stacked wins — same precedence as `lineSeries`.
+    const hasGrouped = !hasStacked && s2.length > 0;
 
     const series: any[] = hasStacked
       ? keys.map(k => ({
@@ -73,6 +87,19 @@ export class BarChartComponent implements OnChanges {
           emphasis: { focus: 'series' },
         }];
 
+    if (hasGrouped) {
+      // Second bar series — echarts groups bars side-by-side when neither
+      // series sets a `stack`. Aligned point-for-point with the primary
+      // category list (`data`); shorter inputs fall back to 0.
+      series.push({
+        name: this.series2Name || 'Series 2',
+        type: 'bar',
+        data: this.data.map((_, i) => (s2[i] && s2[i].value !== undefined ? s2[i].value : 0)),
+        itemStyle: { color: this.series2Color },
+        emphasis: { focus: 'series' },
+      });
+    }
+
     if (hasLine) {
       series.push({
         name: this.lineSeriesName || 'Line',
@@ -87,10 +114,14 @@ export class BarChartComponent implements OnChanges {
       });
     }
 
-    const showLegend = hasStacked || hasLine;
+    const showLegend = hasStacked || hasLine || hasGrouped;
     let legendData: string[] | undefined;
     if (hasStacked) {
       legendData = keys;
+    } else if (hasGrouped && hasLine) {
+      legendData = [this.seriesName || 'Total', this.series2Name || 'Series 2', this.lineSeriesName || 'Line'];
+    } else if (hasGrouped) {
+      legendData = [this.seriesName || 'Total', this.series2Name || 'Series 2'];
     } else if (hasLine) {
       legendData = [this.seriesName || 'Total', this.lineSeriesName || 'Line'];
     }

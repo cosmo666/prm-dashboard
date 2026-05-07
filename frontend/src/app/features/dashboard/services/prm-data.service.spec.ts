@@ -95,6 +95,44 @@ describe('PrmDataService', () => {
     expect(params.limit).toBe('5');
   });
 
+  it('requestedVsProvided calls /prm/kpis/requested-vs-provided', () => {
+    service.requestedVsProvided().subscribe();
+    const args = apiSpy.get.calls.mostRecent().args;
+    expect(args[0]).toBe('/prm/kpis/requested-vs-provided');
+  });
+
+  it('trendsRequestedProvided calls /prm/trends/requested-vs-provided', () => {
+    service.trendsRequestedProvided().subscribe();
+    const args = apiSpy.get.calls.mostRecent().args;
+    expect(args[0]).toBe('/prm/trends/requested-vs-provided');
+  });
+
+  it('trendsMonthly calls /prm/trends/monthly', () => {
+    service.trendsMonthly().subscribe();
+    const args = apiSpy.get.calls.mostRecent().args;
+    expect(args[0]).toBe('/prm/trends/monthly');
+  });
+
+  it('pauseAnalysis calls /prm/performance/pause-analysis', () => {
+    service.pauseAnalysis().subscribe();
+    const args = apiSpy.get.calls.mostRecent().args;
+    expect(args[0]).toBe('/prm/performance/pause-analysis');
+  });
+
+  it('durationByAgentType calls /prm/performance/duration-by-agent-type', () => {
+    service.durationByAgentType().subscribe();
+    const args = apiSpy.get.calls.mostRecent().args;
+    expect(args[0]).toBe('/prm/performance/duration-by-agent-type');
+  });
+
+  it('agentServiceMatrix passes limit to /prm/breakdowns/agent-service-matrix', () => {
+    service.agentServiceMatrix(8).subscribe();
+    const args = apiSpy.get.calls.mostRecent().args;
+    expect(args[0]).toBe('/prm/breakdowns/agent-service-matrix');
+    const params = args[1] as { [key: string]: string };
+    expect(params.limit).toBe('8');
+  });
+
   it('filterOptions short-circuits when airportSnapshot is empty (no HTTP)', () => {
     const emptyStub: Partial<FilterStore> = {
       airportSnapshot: [],

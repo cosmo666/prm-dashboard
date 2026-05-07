@@ -53,6 +53,18 @@ export class LineChartComponent implements OnChanges {
   // Stack mode — applies stack: 'total' + areaStyle to every series.
   @Input() stacked = false;
 
+  // Dual-axis mode — bar series sit on yAxis 0 (left), line/area series on yAxis 1
+  // (right). Used by Fulfillment's "Daily Provided vs Requested" so bar/line of
+  // similar magnitudes don't interfere visually. Mutually exclusive with `stacked`.
+  @Input() dualAxis = false;
+
+  // Optional axis labels — surface in the chart so callers needn't restyle.
+  // Backwards-compatible: existing call sites that omit these get the same
+  // unlabelled axes as before.
+  @Input() xLabel = '';
+  @Input() yLabel = '';
+  @Input() unit = '';
+
   @Input() loading = false;
   @Input() height = 320;
   @Output() pointClick = new EventEmitter<string>();
@@ -176,11 +188,17 @@ export class LineChartComponent implements OnChanges {
       }
 
       const useArea = !isDashed && (s.type === 'area' || this.stacked);
+      const isBar = s.type === 'bar';
+
+      // Dual-axis mapping: bars to the left axis (idx 0), line/area to the
+      // right (idx 1). Single-axis mode leaves yAxisIndex unset.
+      const yAxisIndex = this.dualAxis ? (isBar ? 0 : 1) : undefined;
 
       return {
         name: s.name,
-        type: s.type === 'bar' ? 'bar' : 'line',
+        type: isBar ? 'bar' : 'line',
         stack: this.stacked ? 'total' : undefined,
+        yAxisIndex,
         data: s.data.map(d => d[1]),
         smooth: true,
         symbol: isDashed ? 'none' : 'circle',
@@ -211,13 +229,51 @@ export class LineChartComponent implements OnChanges {
     // so the label badge isn't clipped by the chart edge.
     const hasAnnotations = annotationMarkLines.length > 0;
     const hasLegend = srs.length > 1;
+    const xLabel = this.xLabel;
     const gridTop = hasLegend ? 48 : (hasAnnotations ? 36 : 30);
+    // grid.bottom reserves space for x-axis ticks (~24) + xLabel title (~24
+    // when set) so the title doesn't collide with the tick row.
+    const gridBottom = xLabel ? 56 : 40;
+    // Dual-axis mode mirrors the y-axis: index 0 (left) for bars, index 1
+    // (right) for lines. Equal scales aren't enforced — echarts auto-fits each.
+    const yAxis: any = this.dualAxis
+      ? [
+          {
+            type: 'value',
+            name: this.yLabel || undefined,
+            nameLocation: 'middle',
+            nameGap: 48,
+            nameRotate: 90,
+            splitLine: { lineStyle: { color: '#e2e8f0' } },
+          },
+          {
+            type: 'value',
+            splitLine: { show: false },
+          },
+        ]
+      : {
+          type: 'value',
+          name: this.yLabel || undefined,
+          nameLocation: 'middle',
+          nameGap: 48,
+          nameRotate: 90,
+          splitLine: { lineStyle: { color: '#e2e8f0' } },
+        };
+    // Reserve a touch more space on the right when a second axis is shown.
+    const gridRight = this.dualAxis ? 50 : 20;
     return {
       tooltip: { trigger: 'axis' },
       legend:  hasLegend ? { data: srs.map(s => s.name), right: 0, top: 0, textStyle: { color: '#64748b' } } : undefined,
-      grid:    { left: 40, right: 20, top: gridTop, bottom: 40 },
-      xAxis: { type: 'category', data: xs, axisLine: { lineStyle: { color: '#cbd5e1' } } },
-      yAxis: { type: 'value', splitLine: { lineStyle: { color: '#e2e8f0' } } },
+      grid:    { left: 40, right: gridRight, top: gridTop, bottom: gridBottom },
+      xAxis: {
+        type: 'category',
+        data: xs,
+        axisLine: { lineStyle: { color: '#cbd5e1' } },
+        name: xLabel || undefined,
+        nameLocation: 'middle',
+        nameGap: 30,
+      },
+      yAxis,
       series: chartSeries,
     };
   }

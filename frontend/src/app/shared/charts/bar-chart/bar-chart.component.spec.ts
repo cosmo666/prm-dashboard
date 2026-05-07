@@ -66,6 +66,30 @@ describe('BarChartComponent', () => {
     expect(opts.series[0].data[1].itemStyle.color).toBe('#fb8c00');
   });
 
+  it('renders grouped bars when series2 is provided (Insights "Self vs Outsourced")', () => {
+    component.data = [
+      { label: 'WCHR', value: 12 },
+      { label: 'WCHC', value: 18 },
+    ];
+    component.series2 = [
+      { label: 'WCHR', value: 22 },
+      { label: 'WCHC', value: 28 },
+    ];
+    component.seriesName = 'Self';
+    component.series2Name = 'Outsourced';
+    component.series2Color = '#fb8c00';
+    component.ngOnChanges();
+    const opts = component.options as any;
+    expect(opts.series.length).toBe(2);
+    expect(opts.series[1].type).toBe('bar');
+    // Neither series sets `stack` — that's what makes echarts group them.
+    expect(opts.series[0].stack).toBeUndefined();
+    expect(opts.series[1].stack).toBeUndefined();
+    expect(opts.series[1].data).toEqual([22, 28]);
+    expect(opts.series[1].itemStyle.color).toBe('#fb8c00');
+    expect(opts.legend.data).toEqual(['Self', 'Outsourced']);
+  });
+
   it('emits barClick with category + value when onChartClick fires', () => {
     component.data = [{ label: 'A', value: 10 }, { label: 'B', value: 20 }];
     component.ngOnChanges();

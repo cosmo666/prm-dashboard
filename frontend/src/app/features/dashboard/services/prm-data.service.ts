@@ -17,6 +17,12 @@ import {
   DurationDistributionResponse,
   NoShowsResponse,
   BreakdownResponse,
+  RequestedVsProvidedKpiResponse,
+  RequestedVsProvidedTrendResponse,
+  MonthlyTrendResponse,
+  PauseAnalysisResponse,
+  DurationByAgentTypeResponse,
+  AgentServiceMatrixResponse,
 } from './prm-dtos';
 
 /**
@@ -138,6 +144,32 @@ export class PrmDataService {
 
   byRoute(): Observable<RouteBreakdownResponse> {
     return this.api.get<RouteBreakdownResponse>('/prm/breakdowns/by-route', this.params());
+  }
+
+  // ── Phase B/C foundation: 6 endpoints for Fulfillment + Insights tabs ──
+
+  requestedVsProvided(): Observable<RequestedVsProvidedKpiResponse> {
+    return this.api.get<RequestedVsProvidedKpiResponse>('/prm/kpis/requested-vs-provided', this.params());
+  }
+
+  trendsRequestedProvided(): Observable<RequestedVsProvidedTrendResponse> {
+    return this.api.get<RequestedVsProvidedTrendResponse>('/prm/trends/requested-vs-provided', this.params());
+  }
+
+  trendsMonthly(): Observable<MonthlyTrendResponse> {
+    return this.api.get<MonthlyTrendResponse>('/prm/trends/monthly', this.params());
+  }
+
+  pauseAnalysis(): Observable<PauseAnalysisResponse> {
+    return this.api.get<PauseAnalysisResponse>('/prm/performance/pause-analysis', this.params());
+  }
+
+  durationByAgentType(): Observable<DurationByAgentTypeResponse> {
+    return this.api.get<DurationByAgentTypeResponse>('/prm/performance/duration-by-agent-type', this.params());
+  }
+
+  agentServiceMatrix(limit: number = 10): Observable<AgentServiceMatrixResponse> {
+    return this.api.get<AgentServiceMatrixResponse>('/prm/breakdowns/agent-service-matrix', this.params({ limit }));
   }
 
   /**

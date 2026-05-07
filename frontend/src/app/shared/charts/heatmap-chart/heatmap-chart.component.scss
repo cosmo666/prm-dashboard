@@ -1,0 +1,4 @@
+// Heatmap chart wrapper — purely a passthrough to <app-base-chart>; no
+// component-scoped chrome of its own. Kept so future per-chart polish
+// (e.g. dense-grid axisLabel rotation) has somewhere to land.
+:host { display: block; }

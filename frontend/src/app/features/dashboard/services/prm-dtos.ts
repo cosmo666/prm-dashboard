@@ -156,3 +156,70 @@ export interface NoShowItem {
   rate: number;
 }
 export interface NoShowsResponse { items: NoShowItem[]; }
+
+// ---------- Requested-vs-Provided KPI (Fulfillment) ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/KpiDtos.cs
+//   public record RequestedVsProvidedKpiResponse(
+//       int TotalRequested, int TotalProvided,
+//       int ProvidedAgainstRequested, double FulfillmentRate, double WalkUpRate);
+export interface RequestedVsProvidedKpiResponse {
+  totalRequested: number;
+  totalProvided: number;
+  providedAgainstRequested: number;
+  fulfillmentRate: number;
+  walkUpRate: number;
+}
+
+// ---------- Requested-vs-Provided trend (Fulfillment) ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/TrendDtos.cs
+//   public record RequestedVsProvidedTrendResponse(
+//       List<string> Dates, List<int> Provided, List<int> Requested);
+export interface RequestedVsProvidedTrendResponse {
+  dates: string[];
+  provided: number[];
+  requested: number[];
+}
+
+// ---------- Monthly trend (Insights) ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/TrendDtos.cs
+//   public record MonthlyTrendResponse(List<string> Months, List<int> Values);
+export interface MonthlyTrendResponse {
+  months: string[];
+  values: number[];
+}
+
+// ---------- Pause analysis (Insights) ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/PerformanceDtos.cs
+//   public record PauseAnalysisResponse(
+//       int TotalPaused, double PauseRate,
+//       double AvgPauseDurationMinutes, List<BreakdownItem> ByServiceType);
+export interface PauseAnalysisResponse {
+  totalPaused: number;
+  pauseRate: number;
+  avgPauseDurationMinutes: number;
+  byServiceType: BreakdownItem[];
+}
+
+// ---------- Duration by agent type (Insights) ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/PerformanceDtos.cs
+//   public record DurationByAgentTypeResponse(
+//       List<string> ServiceTypes, List<double> Self, List<double> Outsourced);
+export interface DurationByAgentTypeResponse {
+  serviceTypes: string[];
+  self: number[];
+  outsourced: number[];
+}
+
+// ---------- Agent × Service matrix (Insights heatmap) ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/BreakdownDtos.cs
+//   public record AgentServiceMatrixResponse(
+//       List<string> Agents, List<string> AgentNames,
+//       List<string> ServiceTypes, List<List<int>> Values);
+// `agents` is the agent number / id; `agentNames` the display label.
+// `values[agent][service]` = count.
+export interface AgentServiceMatrixResponse {
+  agents: string[];
+  agentNames: string[];
+  serviceTypes: string[];
+  values: number[][];
+}

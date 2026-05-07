@@ -45,6 +45,47 @@ describe('LineChartComponent', () => {
     expect(series[1].lineStyle.opacity).toBeCloseTo(0.35);
   });
 
+  it('renders an "area" type series with areaStyle filled', () => {
+    const fixture = TestBed.createComponent(LineChartComponent);
+    fixture.componentInstance.series = [{
+      name: 'Actual',
+      type: 'area',
+      data: [['Mon', 10], ['Tue', 20]],
+      color: '#1e88e5',
+    }];
+    fixture.componentInstance.ngOnChanges();
+    const series = ((fixture.componentInstance.options as any).series as any[])[0];
+    expect(series.type).toBe('line');
+    expect(series.areaStyle).toBeTruthy();
+  });
+
+  it('dualAxis splits bars to yAxis 0 and lines to yAxis 1 (Fulfillment use)', () => {
+    const fixture = TestBed.createComponent(LineChartComponent);
+    fixture.componentInstance.series = [
+      { name: 'Provided',  type: 'bar',  data: [['Mon', 10]] },
+      { name: 'Requested', type: 'line', data: [['Mon', 12]] },
+    ];
+    fixture.componentInstance.dualAxis = true;
+    fixture.componentInstance.ngOnChanges();
+    const opts = fixture.componentInstance.options as any;
+    expect(Array.isArray(opts.yAxis)).toBe(true);
+    expect(opts.yAxis.length).toBe(2);
+    const series = opts.series as any[];
+    expect(series[0].type).toBe('bar');
+    expect(series[0].yAxisIndex).toBe(0);
+    expect(series[1].type).toBe('line');
+    expect(series[1].yAxisIndex).toBe(1);
+  });
+
+  it('non-dualAxis renders a single yAxis object (back-compat)', () => {
+    const fixture = TestBed.createComponent(LineChartComponent);
+    fixture.componentInstance.series = [{ name: 'A', data: [['x', 1]] }];
+    fixture.componentInstance.ngOnChanges();
+    const opts = fixture.componentInstance.options as any;
+    expect(Array.isArray(opts.yAxis)).toBe(false);
+    expect(opts.series[0].yAxisIndex).toBeUndefined();
+  });
+
   it('emits pointClick with the date when onChartClick fires (OQ-P1-2 contract)', () => {
     const fixture = TestBed.createComponent(LineChartComponent);
     let captured: string | null = null;

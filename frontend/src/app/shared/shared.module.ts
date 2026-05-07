@@ -30,6 +30,7 @@ import { LineChartComponent } from './charts/line-chart/line-chart.component';
 import { DonutChartComponent } from './charts/donut-chart/donut-chart.component';
 import { HorizontalBarChartComponent } from './charts/horizontal-bar-chart/horizontal-bar-chart.component';
 import { SankeyChartComponent } from './charts/sankey-chart/sankey-chart.component';
+import { HeatmapChartComponent } from './charts/heatmap-chart/heatmap-chart.component';
 import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-card.component';
 import { CompactNumberPipe } from './pipes/compact-number.pipe';
 import { TooltipDirective } from './directives/tooltip.directive';
@@ -53,6 +54,7 @@ import { TooltipDirective } from './directives/tooltip.directive';
     DonutChartComponent,
     HorizontalBarChartComponent,
     SankeyChartComponent,
+    HeatmapChartComponent,
     KpiCardComponent,
     CompactNumberPipe,
     TooltipDirective,
@@ -67,7 +69,7 @@ import { TooltipDirective } from './directives/tooltip.directive';
     NgxEchartsModule,
     FormFieldComponent, BaseChartComponent, BarChartComponent,
     LineChartComponent, DonutChartComponent, HorizontalBarChartComponent,
-    SankeyChartComponent,
+    SankeyChartComponent, HeatmapChartComponent,
     KpiCardComponent,
     CompactNumberPipe,
     TooltipDirective,
