@@ -3,32 +3,40 @@ import { BehaviorSubject, EMPTY, forkJoin, Subject } from 'rxjs';
 import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import { FilterStore } from 'src/app/core/store/filter.store';
 import { PrmDataService } from '../../services/prm-data.service';
-import {
-  SankeyResponse,
-  SankeyNode,
-  SankeyLink,
-  RouteItem,
-} from '../../services/prm-dtos';
-import { BarDatum } from 'src/app/shared/charts/horizontal-bar-chart/horizontal-bar-chart.component';
-import { SankeyChartNode, SankeyChartLink } from 'src/app/shared/charts/sankey-chart/sankey-chart.component';
+import { BarDatum } from 'src/app/shared/charts/bar-chart/bar-chart.component';
+
+// IATA SSR codes for the 9-card row. Order matches main's editorial layout.
+// WCMP (Wheelchair, Multi-Purpose) is included instead of DEAF — matches the
+// codes returned by /breakdowns/by-service-type for the seed tenants.
+const SERVICE_TYPES: string[] = ['WCHR', 'WCHC', 'MAAS', 'WCHS', 'DPNA', 'UMNR', 'BLND', 'MEDA', 'WCMP'];
 
 // Per-SSR-code palette. WCHR is the dominant primary (anchored to --app-primary
 // hex). Others use distinct hues so 9-segment stacks remain legible. Codes not
-// in this map fall back to slate gray (#94a3b8) at the call site. Verified
-// against the seed data's 9 distinct service codes (BLND, DPNA, MAAS, MEDA,
-// UMNR, WCHC, WCHR, WCHS, WCMP) plus DEAF for tenants that include it.
+// in this map fall back to slate gray (#94a3b8) at the call site.
 const SSR_COLORS: { [code: string]: string } = {
   WCHR: '#2563EB',
   WCHC: '#1e3a8a',
   WCHS: '#3b82f6',
-  WCMP: '#6366f1',   // wheelchair-cabin/multi-purpose — indigo-ish, distinct from WCHR/WCHC/WCHS
+  WCMP: '#6366f1',
   MAAS: '#0ea5e9',
   UMNR: '#8b5cf6',
   DPNA: '#a855f7',
   BLND: '#10b981',
-  DEAF: '#22c55e',
   MEDA: '#f59e0b',
+  DEAF: '#22c55e',
 };
+
+export interface ServiceSummary {
+  type: string;
+  count: number;
+  pct: number;
+}
+
+export interface MatrixRow {
+  month: string;
+  counts: { [code: string]: number };
+  total: number;
+}
 
 @Component({
   selector: 'app-service-breakup-tab',
@@ -38,17 +46,24 @@ const SSR_COLORS: { [code: string]: string } = {
 export class ServiceBreakupTabComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
+  serviceTypes: string[] = SERVICE_TYPES;
+
   loading$ = new BehaviorSubject<boolean>(false);
 
-  sankeyNodes$ = new BehaviorSubject<SankeyChartNode[]>([]);
-  sankeyLinks$ = new BehaviorSubject<SankeyChartLink[]>([]);
+  summaries$ = new BehaviorSubject<ServiceSummary[]>([]);
+  matrix$ = new BehaviorSubject<MatrixRow[]>([]);
+  maxPerColumn$ = new BehaviorSubject<{ [code: string]: number }>({});
 
-  monthlyMix$ = new BehaviorSubject<BarDatum[]>([]);
-  monthlyMixStacked$ = new BehaviorSubject<{ [code: string]: number[] }>({});
-  monthlyMixKeys$ = new BehaviorSubject<string[]>([]);
-  monthlyMixColors$ = new BehaviorSubject<{ [code: string]: string }>({});
+  // Stacked monthly trend (top 5 services). Reuses the existing BarChart
+  // stacked-vertical mode added in P3-T3 (no LineChart multi-series support
+  // on this branch yet).
+  trendBars$ = new BehaviorSubject<BarDatum[]>([]);
+  trendStacked$ = new BehaviorSubject<{ [code: string]: number[] }>({});
+  trendKeys$ = new BehaviorSubject<string[]>([]);
+  trendColors$ = new BehaviorSubject<{ [code: string]: string }>({});
 
-  routes$ = new BehaviorSubject<RouteItem[]>([]);
+  serviceCountBars$ = new BehaviorSubject<BarDatum[]>([]);
+  dowBars$ = new BehaviorSubject<BarDatum[]>([]);
 
   constructor(
     public filters: FilterStore,
@@ -64,30 +79,92 @@ export class ServiceBreakupTabComponent implements OnInit, OnDestroy {
         }
         this.loading$.next(true);
         return forkJoin({
-          sankey: this.data.serviceBreakupSankey(),
-          matrix: this.data.serviceTypeMatrix(),
-          routes: this.data.topRoutes(10),
+          byService: this.data.serviceTypeMatrix(),
+          topServices: this.data.topServices(),
+          hourly: this.data.trendsHourly(),
         });
       }),
       takeUntil(this.destroy$),
     ).subscribe(
       r => {
-        const capped = this.capSankeyFlights(r.sankey, 10);
-        this.sankeyNodes$.next(capped.nodes.map(n => ({ name: n.name })));
-        this.sankeyLinks$.next(capped.links);
+        // Monthly matrix rows
+        const rows: MatrixRow[] = (r.byService.rows || []).map(m => {
+          const counts: { [code: string]: number } = {};
+          let total = 0;
+          for (const t of SERVICE_TYPES) {
+            const c = (m.serviceCounts && m.serviceCounts[t]) || 0;
+            counts[t] = c;
+            total += c;
+          }
+          return { month: m.monthYear, counts, total };
+        });
+        this.matrix$.next(rows);
 
-        const months = r.matrix.rows.map(row => row.monthYear);
-        const types = r.matrix.serviceTypes;
-        const stacked: { [code: string]: number[] } = {};
-        for (const t of types) {
-          stacked[t] = r.matrix.rows.map(row => row.serviceCounts[t] || 0);
+        // Max per column (for cell highlighting)
+        const maxes: { [code: string]: number } = {};
+        for (const t of SERVICE_TYPES) {
+          let max = 0;
+          for (const row of rows) {
+            if (row.counts[t] > max) { max = row.counts[t]; }
+          }
+          maxes[t] = max;
         }
-        this.monthlyMix$.next(months.map(m => ({ label: m, value: 0 })));
-        this.monthlyMixStacked$.next(stacked);
-        this.monthlyMixKeys$.next(types);
-        this.monthlyMixColors$.next(this.colorMapForServices(types));
+        this.maxPerColumn$.next(maxes);
 
-        this.routes$.next(r.routes.items || []);
+        // Service summary cards from topServices ranking
+        const totals: { [code: string]: number } = {};
+        for (const t of SERVICE_TYPES) { totals[t] = 0; }
+        for (const item of (r.topServices.items || [])) {
+          totals[item.label] = item.count;
+        }
+        let grand = 0;
+        for (const t of SERVICE_TYPES) { grand += totals[t]; }
+        if (grand === 0) { grand = 1; }
+        this.summaries$.next(SERVICE_TYPES.map(t => ({
+          type: t,
+          count: totals[t],
+          pct: (totals[t] / grand) * 100,
+        })));
+
+        // Stacked monthly trend — top 5 services by total count
+        const totalsForRanking: { code: string; total: number }[] = SERVICE_TYPES.map(t => {
+          let s = 0;
+          for (const row of rows) { s += row.counts[t]; }
+          return { code: t, total: s };
+        });
+        totalsForRanking.sort((a, b) => b.total - a.total);
+        const top5: string[] = totalsForRanking.slice(0, 5).map(x => x.code);
+        const stacked: { [code: string]: number[] } = {};
+        for (const t of top5) {
+          stacked[t] = rows.map(row => row.counts[t]);
+        }
+        const colors: { [code: string]: string } = {};
+        for (const t of top5) { colors[t] = SSR_COLORS[t] || '#94a3b8'; }
+        this.trendBars$.next(rows.map(row => ({ label: row.month, value: 0 })));
+        this.trendStacked$.next(stacked);
+        this.trendKeys$.next(top5);
+        this.trendColors$.next(colors);
+
+        // Services by category (from topServices ranking)
+        this.serviceCountBars$.next((r.topServices.items || []).map(d => ({
+          label: d.label,
+          value: d.count,
+        })));
+
+        // Day-of-week bars (sum across hours, weekend highlighted)
+        const days: string[] = r.hourly.days || [];
+        const hourValues: number[][] = r.hourly.values || [];
+        const dowOut: BarDatum[] = days.map((day, di) => {
+          const dayRow = hourValues[di] || [];
+          let sum = 0;
+          for (const v of dayRow) { sum += v || 0; }
+          return {
+            label: day,
+            value: sum,
+            color: (day === 'Sat' || day === 'Sun') ? '#fb8c00' : '#2563EB',
+          };
+        });
+        this.dowBars$.next(dowOut);
 
         this.loading$.next(false);
       },
@@ -103,93 +180,38 @@ export class ServiceBreakupTabComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /**
-   * OQ-P3-2: client-side cap on the flight stage. Backend returns ALL distinct
-   * flights matching the filter — could be 50+ for a busy tenant — and echarts
-   * 4 sankey gets unreadable past ~30 nodes per stage. Keep top n flights by
-   * total inbound link weight; aggregate the rest into a single "Other flights"
-   * pseudo-node.
-   *
-   * Heuristic: a node is a flight if it never appears as a link.source (it's
-   * stage 3, the leaf). Stages 1 (agent type) and 2 (service code) are
-   * naturally bounded so we only cap the leaf stage.
-   */
-  private capSankeyFlights(raw: SankeyResponse, n: number): SankeyResponse {
-    const sourceNames = new Set<string>(raw.links.map(l => l.source));
-    const flightNodes = raw.nodes.filter(node => !sourceNames.has(node.name));
-    if (flightNodes.length <= n) {
-      return raw;
-    }
-
-    // Inbound weight per flight
-    const inflow: { [name: string]: number } = {};
-    for (const link of raw.links) {
-      if (!sourceNames.has(link.target)) {
-        inflow[link.target] = (inflow[link.target] || 0) + link.value;
-      }
-    }
-    const sorted = Object.keys(inflow).sort((a, b) => inflow[b] - inflow[a]);
-    const dropFlights = new Set(sorted.slice(n));
-    if (dropFlights.size === 0) { return raw; }
-
-    const otherTotal = Array.from(dropFlights).reduce((sum, f) => sum + (inflow[f] || 0), 0);
-    const newNodes: SankeyNode[] = raw.nodes
-      .filter(nd => !dropFlights.has(nd.name))
-      .concat([{ name: 'Other flights', value: otherTotal }]);
-
-    const collapsed: { [src: string]: number } = {};
-    const newLinks: SankeyLink[] = [];
-    for (const link of raw.links) {
-      if (!dropFlights.has(link.target)) {
-        newLinks.push(link);
-      } else {
-        collapsed[link.source] = (collapsed[link.source] || 0) + link.value;
-      }
-    }
-    for (const src of Object.keys(collapsed)) {
-      newLinks.push({ source: src, target: 'Other flights', value: collapsed[src] });
-    }
-
-    return { nodes: newNodes, links: newLinks };
+  isMaxInColumn(code: string, value: number): boolean {
+    if (value <= 0) { return false; }
+    const maxes = this.maxPerColumn$.value;
+    return value === maxes[code];
   }
 
   /**
-   * OQ-P3-3 drill-down dispatcher. Sankey nodes are passed by name; the
-   * dispatcher infers which filter to mutate by inspecting the name.
-   *
-   * Backend `prm_agent_type` values are uppercase in the seed data
-   * (`SELF`, `OUTSOURCED`) so node labels arrive uppercase. We compare
-   * case-insensitively via toUpperCase() so a future tenant with mixed
-   * casing still routes correctly.
-   *
-   * - 'SELF' / 'OUTSOURCED' (any case) → setHandledBy
-   * - Service code (anything in monthlyMixKeys$) → toggleService
-   * - 'Other flights' → no-op (pseudo-node, not a real flight)
-   * - Otherwise → toggleFlight
-   *
-   * R-P3-1 risk acknowledged: a tenant whose service code matches 'SELF'
-   * or a flight number matching an SSR code mis-routes. Pathological edge.
+   * Service-card click — toggle a single-service focus.
+   * If the user has already focused exactly this one service, clicking again
+   * clears the filter back to "all services". Otherwise replaces the filter
+   * with [type] (single-select drill-down, not multi-add).
    */
-  onSankeyNodeClick(name: string): void {
-    if (!name) { return; }
-    const upper = name.toUpperCase();
-    if (upper === 'SELF' || upper === 'OUTSOURCED') {
-      this.filters.setHandledBy([upper]);
-      return;
+  onCardClick(code: string): void {
+    const current = this.filters.serviceSnapshot;
+    if (current.length === 1 && current[0] === code) {
+      this.filters.setService([]);
+    } else {
+      this.filters.setService([code]);
     }
-    if (this.monthlyMixKeys$.value.indexOf(name) >= 0) {
-      this.filters.toggleService(name);
-      return;
-    }
-    if (name === 'Other flights') { return; }
-    this.filters.toggleFlight(name);
   }
 
-  private colorMapForServices(types: string[]): { [code: string]: string } {
-    const out: { [code: string]: string } = {};
-    for (const t of types) {
-      out[t] = SSR_COLORS[t] || '#94a3b8';
-    }
-    return out;
+  onServiceBarClick(payload: { category: string; value: number }): void {
+    if (!payload || !payload.category) { return; }
+    this.filters.setService([payload.category]);
+  }
+
+  /** Day-of-week bar click is informational only — no global day filter exists. */
+  // tslint:disable-next-line: no-empty
+  onDowClick(_payload: { category: string; value: number }): void { }
+
+  isCardActive(code: string, activeServices: string[] | null): boolean {
+    if (!activeServices) { return false; }
+    return activeServices.indexOf(code) >= 0;
   }
 }

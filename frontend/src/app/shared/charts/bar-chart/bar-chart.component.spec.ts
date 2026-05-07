@@ -22,8 +22,12 @@ describe('BarChartComponent', () => {
       { label: 'B', value: 20 },
     ];
     component.ngOnChanges();
-    expect((component.options as any).xAxis.data).toEqual(['A', 'B']);
-    expect((component.options as any).series[0].data).toEqual([10, 20]);
+    const opts = component.options as any;
+    expect(opts.xAxis.data).toEqual(['A', 'B']);
+    // Single-series mode emits objects (per-bar shape) so per-bar color overrides work.
+    expect(opts.series[0].data.length).toBe(2);
+    expect(opts.series[0].data[0].value).toBe(10);
+    expect(opts.series[0].data[1].value).toBe(20);
   });
 
   it('renders single series when stackedSeries is undefined (Phase 0 default)', () => {
@@ -49,5 +53,26 @@ describe('BarChartComponent', () => {
     expect(opts.series[1].stack).toBe('mix');
     expect(opts.series[0].itemStyle.color).toBe('#2563EB');
     expect(opts.legend.data).toEqual(['WCHR', 'WCHC']);
+  });
+
+  it('honors BarDatum.color when provided (per-bar override)', () => {
+    component.data = [
+      { label: 'Mon', value: 50, color: '#1e88e5' },
+      { label: 'Sat', value: 30, color: '#fb8c00' },
+    ];
+    component.ngOnChanges();
+    const opts = component.options as any;
+    expect(opts.series[0].data[0].itemStyle.color).toBe('#1e88e5');
+    expect(opts.series[0].data[1].itemStyle.color).toBe('#fb8c00');
+  });
+
+  it('emits barClick with category + value when onChartClick fires', () => {
+    component.data = [{ label: 'A', value: 10 }, { label: 'B', value: 20 }];
+    component.ngOnChanges();
+    // tslint:disable-next-line: no-any
+    let captured: any = null;
+    component.barClick.subscribe((v: { category: string; value: number }) => { captured = v; });
+    component.onChartClick({ name: 'A', value: 10 });
+    expect(captured).toEqual({ category: 'A', value: 10 });
   });
 });

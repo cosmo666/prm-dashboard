@@ -1,54 +1,70 @@
-<div class="sb" *ngIf="(loading$ | async) !== null">
-  <section class="sb-section">
-    <header class="sb-section__head">
-      <h2 class="sb-section__title">Service Flow</h2>
-      <p class="sb-section__sub">Agent type &rarr; Service &rarr; Flight. Click any node to drill down. Top 10 flights shown; rest grouped as "Other flights".</p>
-    </header>
-    <app-sankey-chart
-      [nodes]="sankeyNodes$ | async"
-      [links]="sankeyLinks$ | async"
-      [loading]="loading$ | async"
-      (nodeClick)="onSankeyNodeClick($event)"></app-sankey-chart>
-  </section>
+<div class="service-content" *ngIf="(loading$ | async) !== null">
+  <!-- Row 1: 9 service summary cards -->
+  <ng-container *ngIf="(filters.service$ | async) as activeServices">
+    <div class="row row-service-cards">
+      <div *ngFor="let s of (summaries$ | async)"
+           class="service-card"
+           [class.active]="isCardActive(s.type, activeServices)"
+           (click)="onCardClick(s.type)">
+        <div class="service-type">{{ s.type }}</div>
+        <div class="service-count">{{ s.count | number }}</div>
+        <div class="service-pct">{{ s.pct | number:'1.1-1' }}%</div>
+      </div>
+    </div>
+  </ng-container>
 
-  <section class="sb-section">
-    <header class="sb-section__head">
-      <h2 class="sb-section__title">Service Mix Over Time</h2>
-      <p class="sb-section__sub">Stacked monthly counts by SSR code.</p>
-    </header>
+  <!-- Row 2: Matrix table + stacked monthly trend -->
+  <div class="row row-matrix-trend">
+    <div class="matrix-card">
+      <div class="chart-title">Monthly Service Matrix</div>
+      <div class="matrix-scroll">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th *ngFor="let t of serviceTypes">{{ t }}</th>
+              <th class="total-col">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of (matrix$ | async)">
+              <td class="month-cell">{{ row.month }}</td>
+              <td *ngFor="let t of serviceTypes"
+                  [class.max-cell]="isMaxInColumn(t, row.counts[t])">
+                {{ row.counts[t] | number }}
+              </td>
+              <td class="total-col"><strong>{{ row.total | number }}</strong></td>
+            </tr>
+            <tr *ngIf="((matrix$ | async) || []).length === 0">
+              <td [attr.colspan]="serviceTypes.length + 2" class="empty">
+                No data matches current filters
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <app-bar-chart
-      [data]="monthlyMix$ | async"
-      [stackedSeries]="monthlyMixStacked$ | async"
-      [stackKeys]="monthlyMixKeys$ | async"
-      [stackColors]="monthlyMixColors$ | async"
+      title="Service Trend (Top 5)"
+      [data]="trendBars$ | async"
+      [stackedSeries]="trendStacked$ | async"
+      [stackKeys]="trendKeys$ | async"
+      [stackColors]="trendColors$ | async"
       [loading]="loading$ | async"></app-bar-chart>
-  </section>
+  </div>
 
-  <section class="sb-section">
-    <header class="sb-section__head">
-      <h2 class="sb-section__title">Top Routes</h2>
-      <p class="sb-section__sub">Top 10 routes by PRM service count.</p>
-    </header>
-    <p-table [value]="(routes$ | async) || []" [rows]="10" responsiveLayout="scroll" styleClass="routes-table">
-      <ng-template pTemplate="header">
-        <tr>
-          <th class="mono">Departure</th>
-          <th class="mono">Arrival</th>
-          <th class="num">Count</th>
-          <th class="num">% of total</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-route>
-        <tr>
-          <td class="mono">{{ route.departure }}</td>
-          <td class="mono">{{ route.arrival }}</td>
-          <td class="mono num">{{ route.count | number }}</td>
-          <td class="mono num">{{ route.percentage | number:'1.1-1' }}%</td>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="emptymessage">
-        <tr><td colspan="4" class="empty">No routes match current filters</td></tr>
-      </ng-template>
-    </p-table>
-  </section>
+  <!-- Row 3: Services by Category + Day-of-Week -->
+  <div class="row row-charts-1-1">
+    <app-bar-chart
+      title="Services by Category"
+      [data]="serviceCountBars$ | async"
+      [loading]="loading$ | async"
+      (barClick)="onServiceBarClick($event)"></app-bar-chart>
+    <app-bar-chart
+      title="Weekly Pattern"
+      [data]="dowBars$ | async"
+      [loading]="loading$ | async"
+      (barClick)="onDowClick($event)"></app-bar-chart>
+  </div>
 </div>

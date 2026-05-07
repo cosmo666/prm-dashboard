@@ -1,33 +1,37 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { of } from 'rxjs';
+import { of, BehaviorSubject } from 'rxjs';
 import { ServiceBreakupTabComponent } from './service-breakup-tab.component';
 import { FilterStore } from 'src/app/core/store/filter.store';
 import { PrmDataService } from '../../services/prm-data.service';
 
 describe('ServiceBreakupTabComponent', () => {
   let fixture: ComponentFixture<ServiceBreakupTabComponent>;
-  let toggleServiceSpy: jasmine.Spy;
-  let toggleFlightSpy: jasmine.Spy;
-  let setHandledBySpy: jasmine.Spy;
+  let setServiceSpy: jasmine.Spy;
+  let serviceSubject: BehaviorSubject<string[]>;
+  // tslint:disable-next-line: no-any
+  let filterStub: any;
 
   beforeEach(() => {
-    toggleServiceSpy = jasmine.createSpy('toggleService');
-    toggleFlightSpy = jasmine.createSpy('toggleFlight');
-    setHandledBySpy = jasmine.createSpy('setHandledBy');
+    setServiceSpy = jasmine.createSpy('setService');
+    serviceSubject = new BehaviorSubject<string[]>([]);
 
-    const filterStub = {
+    filterStub = {
       queryParams$: of({}),
+      service$: serviceSubject.asObservable(),
       airportSnapshot: [],
       dateFromSnapshot: '',
-      toggleService: toggleServiceSpy,
-      toggleFlight: toggleFlightSpy,
-      setHandledBy: setHandledBySpy,
+      serviceSnapshot: [] as string[],
+      setService: (v: string[]) => {
+        setServiceSpy(v);
+        filterStub.serviceSnapshot = v;
+        serviceSubject.next(v);
+      },
     };
     const dataStub = {
-      serviceBreakupSankey: () => of({ nodes: [], links: [] }),
       serviceTypeMatrix: () => of({ serviceTypes: [], rows: [] }),
-      topRoutes: () => of({ items: [] }),
+      topServices: () => of({ items: [] }),
+      trendsHourly: () => of({ days: [], hours: [], values: [] }),
     };
     TestBed.configureTestingModule({
       declarations: [ServiceBreakupTabComponent],
@@ -45,37 +49,55 @@ describe('ServiceBreakupTabComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('onSankeyNodeClick routes uppercase "SELF" (data shape) to setHandledBy([SELF])', () => {
-    fixture.componentInstance.onSankeyNodeClick('SELF');
-    expect(setHandledBySpy).toHaveBeenCalledWith(['SELF']);
+  it('exposes 9 IATA SSR codes in serviceTypes', () => {
+    expect(fixture.componentInstance.serviceTypes.length).toBe(9);
+    expect(fixture.componentInstance.serviceTypes).toContain('WCHR');
+    expect(fixture.componentInstance.serviceTypes).toContain('WCMP');
   });
 
-  it('onSankeyNodeClick routes uppercase "OUTSOURCED" to setHandledBy([OUTSOURCED])', () => {
-    fixture.componentInstance.onSankeyNodeClick('OUTSOURCED');
-    expect(setHandledBySpy).toHaveBeenCalledWith(['OUTSOURCED']);
+  it('onCardClick(WCHR) with no current focus → setService([WCHR])', () => {
+    fixture.componentInstance.onCardClick('WCHR');
+    expect(setServiceSpy).toHaveBeenCalledWith(['WCHR']);
   });
 
-  it('onSankeyNodeClick is case-insensitive on agent-type names (defensive)', () => {
-    fixture.componentInstance.onSankeyNodeClick('Self');
-    expect(setHandledBySpy).toHaveBeenCalledWith(['SELF']);
+  it('onCardClick(WCHR) when WCHR is already the only focus → clears filter', () => {
+    Object.defineProperty(fixture.componentInstance.filters, 'serviceSnapshot', {
+      value: ['WCHR'], configurable: true, writable: true,
+    });
+    fixture.componentInstance.onCardClick('WCHR');
+    expect(setServiceSpy).toHaveBeenCalledWith([]);
   });
 
-  it('onSankeyNodeClick routes a known service code to toggleService', () => {
-    fixture.componentInstance.monthlyMixKeys$.next(['WCHR', 'WCHC']);
-    fixture.componentInstance.onSankeyNodeClick('WCHR');
-    expect(toggleServiceSpy).toHaveBeenCalledWith('WCHR');
+  it('onCardClick(WCHC) when WCHR is the active single-focus → replaces with [WCHC]', () => {
+    Object.defineProperty(fixture.componentInstance.filters, 'serviceSnapshot', {
+      value: ['WCHR'], configurable: true, writable: true,
+    });
+    fixture.componentInstance.onCardClick('WCHC');
+    expect(setServiceSpy).toHaveBeenCalledWith(['WCHC']);
   });
 
-  it('onSankeyNodeClick falls through to toggleFlight for unknown names', () => {
-    fixture.componentInstance.monthlyMixKeys$.next(['WCHR']);
-    fixture.componentInstance.onSankeyNodeClick('AI102');
-    expect(toggleFlightSpy).toHaveBeenCalledWith('AI102');
+  it('onServiceBarClick routes the bar category to setService', () => {
+    fixture.componentInstance.onServiceBarClick({ category: 'MAAS', value: 42 });
+    expect(setServiceSpy).toHaveBeenCalledWith(['MAAS']);
   });
 
-  it('onSankeyNodeClick ignores the "Other flights" pseudo-node', () => {
-    fixture.componentInstance.onSankeyNodeClick('Other flights');
-    expect(toggleFlightSpy).not.toHaveBeenCalled();
-    expect(toggleServiceSpy).not.toHaveBeenCalled();
-    expect(setHandledBySpy).not.toHaveBeenCalled();
+  it('onServiceBarClick ignores empty category', () => {
+    fixture.componentInstance.onServiceBarClick({ category: '', value: 0 });
+    expect(setServiceSpy).not.toHaveBeenCalled();
+  });
+
+  it('isMaxInColumn returns true only for the column max', () => {
+    fixture.componentInstance.maxPerColumn$.next({ WCHR: 100, WCHC: 50 });
+    expect(fixture.componentInstance.isMaxInColumn('WCHR', 100)).toBe(true);
+    expect(fixture.componentInstance.isMaxInColumn('WCHR', 99)).toBe(false);
+    expect(fixture.componentInstance.isMaxInColumn('WCHR', 0)).toBe(false);
+    expect(fixture.componentInstance.isMaxInColumn('WCHC', 50)).toBe(true);
+  });
+
+  it('isCardActive returns true when code is in active list', () => {
+    expect(fixture.componentInstance.isCardActive('WCHR', ['WCHR', 'WCHC'])).toBe(true);
+    expect(fixture.componentInstance.isCardActive('MAAS', ['WCHR', 'WCHC'])).toBe(false);
+    expect(fixture.componentInstance.isCardActive('WCHR', null)).toBe(false);
+    expect(fixture.componentInstance.isCardActive('WCHR', [])).toBe(false);
   });
 });
