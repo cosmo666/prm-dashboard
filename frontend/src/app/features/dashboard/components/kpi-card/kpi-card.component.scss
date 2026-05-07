@@ -1,7 +1,26 @@
 // Most visual styling lives in src/styles/_kpi-cards.scss (Phase 0).
 // Component-scoped rules below are additive — accent dot + inline sparkline.
 // Kept here so the existing global styles don't have to grow new selectors.
-:host { display: block; }
+
+// Fill the parent grid cell so all 5 cards render at the same height in
+// the Overview KPI row. The taller card (delta + deltaLabel + subtext)
+// defines the row height; cards with less content stretch via flex to
+// match. Min-height anchors a baseline so the row never collapses below
+// 132px when every card is short.
+:host {
+  display: flex;
+  height: 100%;
+}
+
+:host ::ng-deep .kpi-card {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 132px;
+  // Pin foot (delta + subtext) to the bottom regardless of line count so
+  // the value (the actual signal) sits at a consistent vertical position
+  // across cards.
+  justify-content: space-between;
+}
 
 .kpi-card__head {
   display: flex;

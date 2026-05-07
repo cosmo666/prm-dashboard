@@ -1,23 +1,57 @@
+// Card chrome for every chart. Matches the Monthly Service Matrix and KPI
+// card surfaces — `--app-surface` background + `--app-border` 1px stroke +
+// 10px radius — so all dashboard panels share the same visual container.
+// Earlier `--md-surface` / `--app-elev-1` tokens were never defined on this
+// branch, which is why the chart-wrapping cards rendered without chrome.
+:host { display: block; }
+
 .base-chart {
   position: relative;
   display: flex;
   flex-direction: column;
-  background: var(--md-surface);
-  border-radius: 4px;
-  box-shadow: var(--app-elev-1);
-  padding: 1rem;
+  background: var(--app-surface, #fff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 10px;
+  padding: 14px 16px 12px;
+  transition: border-color 240ms ease, box-shadow 240ms ease;
 
-  .head     { margin-bottom: 0.5rem; }
-  .title    { font-weight: 500; line-height: 1.2; }
-  .subtitle {
-    font-size: 12px;
-    color: var(--app-text-muted, #475569);
-    margin-top: 2px;
-    line-height: 1.3;
+  &:hover {
+    border-color: var(--app-border-strong, #cbd5e1);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
   }
+
+  .head { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--app-border, #e2e8f0); }
+
+  .title {
+    font-family: 'Fira Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--app-text, #0f172a);
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    font-family: 'Fira Sans', sans-serif;
+    font-size: 11px;
+    color: var(--app-text-muted, #64748b);
+    margin-top: 4px;
+    line-height: 1.3;
+    text-transform: none;
+    letter-spacing: 0.01em;
+  }
+
   .echart { flex: 1; min-height: 0; }
-  .loading, .empty {
-    flex: 1; display: flex; align-items: center; justify-content: center;
-    color: var(--md-on-surface-variant);
+
+  .loading,
+  .empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--app-text-muted, #64748b);
+    font-family: 'Fira Sans', sans-serif;
+    font-size: 13px;
   }
 }
