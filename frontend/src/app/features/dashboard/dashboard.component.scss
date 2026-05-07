@@ -141,14 +141,12 @@
   background: var(--app-border, #e2e8f0);
 }
 
-// ─── Control row: tabs left, filter-bar right ─────────────────────────────
+// ─── Tab row ──────────────────────────────────────────────────────────────
 .control-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   margin-top: 16px;
-  flex-wrap: wrap;
 }
 
 .control-row__tabs {
@@ -195,11 +193,18 @@
   }
 }
 
-.control-row__filters {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  justify-content: flex-end;
+// ─── Filters row — full-width carded strip ────────────────────────────────
+// Filters live in their own row below the tabs so all 5 controls stay on
+// a single line at standard desktop widths (1280px+). Carded chrome
+// (surface + 1px border + 10px radius) matches the chart panels and KPI
+// cards below for visual consistency.
+.filters-row {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: var(--app-surface, #fff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 10px;
+  display: block;
 }
 
 // ─── Content ───────────────────────────────────────────────────────────────
@@ -209,10 +214,6 @@
 }
 
 // ─── Responsive ────────────────────────────────────────────────────────────
-@media (max-width: 1280px) {
-  .control-row__filters { justify-content: flex-start; flex-basis: 100%; }
-}
-
 @media (max-width: 768px) {
   .dashboard { padding: 0 16px 24px; }
   .page-head {
@@ -229,4 +230,5 @@
     width: 100%;
     overflow-x: auto;
   }
+  .filters-row { padding: 10px 12px; }
 }

@@ -30,7 +30,7 @@
     </div>
   </header>
 
-  <!-- Control row: tab pills (left) + inline filter bar (right) -->
+  <!-- Tabs row -->
   <div class="control-row" role="tablist" aria-label="Dashboard tabs">
     <nav class="control-row__tabs" aria-label="Dashboard sections">
       <a *ngFor="let t of tabs"
@@ -40,9 +40,13 @@
          queryParamsHandling="preserve"
          role="tab">{{ t.label }}</a>
     </nav>
-    <div class="control-row__filters">
-      <app-filter-bar [inline]="true"></app-filter-bar>
-    </div>
+  </div>
+
+  <!-- Filter row — full-width dedicated strip so all controls stay on one
+       line at standard desktop widths. Carded chrome matches the chart
+       panels below. -->
+  <div class="filters-row">
+    <app-filter-bar [inline]="true"></app-filter-bar>
   </div>
 
   <main class="dashboard-content">

@@ -20,106 +20,111 @@
   flex: 0 0 auto;
 }
 
-// ─── Inline layout (used inside the dashboard's tabs/control row) ─────────
+// ─── Inline layout (used in the dashboard's full-width filter row) ────────
 //
 // Goals:
-//   * one compact horizontal row, wraps cleanly to a second line at narrow
-//     widths;
-//   * every control rendered at the SAME 32px height — airport selector,
-//     date-range button, and the three multiselects all line up;
-//   * controls render as themed pills (rounded, surface bg, design-system
-//     border + hover/focus states) — NOT the generic PrimeNG default look;
-//   * active filters appear as removable chips below the row.
+//   * 5 controls (Airport · Date · Airline · Service · Handled by) on a
+//     single line at >=1280px viewport widths — wrap below that;
+//   * every control 36px tall — modern, comfortable click target;
+//   * controls render as themed pills (rounded 8px, surface bg, soft border,
+//     primary focus ring) — NOT the generic PrimeNG default look;
+//   * active filters appear as removable chips below the row, left-aligned.
 .fb-inline-wrap {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
 }
 
 .filter-inline {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding: 0;
   width: 100%;
 }
 
+// Each multi-select cell takes equal share of the row; airport+date sit
+// flush to the start at their natural widths.
 .filter-inline .fb-cell {
-  flex: 0 1 200px;
-  min-width: 160px;
-  max-width: 220px;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .filter-inline .fb-cell--airport,
 .filter-inline .fb-cell--date {
   flex: 0 0 auto;
-  max-width: none;
-  min-width: 0;
 }
 
-// ─── Themed multiselect — pills, not generic ─────────────────────────────
+// ─── Themed multiselect — modern pills, not generic ──────────────────────
 // PrimeNG 8.0.3 doesn't honor CSS custom properties; we override `.ui-*`
 // rules with `::ng-deep` so the per-tenant `--app-primary` and slate ramp
-// cascade through. Height parity at 32px across all controls. The whole
-// control becomes a rounded pill with a subtle border that brightens on
-// hover and snaps to primary on focus — matches main's design language.
+// cascade through. 36px height across every control. Soft surface bg,
+// hairline slate border, primary focus ring with 3px soft halo. Caret is a
+// subtle muted chevron via PrimeIcons' `pi pi-chevron-down`.
 :host ::ng-deep .filter-inline .ui-multiselect,
 :host ::ng-deep .filter-inline .ui-dropdown {
   display: flex;
   align-items: center;
   width: 100%;
-  height: 32px;
-  min-height: 32px;
+  height: 36px;
+  min-height: 36px;
   background: var(--app-surface, #fff);
   border: 1px solid var(--app-border, #e2e8f0);
   border-radius: 8px;
   font-family: 'Fira Sans', sans-serif;
-  font-size: 12px;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-  box-shadow: none;
+  font-size: 13px;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
 }
 
 :host ::ng-deep .filter-inline .ui-multiselect:hover,
 :host ::ng-deep .filter-inline .ui-dropdown:hover {
   border-color: var(--app-border-strong, #cbd5e1);
+  background: var(--app-bg-muted, #f8fafc);
 }
 
 :host ::ng-deep .filter-inline .ui-multiselect.ui-state-focus,
 :host ::ng-deep .filter-inline .ui-dropdown.ui-state-focus {
   border-color: var(--app-primary, #2563EB);
+  background: var(--app-surface, #fff);
   box-shadow: 0 0 0 3px var(--app-primary-soft, rgba(37, 99, 235, 0.16));
 }
 
 :host ::ng-deep .filter-inline .ui-multiselect-label-container,
 :host ::ng-deep .filter-inline .ui-multiselect-label,
 :host ::ng-deep .filter-inline .ui-dropdown-label {
-  height: 32px;
-  line-height: 20px;
-  padding: 6px 10px;
-  font-size: 12px;
+  height: 36px;
+  line-height: 24px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--app-text, #0f172a);
   font-family: 'Fira Sans', sans-serif;
   background: transparent;
 }
 
-// Empty-state placeholder ("Airline" / "Service" / "Handled by") — muted
-// so it reads as a label cue rather than a value.
+// Empty-state placeholder — uppercase mono micro-label so each filter
+// reads like a labelled field even with nothing selected.
 :host ::ng-deep .filter-inline .ui-multiselect-label.ui-multiselect-label-empty,
 :host ::ng-deep .filter-inline .ui-dropdown-label.ui-dropdown-label-empty {
-  color: var(--app-text-muted, #64748b);
+  color: var(--app-text-muted, #94a3b8);
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-// Caret triggers — let it inherit the design-system muted token, brighten
-// on the parent's hover.
+// Caret triggers — render a clean chevron via PrimeIcons. Hide PrimeNG's
+// default caret span content via font-size:0 then place our own pseudo
+// element so we don't ship more SVGs.
 :host ::ng-deep .filter-inline .ui-multiselect-trigger,
 :host ::ng-deep .filter-inline .ui-dropdown-trigger {
-  width: 28px;
-  height: 32px;
+  width: 32px;
+  height: 36px;
   background: transparent;
   border: 0;
   color: var(--app-text-muted, #64748b);
@@ -127,11 +132,34 @@
   align-items: center;
   justify-content: center;
   border-radius: 0 8px 8px 0;
+  position: relative;
+
+  > * { display: none; }
+
+  &::after {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 200ms ease, color 160ms ease;
+  }
 }
 
 :host ::ng-deep .filter-inline .ui-multiselect:hover .ui-multiselect-trigger,
-:host ::ng-deep .filter-inline .ui-dropdown:hover .ui-dropdown-trigger {
+:host ::ng-deep .filter-inline .ui-dropdown:hover .ui-dropdown-trigger,
+:host ::ng-deep .filter-inline .ui-multiselect.ui-state-focus .ui-multiselect-trigger,
+:host ::ng-deep .filter-inline .ui-dropdown.ui-state-focus .ui-dropdown-trigger {
+  color: var(--app-primary, #2563EB);
+}
+
+// Selected-count chip on the multiselect ("3 items selected") — render
+// inline with the value text in primary-soft so the user knows multiples
+// are active without opening the dropdown.
+:host ::ng-deep .filter-inline .ui-multiselect-label:not(.ui-multiselect-label-empty) {
   color: var(--app-text, #0f172a);
+  font-weight: 500;
 }
 
 // Drop the legacy <app-form-field> chrome around the airport selector when
@@ -149,21 +177,25 @@
   max-width: 260px;
 }
 
-// Date-range picker exposes a single `.range-btn` — match the pill height
-// and tighten the typography so it sits flush with the multiselects.
+// Date-range picker exposes a single `.range-btn` — match the 36px pill
+// height and chrome so it sits flush with the multiselects.
 :host ::ng-deep .filter-inline app-date-range-picker .range-btn {
-  height: 32px;
-  padding: 0 12px;
-  font-size: 12px;
-  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+  gap: 8px;
   border-radius: 8px;
   border: 1px solid var(--app-border, #e2e8f0);
   background: var(--app-surface, #fff);
   font-family: 'Fira Sans', sans-serif;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  font-weight: 500;
+  color: var(--app-text, #0f172a);
+  box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
 
   &:hover {
     border-color: var(--app-border-strong, #cbd5e1);
+    background: var(--app-bg-muted, #f8fafc);
   }
 
   &:focus,
@@ -174,23 +206,25 @@
   }
 }
 
-// Inline clear button — same pill family, slate text + danger hover.
+// Inline clear button — 36px to match the dropdowns, slate by default,
+// danger-tinted on hover.
 .fb-clear-inline {
   appearance: none;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 32px;
-  padding: 0 12px;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
   background: var(--app-surface, #fff);
   border: 1px solid var(--app-border, #e2e8f0);
   border-radius: 8px;
   color: var(--app-text-muted, #64748b);
   font-family: 'Fira Sans', sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+  flex: 0 0 auto;
 
   &:hover {
     border-color: var(--app-danger, #ef4444);
@@ -266,19 +300,17 @@
   min-height: 36px;
 }
 
-@media (max-width: 1280px) {
-  .filter-inline { justify-content: flex-start; }
-  .filter-inline .fb-cell {
-    flex: 1 1 180px;
-    max-width: none;
-  }
+@media (max-width: 1100px) {
+  // Below 1100px the 5 controls + clear can't reasonably co-exist on one
+  // line; allow them to wrap into 2-3 cells per row.
+  .filter-inline .fb-cell { flex: 1 1 180px; min-width: 160px; }
+  .filter-inline .fb-cell--ms { min-width: 180px; }
 }
 
 @media (max-width: 768px) {
-  .filter-inline { gap: 6px; }
+  .filter-inline { gap: 8px; }
   .filter-inline .fb-cell {
     flex: 1 1 100%;
     min-width: 0;
-    max-width: none;
   }
 }
