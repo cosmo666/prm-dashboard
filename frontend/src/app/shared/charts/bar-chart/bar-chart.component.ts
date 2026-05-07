@@ -121,8 +121,14 @@ export class BarChartComponent implements OnChanges {
         axisPointer: { type: 'shadow' },
         formatter: tooltipFormatter,
       },
-      legend:  showLegend ? { data: legendData, bottom: 0 } : undefined,
-      grid:    { left: 40, right: 20, top: 20, bottom: showLegend ? 50 : 30 },
+      // Wider itemGap so two-item legends ("Serviced" + "Requested") don't
+      // visually collide at narrow chart widths. Bottom-anchored at 0; the
+      // grid below reserves enough room (`bottom: 50`) for the row.
+      legend:  showLegend ? { data: legendData, bottom: 0, type: 'plain', itemGap: 24 } : undefined,
+      // Increase grid.bottom when a legend is present so the legend strip
+      // and the x-axis tick labels don't overlap. 30px when no legend, 56px
+      // when a legend is rendered (28px tick row + 28px legend row).
+      grid:    { left: 40, right: 20, top: 20, bottom: showLegend ? 56 : 30 },
       xAxis:   {
         type: 'category',
         data: labels,

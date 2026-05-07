@@ -79,10 +79,17 @@
   }
 }
 
-// Row 2: matrix + trend
+// Row 2: matrix + trend.
+// align-items: stretch keeps both columns at the same height; the matrix
+// scrolls vertically inside that height when there are more months than fit.
 .row-matrix-trend {
   grid-template-columns: 3fr 2fr;
-  min-height: 280px;
+  align-items: stretch;
+}
+
+.row-matrix-trend > .matrix-card,
+.row-matrix-trend > app-bar-chart {
+  min-height: 320px;
 }
 
 .matrix-card {

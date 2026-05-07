@@ -137,15 +137,25 @@ export class LineChartComponent implements OnChanges {
     const primary = resolvePrimary();
 
     // Annotations: dashed verticals at matching x positions on the first series only.
+    // Label sits inside the chart at the top of the marker line. `padding`
+    // gives the text breathing room vs. the dashed stroke; `align: 'center'`
+    // anchors the small label box on the line so labels for annotations
+    // close to the right edge don't overflow the chart's clip area.
     const annotationMarkLines = (this.annotations || []).map(a => ({
       xAxis: a.date,
       lineStyle: { color: '#94a3b8', type: 'dashed' as const, width: 1, opacity: 0.65 },
       label: {
         formatter: a.label,
         position: 'insideEndTop' as const,
+        align: 'center' as const,
         color: '#475569',
         fontSize: 10,
-        distance: 4,
+        padding: [3, 6, 3, 6] as [number, number, number, number],
+        backgroundColor: 'rgba(255, 255, 255, 0.92)',
+        borderColor: '#cbd5e1',
+        borderWidth: 1,
+        borderRadius: 3,
+        distance: 6,
       },
     }));
 
@@ -197,10 +207,15 @@ export class LineChartComponent implements OnChanges {
       };
     });
 
+    // Annotation labels render inside the grid at top — reserve enough room
+    // so the label badge isn't clipped by the chart edge.
+    const hasAnnotations = annotationMarkLines.length > 0;
+    const hasLegend = srs.length > 1;
+    const gridTop = hasLegend ? 48 : (hasAnnotations ? 36 : 30);
     return {
       tooltip: { trigger: 'axis' },
-      legend:  srs.length > 1 ? { data: srs.map(s => s.name), right: 0, top: 0, textStyle: { color: '#64748b' } } : undefined,
-      grid:    { left: 40, right: 20, top: srs.length > 1 ? 40 : 30, bottom: 40 },
+      legend:  hasLegend ? { data: srs.map(s => s.name), right: 0, top: 0, textStyle: { color: '#64748b' } } : undefined,
+      grid:    { left: 40, right: 20, top: gridTop, bottom: 40 },
       xAxis: { type: 'category', data: xs, axisLine: { lineStyle: { color: '#cbd5e1' } } },
       yAxis: { type: 'value', splitLine: { lineStyle: { color: '#e2e8f0' } } },
       series: chartSeries,

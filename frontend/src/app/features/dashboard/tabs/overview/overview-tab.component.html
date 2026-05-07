@@ -15,7 +15,7 @@
       tooltip="Number of distinct agents who handled at least one PRM service. Self = in-house, Outsourced = contracted."
       [value]="(activeAgents$ | async) | compactNumber"
       accent="teal"
-      [subtext]="'Self · ' + (agentsSelf$ | async) + '   Outsourced · ' + (agentsOutsourced$ | async)"
+      [subtext]="'Self ' + (agentsSelf$ | async) + ' · Outsourced ' + (agentsOutsourced$ | async)"
       [sparkData]="sparkAgents$ | async"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
