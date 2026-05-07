@@ -6,7 +6,7 @@ import { PrmDataService } from '../../services/prm-data.service';
 import { LineSeries } from 'src/app/shared/charts/line-chart/line-chart.component';
 import { BarDatum } from 'src/app/shared/charts/bar-chart/bar-chart.component';
 import { DonutDatum } from 'src/app/shared/charts/donut-chart/donut-chart.component';
-import { DEMO_ANNOTATIONS, ChartAnnotation } from '../../utils/annotations';
+import { ChartAnnotation } from '../../utils/annotations';
 
 // Self/Outsourced colors are domain-fixed (not tenant-themed) — Self in
 // primary blue, Outsourced in amber. Backend returns the labels in upper
@@ -27,7 +27,9 @@ const HANDLING_COLORS: { [name: string]: string } = {
 export class OverviewTabComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  readonly annotations: ChartAnnotation[] = DEMO_ANNOTATIONS;
+  // No annotations on the daily trend — the demo "Holi" markers are noisy and
+  // will be reintroduced as real holiday data via a future calendar service.
+  readonly annotations: ChartAnnotation[] = [];
 
   loading$ = new BehaviorSubject<boolean>(false);
 
@@ -43,12 +45,9 @@ export class OverviewTabComponent implements OnInit, OnDestroy {
   fulfillmentRate$ = new BehaviorSubject<number>(0);
   prevPeriodLabel$ = new BehaviorSubject<string>('');
 
-  // Sparklines (last 30 days of the trend, transformed per-card)
-  sparkTotal$ = new BehaviorSubject<number[]>([]);
-  sparkAgents$ = new BehaviorSubject<number[]>([]);
-  sparkPerAgent$ = new BehaviorSubject<number[]>([]);
-  sparkDuration$ = new BehaviorSubject<number[]>([]);
-  sparkFulfillment$ = new BehaviorSubject<number[]>([]);
+  // Insightful subtext data derived from the daily trend
+  dailyAvg$ = new BehaviorSubject<number>(0);
+  peakDay$ = new BehaviorSubject<number>(0);
 
   // Charts
   dailyTrendSeries$ = new BehaviorSubject<LineSeries[]>([]);
@@ -104,15 +103,11 @@ export class OverviewTabComponent implements OnInit, OnDestroy {
         }];
         this.dailyTrendSeries$.next(series);
 
-        // Sparklines — derived transforms keep each card visually distinct
-        // even though they share the same trend signal. Real per-KPI day-by-day
-        // history would be a separate set of endpoints we don't have.
-        const tail = vals.slice(-30);
-        this.sparkTotal$.next(tail);
-        this.sparkAgents$.next(tail.map(v => v * 0.7));
-        this.sparkPerAgent$.next(tail.map(v => v / 15));
-        this.sparkDuration$.next(tail.map(v => v * 0.4 + 40));
-        this.sparkFulfillment$.next(tail.map(v => 92 + (v % 7)));
+        // Insightful subtext derivations from the trend
+        const nonZero = vals.filter(v => v > 0);
+        const sum = nonZero.reduce((a, b) => a + b, 0);
+        this.dailyAvg$.next(nonZero.length > 0 ? sum / nonZero.length : 0);
+        this.peakDay$.next(vals.length > 0 ? Math.max.apply(null, vals) : 0);
 
         // Handling distribution — labels[] + values[] → DonutDatum[]
         const hLabels: string[] = r.handling.labels || [];

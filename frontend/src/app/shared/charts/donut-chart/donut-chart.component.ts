@@ -36,15 +36,44 @@ export class DonutChartComponent implements OnChanges {
           itemStyle: d.color ? { color: d.color } : undefined,
         })),
       } as any],
+      // Center text: bigger total + small "TOTAL" label, both anchored at the
+      // exact donut center via textAlign/textVerticalAlign so the alignment
+      // doesn't drift with chart resizes. Group element keeps the two texts
+      // glued together as the chart container reflows.
       graphic: [
         {
-          type: 'text', left: '35%', top: '46%',
-          style: { text: total.toLocaleString(), textAlign: 'center', fontSize: 22, fontWeight: 500, fill: '#0f172a' },
-        },
-        {
-          type: 'text', left: '35%', top: '60%',
-          style: { text: 'TOTAL', textAlign: 'center', fontSize: 10, fill: '#64748b' },
-        },
+          type: 'group',
+          left: '35%',
+          top: 'middle',
+          children: [
+            {
+              type: 'text',
+              top: -12,
+              style: {
+                text: total.toLocaleString(),
+                textAlign: 'center',
+                textVerticalAlign: 'middle',
+                fontSize: 22,
+                fontWeight: 600,
+                fontFamily: '"Fira Sans", sans-serif',
+                fill: '#0f172a',
+              },
+            },
+            {
+              type: 'text',
+              top: 14,
+              style: {
+                text: 'TOTAL',
+                textAlign: 'center',
+                textVerticalAlign: 'middle',
+                fontSize: 10,
+                fontFamily: '"Fira Code", ui-monospace, monospace',
+                fontWeight: 500,
+                fill: '#64748b',
+              },
+            },
+          ],
+        } as any,
       ],
     };
   }

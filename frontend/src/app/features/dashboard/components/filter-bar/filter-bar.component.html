@@ -1,53 +1,93 @@
 <!--
   Inline mode: single horizontal row, no per-field labels above. The
   PrimeNG multiselect's [defaultLabel] doubles as the empty placeholder
-  ("Airline" / "Service" / "Handled by"). No chips row — chips would be
-  noise inside the tabs/control row.
+  ("Airline" / "Service" / "Handled by"). Active filters surface as
+  removable chips below the row so the user can drop one without re-
+  opening the dropdown.
 -->
 <ng-container *ngIf="inline; else stacked">
-  <div class="filter-inline">
-    <app-airport-selector class="fb-cell fb-cell--airport"></app-airport-selector>
-    <app-date-range-picker class="fb-cell fb-cell--date"></app-date-range-picker>
+  <div class="fb-inline-wrap">
+    <div class="filter-inline">
+      <app-airport-selector class="fb-cell fb-cell--airport"></app-airport-selector>
+      <app-date-range-picker class="fb-cell fb-cell--date"></app-date-range-picker>
 
-    <div class="fb-cell fb-cell--ms">
-      <p-multiSelect
-        [options]="airlineOptions"
-        [(ngModel)]="airline"
-        (onChange)="setAirline($event)"
-        defaultLabel="Airline"
-        [appendTo]="'body'"
-        [filter]="true">
-      </p-multiSelect>
+      <div class="fb-cell fb-cell--ms">
+        <p-multiSelect
+          [options]="airlineOptions"
+          [(ngModel)]="airline"
+          (onChange)="setAirline($event)"
+          defaultLabel="Airline"
+          [appendTo]="'body'"
+          [filter]="true">
+        </p-multiSelect>
+      </div>
+
+      <div class="fb-cell fb-cell--ms">
+        <p-multiSelect
+          [options]="serviceOptions"
+          [(ngModel)]="service"
+          (onChange)="setService($event)"
+          defaultLabel="Service"
+          [appendTo]="'body'"
+          [filter]="true">
+        </p-multiSelect>
+      </div>
+
+      <div class="fb-cell fb-cell--ms">
+        <p-multiSelect
+          [options]="handledByOptions"
+          [(ngModel)]="handledBy"
+          (onChange)="setHandledBy($event)"
+          defaultLabel="Handled by"
+          [appendTo]="'body'">
+        </p-multiSelect>
+      </div>
+
+      <button
+        type="button"
+        class="fb-clear-inline"
+        (click)="clearAll()"
+        *ngIf="hasAnyFilter()"
+        title="Clear all filters">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <span>Clear</span>
+      </button>
     </div>
 
-    <div class="fb-cell fb-cell--ms">
-      <p-multiSelect
-        [options]="serviceOptions"
-        [(ngModel)]="service"
-        (onChange)="setService($event)"
-        defaultLabel="Service"
-        [appendTo]="'body'"
-        [filter]="true">
-      </p-multiSelect>
+    <!--
+      Active-filter chips. Each chip shows the dimension key + value and an
+      X button that removes only that single filter. Clicking the body of
+      the chip also removes it (the whole chip is the click surface — main
+      uses the same affordance).
+    -->
+    <div class="filter-bar__chips" *ngIf="hasAnyFilter()" role="status" aria-live="polite" aria-label="Active filters">
+      <button type="button" class="chip-pill" *ngFor="let v of airline" (click)="removeAirline(v)" [attr.aria-label]="'Remove airline filter: ' + v">
+        <span class="chip-pill__key">Airline</span>
+        <span class="chip-pill__sep">·</span>
+        <span class="chip-pill__val">{{ v }}</span>
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button type="button" class="chip-pill" *ngFor="let v of service" (click)="removeService(v)" [attr.aria-label]="'Remove service filter: ' + v">
+        <span class="chip-pill__key">Service</span>
+        <span class="chip-pill__sep">·</span>
+        <span class="chip-pill__val">{{ v }}</span>
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button type="button" class="chip-pill" *ngFor="let v of handledBy" (click)="removeHandledBy(v)" [attr.aria-label]="'Remove handled-by filter: ' + handledByLabel(v)">
+        <span class="chip-pill__key">Handled</span>
+        <span class="chip-pill__sep">·</span>
+        <span class="chip-pill__val">{{ handledByLabel(v) }}</span>
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
     </div>
-
-    <div class="fb-cell fb-cell--ms">
-      <p-multiSelect
-        [options]="handledByOptions"
-        [(ngModel)]="handledBy"
-        (onChange)="setHandledBy($event)"
-        defaultLabel="Handled by"
-        [appendTo]="'body'">
-      </p-multiSelect>
-    </div>
-
-    <button
-      type="button"
-      class="ui-button ui-button-secondary fb-clear"
-      (click)="clearAll()"
-      *ngIf="hasAnyFilter()">
-      Clear
-    </button>
   </div>
 </ng-container>
 
@@ -77,18 +117,30 @@
     </button>
   </div>
 
-  <div class="filter-chips" *ngIf="hasAnyFilter()">
-    <span class="filter-chip" *ngFor="let v of airline">
-      Airline: {{ v }}
-      <button type="button" class="filter-chip__close" (click)="removeAirline(v)" aria-label="Remove">&times;</button>
-    </span>
-    <span class="filter-chip" *ngFor="let v of service">
-      Service: {{ v }}
-      <button type="button" class="filter-chip__close" (click)="removeService(v)" aria-label="Remove">&times;</button>
-    </span>
-    <span class="filter-chip" *ngFor="let v of handledBy">
-      {{ handledByLabel(v) }}
-      <button type="button" class="filter-chip__close" (click)="removeHandledBy(v)" aria-label="Remove">&times;</button>
-    </span>
+  <div class="filter-bar__chips" *ngIf="hasAnyFilter()">
+    <button type="button" class="chip-pill" *ngFor="let v of airline" (click)="removeAirline(v)" [attr.aria-label]="'Remove airline filter: ' + v">
+      <span class="chip-pill__key">Airline</span>
+      <span class="chip-pill__sep">·</span>
+      <span class="chip-pill__val">{{ v }}</span>
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button type="button" class="chip-pill" *ngFor="let v of service" (click)="removeService(v)" [attr.aria-label]="'Remove service filter: ' + v">
+      <span class="chip-pill__key">Service</span>
+      <span class="chip-pill__sep">·</span>
+      <span class="chip-pill__val">{{ v }}</span>
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button type="button" class="chip-pill" *ngFor="let v of handledBy" (click)="removeHandledBy(v)" [attr.aria-label]="'Remove handled-by filter: ' + handledByLabel(v)">
+      <span class="chip-pill__key">Handled</span>
+      <span class="chip-pill__sep">·</span>
+      <span class="chip-pill__val">{{ handledByLabel(v) }}</span>
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
   </div>
 </ng-template>

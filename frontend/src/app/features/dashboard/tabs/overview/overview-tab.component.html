@@ -8,7 +8,7 @@
       accent="blue"
       [delta]="totalDelta$ | async"
       [deltaLabel]="prevPeriodLabel$ | async"
-      [sparkData]="sparkTotal$ | async"
+      [subtext]="'Daily avg ' + (dailyAvg$ | async | number:'1.0-0') + ' · Peak ' + (peakDay$ | async | number)"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
       label="Active Agents"
@@ -16,14 +16,13 @@
       [value]="(activeAgents$ | async) | compactNumber"
       accent="teal"
       [subtext]="'Self ' + (agentsSelf$ | async) + ' · Outsourced ' + (agentsOutsourced$ | async)"
-      [sparkData]="sparkAgents$ | async"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
       label="Avg Services / Agent / Day"
       tooltip="Average number of PRM services each agent handles per working day. Higher means better utilization; too high may indicate overload."
       [value]="(avgPerAgent$ | async) | number:'1.1-1'"
       accent="amber"
-      [sparkData]="sparkPerAgent$ | async"
+      [subtext]="'Total ' + ((totalPrm$ | async) | compactNumber) + ' / ' + (activeAgents$ | async) + ' agents'"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
       label="Avg Duration (min)"
@@ -32,14 +31,13 @@
       accent="plum"
       [delta]="durationDelta$ | async"
       [deltaLabel]="prevPeriodLabel$ | async"
-      [sparkData]="sparkDuration$ | async"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
       label="Fulfillment Rate"
       tooltip="Percentage of pre-requested PRM services that were actually fulfilled. 100% means every booked request was served."
       [value]="((fulfillmentRate$ | async) | number:'1.1-1') + '%'"
       accent="green"
-      [sparkData]="sparkFulfillment$ | async"
+      subtext="of pre-requested PRM"
       [loading]="loading$ | async"></app-kpi-card>
   </div>
 

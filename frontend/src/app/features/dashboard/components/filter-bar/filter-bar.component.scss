@@ -20,35 +20,6 @@
   flex: 0 0 auto;
 }
 
-.filter-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 0 0 12px;
-}
-
-.filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  background: var(--app-primary-soft);
-  color: var(--app-primary);
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-
-  &__close {
-    background: transparent;
-    border: 0;
-    color: inherit;
-    cursor: pointer;
-    font-size: 14px;
-    line-height: 1;
-    padding: 0;
-  }
-}
-
 // ─── Inline layout (used inside the dashboard's tabs/control row) ─────────
 //
 // Goals:
@@ -56,9 +27,16 @@
 //     widths;
 //   * every control rendered at the SAME 32px height — airport selector,
 //     date-range button, and the three multiselects all line up;
-//   * no labels above the controls — the multiselect's [defaultLabel] is
-//     the empty-state placeholder, and the airport selector/date-range
-//     button carry their own internal label.
+//   * controls render as themed pills (rounded, surface bg, design-system
+//     border + hover/focus states) — NOT the generic PrimeNG default look;
+//   * active filters appear as removable chips below the row.
+.fb-inline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
 .filter-inline {
   display: flex;
   flex-wrap: wrap;
@@ -82,20 +60,37 @@
   min-width: 0;
 }
 
-.filter-inline .fb-clear {
-  height: 32px;
-  padding: 0 12px;
-  font-size: 12px;
-}
-
-// Height parity — 32px across all controls in inline mode.
+// ─── Themed multiselect — pills, not generic ─────────────────────────────
+// PrimeNG 8.0.3 doesn't honor CSS custom properties; we override `.ui-*`
+// rules with `::ng-deep` so the per-tenant `--app-primary` and slate ramp
+// cascade through. Height parity at 32px across all controls. The whole
+// control becomes a rounded pill with a subtle border that brightens on
+// hover and snaps to primary on focus — matches main's design language.
 :host ::ng-deep .filter-inline .ui-multiselect,
 :host ::ng-deep .filter-inline .ui-dropdown {
-  width: 100%;
-  min-height: 32px;
-  height: 32px;
   display: flex;
   align-items: center;
+  width: 100%;
+  height: 32px;
+  min-height: 32px;
+  background: var(--app-surface, #fff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 8px;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 12px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+  box-shadow: none;
+}
+
+:host ::ng-deep .filter-inline .ui-multiselect:hover,
+:host ::ng-deep .filter-inline .ui-dropdown:hover {
+  border-color: var(--app-border-strong, #cbd5e1);
+}
+
+:host ::ng-deep .filter-inline .ui-multiselect.ui-state-focus,
+:host ::ng-deep .filter-inline .ui-dropdown.ui-state-focus {
+  border-color: var(--app-primary, #2563EB);
+  box-shadow: 0 0 0 3px var(--app-primary-soft, rgba(37, 99, 235, 0.16));
 }
 
 :host ::ng-deep .filter-inline .ui-multiselect-label-container,
@@ -105,17 +100,42 @@
   line-height: 20px;
   padding: 6px 10px;
   font-size: 12px;
+  color: var(--app-text, #0f172a);
+  font-family: 'Fira Sans', sans-serif;
+  background: transparent;
 }
 
-// The default label ("Airline" / "Service" / "Handled by") gets a muted
-// look so it reads as a placeholder rather than a value.
+// Empty-state placeholder ("Airline" / "Service" / "Handled by") — muted
+// so it reads as a label cue rather than a value.
 :host ::ng-deep .filter-inline .ui-multiselect-label.ui-multiselect-label-empty,
 :host ::ng-deep .filter-inline .ui-dropdown-label.ui-dropdown-label-empty {
-  color: var(--app-text-muted);
+  color: var(--app-text-muted, #64748b);
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
-// In inline mode the airport selector also drops its <app-form-field>
-// wrapper if any — we only want the bare multiselect.
+// Caret triggers — let it inherit the design-system muted token, brighten
+// on the parent's hover.
+:host ::ng-deep .filter-inline .ui-multiselect-trigger,
+:host ::ng-deep .filter-inline .ui-dropdown-trigger {
+  width: 28px;
+  height: 32px;
+  background: transparent;
+  border: 0;
+  color: var(--app-text-muted, #64748b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 8px 8px 0;
+}
+
+:host ::ng-deep .filter-inline .ui-multiselect:hover .ui-multiselect-trigger,
+:host ::ng-deep .filter-inline .ui-dropdown:hover .ui-dropdown-trigger {
+  color: var(--app-text, #0f172a);
+}
+
+// Drop the legacy <app-form-field> chrome around the airport selector when
+// it lives in inline mode — we only want the bare multiselect.
 :host ::ng-deep .filter-inline app-airport-selector .app-form-field {
   margin-bottom: 0;
   padding-top: 0;
@@ -129,14 +149,114 @@
   max-width: 260px;
 }
 
-// The date-range picker exposes a single `<button class="range-btn">`.
-// Compress it to 32px and tighten the label/range typography so it sits
-// flush with the multiselects.
+// Date-range picker exposes a single `.range-btn` — match the pill height
+// and tighten the typography so it sits flush with the multiselects.
 :host ::ng-deep .filter-inline app-date-range-picker .range-btn {
   height: 32px;
-  padding: 0 10px;
+  padding: 0 12px;
   font-size: 12px;
   gap: 6px;
+  border-radius: 8px;
+  border: 1px solid var(--app-border, #e2e8f0);
+  background: var(--app-surface, #fff);
+  font-family: 'Fira Sans', sans-serif;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+
+  &:hover {
+    border-color: var(--app-border-strong, #cbd5e1);
+  }
+
+  &:focus,
+  &:focus-visible {
+    border-color: var(--app-primary, #2563EB);
+    box-shadow: 0 0 0 3px var(--app-primary-soft, rgba(37, 99, 235, 0.16));
+    outline: none;
+  }
+}
+
+// Inline clear button — same pill family, slate text + danger hover.
+.fb-clear-inline {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 12px;
+  background: var(--app-surface, #fff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 8px;
+  color: var(--app-text-muted, #64748b);
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+
+  &:hover {
+    border-color: var(--app-danger, #ef4444);
+    color: var(--app-danger, #ef4444);
+    background: var(--app-danger-soft, #fee2e2);
+  }
+
+  svg { opacity: 0.85; }
+}
+
+// ─── Active-filter chips ─────────────────────────────────────────────────
+// Removable chips: KEY · VALUE × — the whole chip is the click surface.
+// Hover flips to primary so the X reads as the obvious affordance.
+.filter-bar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 0 0;
+  justify-content: flex-end;
+}
+
+.chip-pill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--app-primary-soft, rgba(37, 99, 235, 0.12));
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 11px;
+  color: var(--app-primary, #2563EB);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+
+  &:hover {
+    background: var(--app-primary, #2563EB);
+    color: var(--app-primary-on, #fff);
+    transform: translateY(-1px);
+  }
+
+  svg {
+    margin-left: 2px;
+    opacity: 0.7;
+  }
+
+  &:hover svg { opacity: 1; }
+}
+
+.chip-pill__key {
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+}
+
+.chip-pill__sep {
+  opacity: 0.5;
+}
+
+.chip-pill__val {
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-size: 11px;
 }
 
 // ─── Stacked-mode height parity (still useful — labels are above) ─────────
@@ -147,13 +267,12 @@
 }
 
 @media (max-width: 1280px) {
-  .filter-inline {
-    justify-content: flex-start;
-  }
+  .filter-inline { justify-content: flex-start; }
   .filter-inline .fb-cell {
     flex: 1 1 180px;
     max-width: none;
   }
+  .filter-bar__chips { justify-content: flex-start; }
 }
 
 @media (max-width: 768px) {
