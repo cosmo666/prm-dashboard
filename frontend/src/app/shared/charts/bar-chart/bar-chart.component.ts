@@ -125,16 +125,26 @@ export class BarChartComponent implements OnChanges {
       // visually collide at narrow chart widths. Bottom-anchored at 0; the
       // grid below reserves enough room (`bottom: 50`) for the row.
       legend:  showLegend ? { data: legendData, bottom: 0, type: 'plain', itemGap: 24 } : undefined,
-      // Increase grid.bottom when a legend is present so the legend strip
-      // and the x-axis tick labels don't overlap. 30px when no legend, 56px
-      // when a legend is rendered (28px tick row + 28px legend row).
-      grid:    { left: 40, right: 20, top: 20, bottom: showLegend ? 56 : 30 },
+      // grid.bottom reserves vertical space for x-axis ticks (24) +
+      // optional x-axis title (~24 when xLabel is set) + legend strip
+      // (~28 when showLegend). Without enough room, xLabel and legend
+      // collide — Top 10 Flights had "Flight number" sitting on top of
+      // "Serviced / Requested".
+      grid:    {
+        left: 40,
+        right: 20,
+        top: 20,
+        bottom: showLegend
+          ? (this.xLabel ? 86 : 56)
+          : (this.xLabel ? 50 : 30),
+      },
       xAxis:   {
         type: 'category',
         data: labels,
         name: this.xLabel || undefined,
         nameLocation: 'middle',
-        nameGap: 30,
+        // 26 keeps the title flush above the legend; 30 when no legend.
+        nameGap: showLegend ? 26 : 30,
       },
       yAxis:   {
         type: 'value',

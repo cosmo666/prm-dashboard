@@ -20,11 +20,26 @@ export class DonutChartComponent implements OnChanges {
   ngOnChanges(): void {
     const total = this.data.reduce((a, b) => a + b.value, 0);
     this.options = {
-      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      // `tooltip.position: 'top'` forces the tooltip to sit ABOVE the
+      // anchor point regardless of where the cursor is, instead of
+      // tracking the cursor. Combined with `confine: true` to keep it
+      // inside the chart container, this stops the tooltip from
+      // covering the segment-value labels (e.g. "485") that we paint
+      // outside each slice.
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}: {c} ({d}%)',
+        position: 'top',
+        confine: true,
+      },
       legend:  { orient: 'vertical', right: 0, top: 'middle', textStyle: { fontSize: 12 } },
       series: [{
         type: 'pie',
         radius: ['58%', '78%'],
+        // Anchor the donut at the GEOMETRIC center of the chart's left
+        // ~70% (the legend takes the right). 35% horizontal puts the
+        // donut squarely inside the bordered area; the graphic-text
+        // center coordinates below MUST match this exactly.
         center: ['35%', '50%'],
         avoidLabelOverlap: true,
         itemStyle: { borderColor: '#fff', borderWidth: 2 },
@@ -33,7 +48,7 @@ export class DonutChartComponent implements OnChanges {
         label: {
           show: true,
           position: 'outside',
-          formatter: '{c}',
+          formatter: '{c} ({d}%)',
           fontFamily: '"Fira Code", ui-monospace, monospace',
           fontSize: 11,
           color: '#0f172a',
@@ -46,19 +61,23 @@ export class DonutChartComponent implements OnChanges {
           itemStyle: d.color ? { color: d.color } : undefined,
         })),
       } as any],
-      // Center text: positioning each text element with `top: '50%'` plus
-      // `textVerticalAlign: 'middle'` anchors the text's vertical CENTER at
-      // the 50% line — survives container resizes. Stacked rows offset
-      // ±10px so the number sits above the "TOTAL" caption.
+      // Center text: echarts 4 positions a graphic.text element by its
+      // TOP-LEFT corner when given absolute `left`/`top`, regardless of
+      // `textAlign`/`textVerticalAlign`. To put the geometric center of
+      // each text element at the donut's [35%, 50%] anchor, we use the
+      // `position: ['35%', '50%']` array form — this DOES respect
+      // textAlign/textVerticalAlign and uses them as the anchor mode.
+      // Two stacked text elements offset by ±10px on the y-axis.
       graphic: [
         {
           type: 'text',
-          left: '35%',
-          top: '46%',
+          position: ['35%', '50%'],
+          z: 100,
           style: {
             text: total.toLocaleString(),
             textAlign: 'center',
             textVerticalAlign: 'middle',
+            y: -10,
             fontSize: 22,
             fontWeight: 600,
             fontFamily: '"Fira Sans", sans-serif',
@@ -67,16 +86,16 @@ export class DonutChartComponent implements OnChanges {
         } as any,
         {
           type: 'text',
-          left: '35%',
-          top: '58%',
+          position: ['35%', '50%'],
+          z: 100,
           style: {
             text: 'TOTAL',
             textAlign: 'center',
             textVerticalAlign: 'middle',
+            y: 14,
             fontSize: 10,
             fontFamily: '"Fira Code", ui-monospace, monospace',
             fontWeight: 500,
-            letterSpacing: 1,
             fill: '#64748b',
           },
         } as any,
