@@ -5,6 +5,8 @@ import { DashboardComponent } from './dashboard.component';
 import { OverviewTabComponent } from './tabs/overview/overview-tab.component';
 import { Top10TabComponent } from './tabs/top10/top10-tab.component';
 import { ServiceBreakupTabComponent } from './tabs/service-breakup/service-breakup-tab.component';
+import { FulfillmentTabComponent } from './tabs/fulfillment/fulfillment-tab.component';
+import { InsightsTabComponent } from './tabs/insights/insights-tab.component';
 import { FilterBarComponent } from './components/filter-bar/filter-bar.component';
 import { AirportSelectorComponent } from './components/airport-selector/airport-selector.component';
 import { DateRangePickerComponent } from './components/date-range-picker/date-range-picker.component';
@@ -27,6 +29,8 @@ import { DashboardRoutingModule } from './dashboard-routing.module';
     OverviewTabComponent,
     Top10TabComponent,
     ServiceBreakupTabComponent,
+    FulfillmentTabComponent,
+    InsightsTabComponent,
     FilterBarComponent,
     AirportSelectorComponent,
     DateRangePickerComponent,

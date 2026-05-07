@@ -11,6 +11,8 @@ const TABS: TabDef[] = [
   { label: 'Overview',        route: 'overview'        },
   { label: 'Top 10',          route: 'top10'           },
   { label: 'Service Breakup', route: 'service-breakup' },
+  { label: 'Fulfillment',     route: 'fulfillment'     },
+  { label: 'Insights',        route: 'insights'        },
 ];
 
 @Component({
