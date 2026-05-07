@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { of, Subject } from 'rxjs';
 import { takeUntil, debounceTime, switchMap } from 'rxjs/operators';
 import { FilterStore } from 'src/app/core/store/filter.store';
@@ -12,12 +12,27 @@ const EMPTY_OPTIONS: FilterOptionsResponse = {
 
 interface Opt { label: string; value: string; }
 
+/**
+ * FilterBar — secondary-filter strip (airline / service / handled-by / date /
+ * airport).
+ *
+ * Two layouts:
+ *   inline = false (default) — labelled cells stacked vertically, with chips
+ *   underneath. Used on standalone pages and as the dashboard's pre-Phase-D fallback.
+ *
+ *   inline = true — single horizontal row designed to live next to the tab
+ *   pills inside the dashboard's "control row". No labels above each cell;
+ *   the multiselect's [defaultLabel] doubles as the empty-state placeholder
+ *   ("Airline" / "Service" / "Handled by"). No chips row.
+ */
 @Component({
   selector: 'app-filter-bar',
   templateUrl: './filter-bar.component.html',
   styleUrls: ['./filter-bar.component.scss'],
 })
 export class FilterBarComponent implements OnInit, OnDestroy {
+  @Input() inline = false;
+
   airlineOptions: Opt[] = [];
   serviceOptions: Opt[] = [];
   handledByOptions: Opt[] = [
@@ -79,4 +94,8 @@ export class FilterBarComponent implements OnInit, OnDestroy {
   }
 
   clearAll(): void { this.filters.clearSecondary(); }
+
+  hasAnyFilter(): boolean {
+    return this.airline.length > 0 || this.service.length > 0 || this.handledBy.length > 0;
+  }
 }

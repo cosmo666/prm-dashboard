@@ -1,35 +1,94 @@
-<div class="filter-bar">
-  <app-airport-selector class="fb-cell"></app-airport-selector>
-  <app-date-range-picker class="fb-cell"></app-date-range-picker>
+<!--
+  Inline mode: single horizontal row, no per-field labels above. The
+  PrimeNG multiselect's [defaultLabel] doubles as the empty placeholder
+  ("Airline" / "Service" / "Handled by"). No chips row — chips would be
+  noise inside the tabs/control row.
+-->
+<ng-container *ngIf="inline; else stacked">
+  <div class="filter-inline">
+    <app-airport-selector class="fb-cell fb-cell--airport"></app-airport-selector>
+    <app-date-range-picker class="fb-cell fb-cell--date"></app-date-range-picker>
 
-  <app-form-field label="Airline" class="fb-cell">
-    <p-multiSelect [options]="airlineOptions" [(ngModel)]="airline" (onChange)="setAirline($event)" [appendTo]="'body'" [filter]="true"></p-multiSelect>
-  </app-form-field>
+    <div class="fb-cell fb-cell--ms">
+      <p-multiSelect
+        [options]="airlineOptions"
+        [(ngModel)]="airline"
+        (onChange)="setAirline($event)"
+        defaultLabel="Airline"
+        [appendTo]="'body'"
+        [filter]="true">
+      </p-multiSelect>
+    </div>
 
-  <app-form-field label="Service" class="fb-cell">
-    <p-multiSelect [options]="serviceOptions" [(ngModel)]="service" (onChange)="setService($event)" [appendTo]="'body'" [filter]="true"></p-multiSelect>
-  </app-form-field>
+    <div class="fb-cell fb-cell--ms">
+      <p-multiSelect
+        [options]="serviceOptions"
+        [(ngModel)]="service"
+        (onChange)="setService($event)"
+        defaultLabel="Service"
+        [appendTo]="'body'"
+        [filter]="true">
+      </p-multiSelect>
+    </div>
 
-  <app-form-field label="Handled By" class="fb-cell">
-    <p-multiSelect [options]="handledByOptions" [(ngModel)]="handledBy" (onChange)="setHandledBy($event)" [appendTo]="'body'"></p-multiSelect>
-  </app-form-field>
+    <div class="fb-cell fb-cell--ms">
+      <p-multiSelect
+        [options]="handledByOptions"
+        [(ngModel)]="handledBy"
+        (onChange)="setHandledBy($event)"
+        defaultLabel="Handled by"
+        [appendTo]="'body'">
+      </p-multiSelect>
+    </div>
 
-  <button type="button" class="ui-button ui-button-secondary fb-clear" (click)="clearAll()" *ngIf="airline.length || service.length || handledBy.length">
-    Clear
-  </button>
-</div>
+    <button
+      type="button"
+      class="ui-button ui-button-secondary fb-clear"
+      (click)="clearAll()"
+      *ngIf="hasAnyFilter()">
+      Clear
+    </button>
+  </div>
+</ng-container>
 
-<div class="filter-chips" *ngIf="airline.length || service.length || handledBy.length">
-  <span class="filter-chip" *ngFor="let v of airline">
-    Airline: {{ v }}
-    <button type="button" class="filter-chip__close" (click)="removeAirline(v)" aria-label="Remove">×</button>
-  </span>
-  <span class="filter-chip" *ngFor="let v of service">
-    Service: {{ v }}
-    <button type="button" class="filter-chip__close" (click)="removeService(v)" aria-label="Remove">×</button>
-  </span>
-  <span class="filter-chip" *ngFor="let v of handledBy">
-    {{ handledByLabel(v) }}
-    <button type="button" class="filter-chip__close" (click)="removeHandledBy(v)" aria-label="Remove">×</button>
-  </span>
-</div>
+<!--
+  Stacked mode (default): each control wears its own labelled <app-form-field>
+  shell, and active filters appear as removable chips beneath the row.
+-->
+<ng-template #stacked>
+  <div class="filter-bar">
+    <app-airport-selector class="fb-cell"></app-airport-selector>
+    <app-date-range-picker class="fb-cell"></app-date-range-picker>
+
+    <app-form-field label="Airline" class="fb-cell">
+      <p-multiSelect [options]="airlineOptions" [(ngModel)]="airline" (onChange)="setAirline($event)" [appendTo]="'body'" [filter]="true"></p-multiSelect>
+    </app-form-field>
+
+    <app-form-field label="Service" class="fb-cell">
+      <p-multiSelect [options]="serviceOptions" [(ngModel)]="service" (onChange)="setService($event)" [appendTo]="'body'" [filter]="true"></p-multiSelect>
+    </app-form-field>
+
+    <app-form-field label="Handled By" class="fb-cell">
+      <p-multiSelect [options]="handledByOptions" [(ngModel)]="handledBy" (onChange)="setHandledBy($event)" [appendTo]="'body'"></p-multiSelect>
+    </app-form-field>
+
+    <button type="button" class="ui-button ui-button-secondary fb-clear" (click)="clearAll()" *ngIf="hasAnyFilter()">
+      Clear
+    </button>
+  </div>
+
+  <div class="filter-chips" *ngIf="hasAnyFilter()">
+    <span class="filter-chip" *ngFor="let v of airline">
+      Airline: {{ v }}
+      <button type="button" class="filter-chip__close" (click)="removeAirline(v)" aria-label="Remove">&times;</button>
+    </span>
+    <span class="filter-chip" *ngFor="let v of service">
+      Service: {{ v }}
+      <button type="button" class="filter-chip__close" (click)="removeService(v)" aria-label="Remove">&times;</button>
+    </span>
+    <span class="filter-chip" *ngFor="let v of handledBy">
+      {{ handledByLabel(v) }}
+      <button type="button" class="filter-chip__close" (click)="removeHandledBy(v)" aria-label="Remove">&times;</button>
+    </span>
+  </div>
+</ng-template>

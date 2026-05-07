@@ -1,11 +1,56 @@
-<div class="dashboard-shell">
-  <app-filter-bar></app-filter-bar>
-  <nav class="dashboard-tabs" aria-label="Dashboard sections">
-    <a routerLink="overview"        routerLinkActive="is-active" queryParamsHandling="preserve">Overview</a>
-    <a routerLink="top10"            routerLinkActive="is-active" queryParamsHandling="preserve">Top 10</a>
-    <a routerLink="service-breakup" routerLinkActive="is-active" queryParamsHandling="preserve">Service Breakup</a>
-  </nav>
+<!-- TODO(phase-d-2): wire <app-top-bar> here once the component is ported -->
+<main class="dashboard">
+  <!-- Page head: eyebrow + LIVE pill + title + period meta -->
+  <header class="page-head">
+    <div class="page-head__left">
+      <div class="eyebrow-row">
+        <div class="eyebrow">
+          <span class="eyebrow__dot"></span>
+          <span class="eyebrow__text">PRM Analytics</span>
+        </div>
+        <span class="live-pill">LIVE</span>
+      </div>
+      <h1 class="page-head__title">Passenger Services</h1>
+      <ng-container *ngIf="(filterSummary$ | async) as summary">
+        <div class="page-head__summary" *ngIf="summary">
+          <span class="summary-text">{{ summary }}</span>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="page-head__right">
+      <div class="meta">
+        <div class="meta__label">Period</div>
+        <div class="meta__value font-mono">
+          {{ (filters.dateFrom$ | async) || '—' }}
+          <span class="meta__sep">—</span>
+          {{ (filters.dateTo$ | async) || '—' }}
+        </div>
+      </div>
+      <div class="meta__divider"></div>
+      <div class="meta">
+        <div class="meta__label">Preset</div>
+        <div class="meta__value font-mono">{{ (filters.datePreset$ | async) || '—' }}</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Control row: tab pills (left) + inline filter bar (right) -->
+  <div class="control-row" role="tablist" aria-label="Dashboard tabs">
+    <nav class="control-row__tabs" aria-label="Dashboard sections">
+      <a *ngFor="let t of tabs"
+         class="tab-pill"
+         [routerLink]="t.route"
+         routerLinkActive="is-active"
+         queryParamsHandling="preserve"
+         role="tab">{{ t.label }}</a>
+    </nav>
+    <div class="control-row__filters">
+      <app-filter-bar [inline]="true"></app-filter-bar>
+    </div>
+  </div>
+
   <main class="dashboard-content">
     <router-outlet></router-outlet>
   </main>
-</div>
+</main>

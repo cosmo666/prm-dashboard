@@ -1,5 +1,6 @@
 :host { display: block; }
 
+// ─── Stacked (default) layout ─────────────────────────────────────────────
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
@@ -9,12 +10,14 @@
 }
 
 .fb-cell {
-  flex: 0 1 220px;
-  min-width: 180px;
+  flex: 1 1 200px;
+  min-width: 200px;
+  max-width: 240px;
 }
 
 .fb-clear {
   height: 36px;
+  flex: 0 0 auto;
 }
 
 .filter-chips {
@@ -43,5 +46,121 @@
     font-size: 14px;
     line-height: 1;
     padding: 0;
+  }
+}
+
+// ─── Inline layout (used inside the dashboard's tabs/control row) ─────────
+//
+// Goals:
+//   * one compact horizontal row, wraps cleanly to a second line at narrow
+//     widths;
+//   * every control rendered at the SAME 32px height — airport selector,
+//     date-range button, and the three multiselects all line up;
+//   * no labels above the controls — the multiselect's [defaultLabel] is
+//     the empty-state placeholder, and the airport selector/date-range
+//     button carry their own internal label.
+.filter-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0;
+  width: 100%;
+}
+
+.filter-inline .fb-cell {
+  flex: 0 1 200px;
+  min-width: 160px;
+  max-width: 220px;
+}
+
+.filter-inline .fb-cell--airport,
+.filter-inline .fb-cell--date {
+  flex: 0 0 auto;
+  max-width: none;
+  min-width: 0;
+}
+
+.filter-inline .fb-clear {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+// Height parity — 32px across all controls in inline mode.
+:host ::ng-deep .filter-inline .ui-multiselect,
+:host ::ng-deep .filter-inline .ui-dropdown {
+  width: 100%;
+  min-height: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+:host ::ng-deep .filter-inline .ui-multiselect-label-container,
+:host ::ng-deep .filter-inline .ui-multiselect-label,
+:host ::ng-deep .filter-inline .ui-dropdown-label {
+  height: 32px;
+  line-height: 20px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+// The default label ("Airline" / "Service" / "Handled by") gets a muted
+// look so it reads as a placeholder rather than a value.
+:host ::ng-deep .filter-inline .ui-multiselect-label.ui-multiselect-label-empty,
+:host ::ng-deep .filter-inline .ui-dropdown-label.ui-dropdown-label-empty {
+  color: var(--app-text-muted);
+}
+
+// In inline mode the airport selector also drops its <app-form-field>
+// wrapper if any — we only want the bare multiselect.
+:host ::ng-deep .filter-inline app-airport-selector .app-form-field {
+  margin-bottom: 0;
+  padding-top: 0;
+
+  .field-label,
+  .field-underline { display: none; }
+}
+
+:host ::ng-deep .filter-inline app-airport-selector .ui-multiselect {
+  min-width: 200px;
+  max-width: 260px;
+}
+
+// The date-range picker exposes a single `<button class="range-btn">`.
+// Compress it to 32px and tighten the label/range typography so it sits
+// flush with the multiselects.
+:host ::ng-deep .filter-inline app-date-range-picker .range-btn {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  gap: 6px;
+}
+
+// ─── Stacked-mode height parity (still useful — labels are above) ─────────
+:host ::ng-deep .filter-bar .ui-multiselect,
+:host ::ng-deep .filter-bar .ui-dropdown {
+  width: 100%;
+  min-height: 36px;
+}
+
+@media (max-width: 1280px) {
+  .filter-inline {
+    justify-content: flex-start;
+  }
+  .filter-inline .fb-cell {
+    flex: 1 1 180px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-inline { gap: 6px; }
+  .filter-inline .fb-cell {
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: none;
   }
 }
