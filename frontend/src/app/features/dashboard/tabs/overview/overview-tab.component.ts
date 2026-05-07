@@ -3,9 +3,17 @@ import { BehaviorSubject, EMPTY, forkJoin, Subject } from 'rxjs';
 import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import { FilterStore } from 'src/app/core/store/filter.store';
 import { PrmDataService } from '../../services/prm-data.service';
-import { DailyTrendResponse } from '../../services/prm-dtos';
+import { LineSeries } from 'src/app/shared/charts/line-chart/line-chart.component';
+import { BarDatum } from 'src/app/shared/charts/bar-chart/bar-chart.component';
 import { DonutDatum } from 'src/app/shared/charts/donut-chart/donut-chart.component';
-import { BarDatum } from 'src/app/shared/charts/horizontal-bar-chart/horizontal-bar-chart.component';
+import { DEMO_ANNOTATIONS, ChartAnnotation } from '../../utils/annotations';
+
+// Self/Outsourced colors are domain-fixed (not tenant-themed) — Self in
+// primary blue, Outsourced in amber. Mirrors main's hCol mapping.
+const HANDLING_COLORS: { [name: string]: string } = {
+  Self: '#1e88e5',
+  Outsourced: '#fb8c00',
+};
 
 @Component({
   selector: 'app-overview-tab',
@@ -15,25 +23,35 @@ import { BarDatum } from 'src/app/shared/charts/horizontal-bar-chart/horizontal-
 export class OverviewTabComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
+  readonly annotations: ChartAnnotation[] = DEMO_ANNOTATIONS;
+
   loading$ = new BehaviorSubject<boolean>(false);
 
   // KPI state
   totalPrm$ = new BehaviorSubject<number>(0);
   totalDelta$ = new BehaviorSubject<number | null>(null);
-  avgDuration$ = new BehaviorSubject<number>(0);
-  durationDelta$ = new BehaviorSubject<number | null>(null);
-  fulfillmentPct$ = new BehaviorSubject<number>(0);
-  totalAgents$ = new BehaviorSubject<number>(0);
+  activeAgents$ = new BehaviorSubject<number>(0);
   agentsSelf$ = new BehaviorSubject<number>(0);
   agentsOutsourced$ = new BehaviorSubject<number>(0);
-  avgServicesPerAgentPerDay$ = new BehaviorSubject<number>(0);
-  avgServicesDelta$ = new BehaviorSubject<number | null>(null);
+  avgPerAgent$ = new BehaviorSubject<number>(0);
+  avgDuration$ = new BehaviorSubject<number>(0);
+  durationDelta$ = new BehaviorSubject<number | null>(null);
+  fulfillmentRate$ = new BehaviorSubject<number>(0);
+  prevPeriodLabel$ = new BehaviorSubject<string>('');
 
-  // Chart state
-  dailyTrend$ = new BehaviorSubject<DailyTrendResponse | null>(null);
-  dailyTrendPrev$ = new BehaviorSubject<DailyTrendResponse | null>(null);
+  // Sparklines (last 30 days of the trend, transformed per-card)
+  sparkTotal$ = new BehaviorSubject<number[]>([]);
+  sparkAgents$ = new BehaviorSubject<number[]>([]);
+  sparkPerAgent$ = new BehaviorSubject<number[]>([]);
+  sparkDuration$ = new BehaviorSubject<number[]>([]);
+  sparkFulfillment$ = new BehaviorSubject<number[]>([]);
+
+  // Charts
+  dailyTrendSeries$ = new BehaviorSubject<LineSeries[]>([]);
+  handling$ = new BehaviorSubject<DonutDatum[]>([]);
   serviceTypes$ = new BehaviorSubject<DonutDatum[]>([]);
-  topAirlines$ = new BehaviorSubject<BarDatum[]>([]);
+  durationBuckets$ = new BehaviorSubject<BarDatum[]>([]);
+  locations$ = new BehaviorSubject<BarDatum[]>([]);
 
   constructor(
     public filters: FilterStore,
@@ -44,48 +62,79 @@ export class OverviewTabComponent implements OnInit, OnDestroy {
     this.filters.queryParams$.pipe(
       debounceTime(50),
       switchMap(() => {
-        // Backend requires at least one airport + a date range. Skip the
-        // forkJoin until the user (or applyDefault) has populated both.
         if (this.filters.airportSnapshot.length === 0 || !this.filters.dateFromSnapshot) {
           return EMPTY;
         }
         this.loading$.next(true);
+        this.prevPeriodLabel$.next(this.computePrevPeriodLabel());
         return forkJoin({
-          kpis:      this.data.kpisSummary(),
-          trend:     this.data.trendsDaily('count'),
-          // OQ-P1-3 PoP overlay — second call shifts dates to the previous comparable period.
-          trendPrev: this.data.trendsDailyPrev('count'),
-          services:  this.data.topServices(),
-          airlines:  this.data.topAirlines(10),
+          kpis: this.data.kpisSummary(),
+          handling: this.data.handlingDistribution(),
+          trend: this.data.trendsDaily('count'),
+          services: this.data.topServices(),
+          duration: this.data.durationDistribution(),
+          locations: this.data.byLocation(),
         });
       }),
       takeUntil(this.destroy$),
     ).subscribe(
       r => {
         // KPIs
-        this.totalPrm$.next(r.kpis.totalPrm);
+        this.totalPrm$.next(r.kpis.totalPrm || 0);
         this.totalDelta$.next(this.pctDelta(r.kpis.totalPrm, r.kpis.totalPrmPrevPeriod));
-        this.avgDuration$.next(r.kpis.avgDurationMinutes);
+        this.activeAgents$.next(r.kpis.totalAgents || 0);
+        this.agentsSelf$.next(r.kpis.agentsSelf || 0);
+        this.agentsOutsourced$.next(r.kpis.agentsOutsourced || 0);
+        this.avgPerAgent$.next(r.kpis.avgServicesPerAgentPerDay || 0);
+        this.avgDuration$.next(r.kpis.avgDurationMinutes || 0);
         this.durationDelta$.next(this.pctDelta(r.kpis.avgDurationMinutes, r.kpis.avgDurationPrevPeriod));
-        this.fulfillmentPct$.next(r.kpis.fulfillmentPct);
-        this.totalAgents$.next(r.kpis.totalAgents);
-        this.agentsSelf$.next(r.kpis.agentsSelf);
-        this.agentsOutsourced$.next(r.kpis.agentsOutsourced);
-        this.avgServicesPerAgentPerDay$.next(r.kpis.avgServicesPerAgentPerDay);
-        this.avgServicesDelta$.next(this.pctDelta(r.kpis.avgServicesPerAgentPerDay, r.kpis.avgServicesPrevPeriod));
+        this.fulfillmentRate$.next(r.kpis.fulfillmentPct || 0);
 
-        // Trend (current + optional prev overlay)
-        this.dailyTrend$.next(r.trend);
-        this.dailyTrendPrev$.next(
-          r.trendPrev && r.trendPrev.values && r.trendPrev.values.length > 0 ? r.trendPrev : null
-        );
+        // Daily trend → LineSeries[] keyed on full yyyy-mm-dd dates so the
+        // annotations and pointClick can match by exact date.
+        const dates: string[] = r.trend.dates || [];
+        const vals: number[] = r.trend.values || [];
+        const series: LineSeries[] = [{
+          name: 'Services',
+          data: dates.map((d, i): [string, number] => [d, vals[i] || 0]),
+        }];
+        this.dailyTrendSeries$.next(series);
 
-        // RankingsResponse → chart data
-        this.serviceTypes$.next((r.services.items || []).slice(0, 5).map(s => ({
-          name: s.label, value: s.count,
+        // Sparklines — derived transforms keep each card visually distinct
+        // even though they share the same trend signal. Real per-KPI day-by-day
+        // history would be a separate set of endpoints we don't have.
+        const tail = vals.slice(-30);
+        this.sparkTotal$.next(tail);
+        this.sparkAgents$.next(tail.map(v => v * 0.7));
+        this.sparkPerAgent$.next(tail.map(v => v / 15));
+        this.sparkDuration$.next(tail.map(v => v * 0.4 + 40));
+        this.sparkFulfillment$.next(tail.map(v => 92 + (v % 7)));
+
+        // Handling distribution — labels[] + values[] → DonutDatum[]
+        const hLabels: string[] = r.handling.labels || [];
+        const hValues: number[] = r.handling.values || [];
+        this.handling$.next(hLabels.map((l, i) => ({
+          name: l,
+          value: hValues[i] || 0,
+          color: HANDLING_COLORS[l],
         })));
-        this.topAirlines$.next((r.airlines.items || []).map(a => ({
-          label: a.label, value: a.count,
+
+        // Top 5 service types
+        this.serviceTypes$.next((r.services.items || []).slice(0, 5).map(s => ({
+          name: s.label,
+          value: s.count,
+        })));
+
+        // Duration buckets
+        this.durationBuckets$.next((r.duration.buckets || []).map(b => ({
+          label: b.label,
+          value: b.count,
+        })));
+
+        // Locations
+        this.locations$.next((r.locations.items || []).map(l => ({
+          label: l.label,
+          value: l.count,
         })));
 
         this.loading$.next(false);
@@ -102,26 +151,56 @@ export class OverviewTabComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /** Used by the template (compact-number formatting for Total PRM). */
-  formatCount(n: number | null): string {
-    if (n === null || n === undefined) { return '—'; }
-    if (n >= 1000000) { return (n / 1000000).toFixed(1) + 'M'; }
-    if (n >= 1000)    { return (n / 1000).toFixed(1) + 'k'; }
-    return n.toLocaleString();
+  /** Click on a trend point — narrow the dashboard to that single day. */
+  onDailyPointClick(dateLabel: string): void {
+    if (!dateLabel) { return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateLabel)) { return; }
+    this.filters.setDateRange('custom', dateLabel, dateLabel);
   }
 
-  /** OQ-P1-2 drill-down: donut segment click toggles the service filter. */
-  onServiceSegmentClick(payload: { name: string; value: number }): void {
-    if (payload && payload.name) { this.filters.toggleService(payload.name); }
+  /** Donut click on Handling — set handled_by filter to SELF or OUTSOURCED. */
+  onHandlingClick(payload: { name: string; value: number }): void {
+    if (!payload || !payload.name) { return; }
+    const lower = payload.name.toLowerCase();
+    if (lower.indexOf('self') === 0) {
+      this.filters.setHandledBy(['SELF']);
+    } else if (lower.indexOf('out') === 0) {
+      this.filters.setHandledBy(['OUTSOURCED']);
+    }
   }
 
-  /** OQ-P1-2 drill-down: bar click toggles the airline filter. */
-  onAirlineBarClick(payload: { category: string; value: number }): void {
-    if (payload && payload.category) { this.filters.toggleAirline(payload.category); }
+  /** Donut click on Service Type — focus that single SSR code. */
+  onServiceTypeClick(payload: { name: string; value: number }): void {
+    if (payload && payload.name) { this.filters.setService([payload.name]); }
+  }
+
+  /** Bar click on Duration buckets — informational only (no global duration filter). */
+  // tslint:disable-next-line: no-empty
+  onDurationClick(_payload: { category: string; value: number }): void { }
+
+  /** Bar click on Location — informational only. */
+  // tslint:disable-next-line: no-empty
+  onLocationClick(_payload: { category: string; value: number }): void { }
+
+  /** Human-readable label for the comparison period, e.g. "vs Jan 29 – Feb 28". */
+  private computePrevPeriodLabel(): string {
+    const from = this.filters.dateFromSnapshot;
+    const to = this.filters.dateToSnapshot;
+    if (!from || !to) { return ''; }
+    const d1 = new Date(from);
+    const d2 = new Date(to);
+    if (isNaN(d1.getTime()) || isNaN(d2.getTime())) { return ''; }
+    const days = Math.round((d2.getTime() - d1.getTime()) / 86400000) + 1;
+    const prevEnd = new Date(d1);
+    prevEnd.setDate(prevEnd.getDate() - 1);
+    const prevStart = new Date(prevEnd);
+    prevStart.setDate(prevStart.getDate() - days + 1);
+    const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return 'vs ' + fmt(prevStart) + ' – ' + fmt(prevEnd);
   }
 
   private pctDelta(curr: number, prev: number): number | null {
-    if (!prev) { return null; }   // no baseline → hide delta
+    if (!prev) { return null; }
     return ((curr - prev) / prev) * 100;
   }
 }

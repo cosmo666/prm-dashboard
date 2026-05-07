@@ -1,78 +1,91 @@
-<div class="overview" *ngIf="(loading$ | async) !== null">
-  <!-- Row 1: 5 KPI cards (OQ-P1-1 — added Avg svc / agent / day) -->
-  <div class="p-grid kpi-row">
-    <div class="p-col-12 p-md-6 p-lg-2 p-xl-2">
-      <app-kpi-card
-        label="Total PRM Services"
-        icon="pi-chart-bar"
-        [value]="formatCount(totalPrm$ | async)"
-        [delta]="totalDelta$ | async"
-        subtext="vs prev period"
-        [loading]="loading$ | async"></app-kpi-card>
-    </div>
-    <div class="p-col-12 p-md-6 p-lg-2 p-xl-2">
-      <app-kpi-card
-        label="Active Agents"
-        icon="pi-user"
-        [value]="(totalAgents$ | async) || 0 | number"
-        [subtext]="'Self · ' + (agentsSelf$ | async) + '   Outsourced · ' + (agentsOutsourced$ | async)"
-        [loading]="loading$ | async"></app-kpi-card>
-    </div>
-    <div class="p-col-12 p-md-6 p-lg-3 p-xl-3">
-      <app-kpi-card
-        label="Avg svc / agent / day"
-        icon="pi-users"
-        [value]="(avgServicesPerAgentPerDay$ | async) | number:'1.1-1'"
-        [delta]="avgServicesDelta$ | async"
-        subtext="vs prev period"
-        [loading]="loading$ | async"></app-kpi-card>
-    </div>
-    <div class="p-col-12 p-md-6 p-lg-2 p-xl-2">
-      <app-kpi-card
-        label="Avg Duration (min)"
-        icon="pi-clock"
-        [value]="(avgDuration$ | async) | number:'1.0-0'"
-        [delta]="durationDelta$ | async"
-        subtext="vs prev period"
-        [loading]="loading$ | async"></app-kpi-card>
-    </div>
-    <div class="p-col-12 p-md-6 p-lg-3 p-xl-3">
-      <app-kpi-card
-        label="Fulfillment Rate"
-        icon="pi-check-circle"
-        [value]="((fulfillmentPct$ | async) | number:'1.1-1') + '%'"
-        [loading]="loading$ | async"></app-kpi-card>
-    </div>
+<div class="overview-content" *ngIf="(loading$ | async) !== null">
+  <!-- Row 1: 5 KPI cards -->
+  <div class="row row-kpis">
+    <app-kpi-card
+      label="Total PRM Services"
+      tooltip="Total unique PRM services delivered in the selected period. Each service counts once even if paused and resumed."
+      [value]="(totalPrm$ | async) | compactNumber"
+      accent="blue"
+      [delta]="totalDelta$ | async"
+      [deltaLabel]="prevPeriodLabel$ | async"
+      [sparkData]="sparkTotal$ | async"
+      [loading]="loading$ | async"></app-kpi-card>
+    <app-kpi-card
+      label="Active Agents"
+      tooltip="Number of distinct agents who handled at least one PRM service. Self = in-house, Outsourced = contracted."
+      [value]="(activeAgents$ | async) | compactNumber"
+      accent="teal"
+      [subtext]="'Self · ' + (agentsSelf$ | async) + '   Outsourced · ' + (agentsOutsourced$ | async)"
+      [sparkData]="sparkAgents$ | async"
+      [loading]="loading$ | async"></app-kpi-card>
+    <app-kpi-card
+      label="Avg Services / Agent / Day"
+      tooltip="Average number of PRM services each agent handles per working day. Higher means better utilization; too high may indicate overload."
+      [value]="(avgPerAgent$ | async) | number:'1.1-1'"
+      accent="amber"
+      [sparkData]="sparkPerAgent$ | async"
+      [loading]="loading$ | async"></app-kpi-card>
+    <app-kpi-card
+      label="Avg Duration (min)"
+      tooltip="Average time in minutes to complete a PRM service, from start to end. Excludes paused time for services that were interrupted."
+      [value]="(avgDuration$ | async) | number:'1.0-0'"
+      accent="plum"
+      [delta]="durationDelta$ | async"
+      [deltaLabel]="prevPeriodLabel$ | async"
+      [sparkData]="sparkDuration$ | async"
+      [loading]="loading$ | async"></app-kpi-card>
+    <app-kpi-card
+      label="Fulfillment Rate"
+      tooltip="Percentage of pre-requested PRM services that were actually fulfilled. 100% means every booked request was served."
+      [value]="((fulfillmentRate$ | async) | number:'1.1-1') + '%'"
+      accent="green"
+      [sparkData]="sparkFulfillment$ | async"
+      [loading]="loading$ | async"></app-kpi-card>
   </div>
 
-  <!-- Row 2: Daily trend (8) + Service-type donut (4) -->
-  <div class="p-grid chart-row">
-    <div class="p-col-12 p-lg-8">
-      <app-line-chart
-        title="Daily PRM Trend"
-        subtitle="Count of unique services per day (with previous-period overlay)"
-        [trend]="dailyTrend$ | async"
-        [secondarySeries]="dailyTrendPrev$ | async"
-        [loading]="loading$ | async"></app-line-chart>
-    </div>
-    <div class="p-col-12 p-lg-4">
-      <app-donut-chart
-        title="Service Type Breakdown"
-        subtitle="Top 5 categories by volume — click a segment to filter"
-        [data]="serviceTypes$ | async"
-        [loading]="loading$ | async"
-        (segmentClick)="onServiceSegmentClick($event)"></app-donut-chart>
-    </div>
+  <!-- Row 2: Daily Trend (2/3) + Handling Distribution (1/3) -->
+  <div class="row row-charts-2-1">
+    <app-line-chart
+      title="Daily PRM Trend"
+      subtitle="Count of unique services per day"
+      [series]="dailyTrendSeries$ | async"
+      [loading]="loading$ | async"
+      [annotations]="annotations"
+      [showAvgLine]="true"
+      (pointClick)="onDailyPointClick($event)"></app-line-chart>
+    <app-donut-chart
+      title="Handling Distribution"
+      subtitle="Self vs Outsourced"
+      [data]="handling$ | async"
+      [loading]="loading$ | async"
+      (segmentClick)="onHandlingClick($event)"></app-donut-chart>
   </div>
 
-  <!-- Row 3: Top airlines (full width) -->
-  <div class="p-grid chart-row">
-    <div class="p-col-12">
-      <app-horizontal-bar-chart
-        title="Top Airlines"
-        [data]="topAirlines$ | async"
-        [loading]="loading$ | async"
-        (barClick)="onAirlineBarClick($event)"></app-horizontal-bar-chart>
-    </div>
+  <!-- Row 3: Service Types + Duration Distribution + Locations -->
+  <div class="row row-charts-1-1-1">
+    <app-donut-chart
+      title="Service Type Breakdown"
+      subtitle="Top 5 categories by volume"
+      [data]="serviceTypes$ | async"
+      [loading]="loading$ | async"
+      (segmentClick)="onServiceTypeClick($event)"></app-donut-chart>
+    <app-bar-chart
+      title="Service Duration Spread"
+      subtitle="How long services take"
+      [data]="durationBuckets$ | async"
+      [loading]="loading$ | async"
+      xLabel="Duration bucket (minutes)"
+      yLabel="PRM services (count)"
+      unit="services"
+      (barClick)="onDurationClick($event)"></app-bar-chart>
+    <app-horizontal-bar-chart
+      title="Services by Location"
+      subtitle="Where PRM services are delivered"
+      [data]="locations$ | async"
+      [loading]="loading$ | async"
+      xLabel="PRM services (count)"
+      yLabel="Location"
+      unit="services"
+      (barClick)="onLocationClick($event)"></app-horizontal-bar-chart>
   </div>
 </div>
