@@ -9,8 +9,12 @@ import { DonutDatum } from 'src/app/shared/charts/donut-chart/donut-chart.compon
 import { DEMO_ANNOTATIONS, ChartAnnotation } from '../../utils/annotations';
 
 // Self/Outsourced colors are domain-fixed (not tenant-themed) — Self in
-// primary blue, Outsourced in amber. Mirrors main's hCol mapping.
+// primary blue, Outsourced in amber. Backend returns the labels in upper
+// case ("SELF" / "OUTSOURCED"); both casings are mapped so a future tenant
+// returning title-case still picks up the right colour.
 const HANDLING_COLORS: { [name: string]: string } = {
+  SELF: '#1e88e5',
+  OUTSOURCED: '#fb8c00',
   Self: '#1e88e5',
   Outsourced: '#fb8c00',
 };
