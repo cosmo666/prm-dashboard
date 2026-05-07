@@ -78,7 +78,8 @@ build-output*.txt
 # IDE / editor
 # ============================================================
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 .fleet/
 *.swp
 *.swo
