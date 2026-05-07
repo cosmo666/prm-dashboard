@@ -3,11 +3,22 @@
 // 10px radius — so all dashboard panels share the same visual container.
 // Earlier `--md-surface` / `--app-elev-1` tokens were never defined on this
 // branch, which is why the chart-wrapping cards rendered without chrome.
-:host { display: block; }
+//
+// The host fills its parent grid cell (Overview / Top10 / Service Breakup
+// rows are CSS grids with default `align-items: stretch`). The .base-chart
+// child uses `flex: 1` so adjacent charts in the same row always end up at
+// matching heights — the tallest sibling defines the row height.
+:host {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
 
 .base-chart {
   position: relative;
   display: flex;
+  flex: 1 1 auto;
+  width: 100%;
   flex-direction: column;
   background: var(--app-surface, #fff);
   border: 1px solid var(--app-border, #e2e8f0);

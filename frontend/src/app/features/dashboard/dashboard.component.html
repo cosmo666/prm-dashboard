@@ -11,11 +11,6 @@
         <span class="live-pill">LIVE</span>
       </div>
       <h1 class="page-head__title">Passenger Services</h1>
-      <ng-container *ngIf="(filterSummary$ | async) as summary">
-        <div class="page-head__summary" *ngIf="summary">
-          <span class="summary-text">{{ summary }}</span>
-        </div>
-      </ng-container>
     </div>
 
     <div class="page-head__right">

@@ -24,55 +24,61 @@ export class DonutChartComponent implements OnChanges {
       legend:  { orient: 'vertical', right: 0, top: 'middle', textStyle: { fontSize: 12 } },
       series: [{
         type: 'pie',
-        radius: ['60%', '80%'],
+        radius: ['58%', '78%'],
         center: ['35%', '50%'],
         avoidLabelOverlap: true,
         itemStyle: { borderColor: '#fff', borderWidth: 2 },
-        label: { show: false },
-        emphasis: { focus: 'series' },
+        // Show value + percentage outside each segment so the user sees
+        // the breakdown at a glance without hovering.
+        label: {
+          show: true,
+          position: 'outside',
+          formatter: '{c}',
+          fontFamily: '"Fira Code", ui-monospace, monospace',
+          fontSize: 11,
+          color: '#0f172a',
+        },
+        labelLine: { show: true, length: 6, length2: 4, smooth: true, lineStyle: { color: '#cbd5e1' } },
+        emphasis: { focus: 'series', label: { fontSize: 12, fontWeight: 'bold' } },
         data: this.data.map(d => ({
           name: d.name,
           value: d.value,
           itemStyle: d.color ? { color: d.color } : undefined,
         })),
       } as any],
-      // Center text: bigger total + small "TOTAL" label, both anchored at the
-      // exact donut center via textAlign/textVerticalAlign so the alignment
-      // doesn't drift with chart resizes. Group element keeps the two texts
-      // glued together as the chart container reflows.
+      // Center text: positioning each text element with `top: '50%'` plus
+      // `textVerticalAlign: 'middle'` anchors the text's vertical CENTER at
+      // the 50% line — survives container resizes. Stacked rows offset
+      // ±10px so the number sits above the "TOTAL" caption.
       graphic: [
         {
-          type: 'group',
+          type: 'text',
           left: '35%',
-          top: 'middle',
-          children: [
-            {
-              type: 'text',
-              top: -12,
-              style: {
-                text: total.toLocaleString(),
-                textAlign: 'center',
-                textVerticalAlign: 'middle',
-                fontSize: 22,
-                fontWeight: 600,
-                fontFamily: '"Fira Sans", sans-serif',
-                fill: '#0f172a',
-              },
-            },
-            {
-              type: 'text',
-              top: 14,
-              style: {
-                text: 'TOTAL',
-                textAlign: 'center',
-                textVerticalAlign: 'middle',
-                fontSize: 10,
-                fontFamily: '"Fira Code", ui-monospace, monospace',
-                fontWeight: 500,
-                fill: '#64748b',
-              },
-            },
-          ],
+          top: '46%',
+          style: {
+            text: total.toLocaleString(),
+            textAlign: 'center',
+            textVerticalAlign: 'middle',
+            fontSize: 22,
+            fontWeight: 600,
+            fontFamily: '"Fira Sans", sans-serif',
+            fill: '#0f172a',
+          },
+        } as any,
+        {
+          type: 'text',
+          left: '35%',
+          top: '58%',
+          style: {
+            text: 'TOTAL',
+            textAlign: 'center',
+            textVerticalAlign: 'middle',
+            fontSize: 10,
+            fontFamily: '"Fira Code", ui-monospace, monospace',
+            fontWeight: 500,
+            letterSpacing: 1,
+            fill: '#64748b',
+          },
         } as any,
       ],
     };
