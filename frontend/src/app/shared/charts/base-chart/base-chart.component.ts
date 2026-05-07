@@ -8,6 +8,7 @@ import { EChartOption } from 'echarts';
 })
 export class BaseChartComponent {
   @Input() title?: string;
+  @Input() subtitle?: string;
   @Input() loading = false;
   @Input() options: EChartOption | null = null;
   @Input() height = 320;

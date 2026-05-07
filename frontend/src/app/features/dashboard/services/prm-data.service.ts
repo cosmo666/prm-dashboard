@@ -13,6 +13,10 @@ import {
   SankeyResponse,
   ServiceTypeMatrixResponse,
   RouteBreakdownResponse,
+  HandlingDistributionResponse,
+  DurationDistributionResponse,
+  NoShowsResponse,
+  BreakdownResponse,
 } from './prm-dtos';
 
 /**
@@ -112,6 +116,28 @@ export class PrmDataService {
 
   topRoutes(limit: number = 10): Observable<RouteBreakdownResponse> {
     return this.api.get<RouteBreakdownResponse>('/prm/breakdowns/by-route', this.params({ limit }));
+  }
+
+  // ── Phase A foundation: 5 endpoints for Overview row 2-3 + Top10 row 3 ──
+
+  handlingDistribution(): Observable<HandlingDistributionResponse> {
+    return this.api.get<HandlingDistributionResponse>('/prm/kpis/handling-distribution', this.params());
+  }
+
+  durationDistribution(): Observable<DurationDistributionResponse> {
+    return this.api.get<DurationDistributionResponse>('/prm/performance/duration-distribution', this.params());
+  }
+
+  byLocation(): Observable<BreakdownResponse> {
+    return this.api.get<BreakdownResponse>('/prm/breakdowns/by-location', this.params());
+  }
+
+  noShows(): Observable<NoShowsResponse> {
+    return this.api.get<NoShowsResponse>('/prm/performance/no-shows', this.params());
+  }
+
+  byRoute(): Observable<RouteBreakdownResponse> {
+    return this.api.get<RouteBreakdownResponse>('/prm/breakdowns/by-route', this.params());
   }
 
   /**

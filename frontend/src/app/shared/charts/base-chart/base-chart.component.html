@@ -1,5 +1,8 @@
 <div class="base-chart" [style.height.px]="height">
-  <div class="title" *ngIf="title">{{ title }}</div>
+  <div class="head" *ngIf="title || subtitle">
+    <div class="title" *ngIf="title">{{ title }}</div>
+    <div class="subtitle" *ngIf="subtitle">{{ subtitle }}</div>
+  </div>
   <div class="loading" *ngIf="loading"><p-progressSpinner></p-progressSpinner></div>
   <div class="empty"   *ngIf="!loading && isEmpty">No data matches current filters</div>
   <div class="echart"  *ngIf="!loading && !isEmpty"

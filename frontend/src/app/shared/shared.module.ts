@@ -31,6 +31,8 @@ import { DonutChartComponent } from './charts/donut-chart/donut-chart.component'
 import { HorizontalBarChartComponent } from './charts/horizontal-bar-chart/horizontal-bar-chart.component';
 import { SankeyChartComponent } from './charts/sankey-chart/sankey-chart.component';
 import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-card.component';
+import { CompactNumberPipe } from './pipes/compact-number.pipe';
+import { TooltipDirective } from './directives/tooltip.directive';
 
 // NgxEchartsModule.forRoot is called once at AppModule level so the echarts
 // factory provider lives in the root injector. SharedModule only re-exports
@@ -52,6 +54,8 @@ import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-
     HorizontalBarChartComponent,
     SankeyChartComponent,
     KpiCardComponent,
+    CompactNumberPipe,
+    TooltipDirective,
   ],
   exports: [
     CommonModule, FormsModule, ReactiveFormsModule, RouterModule,
@@ -65,6 +69,8 @@ import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-
     LineChartComponent, DonutChartComponent, HorizontalBarChartComponent,
     SankeyChartComponent,
     KpiCardComponent,
+    CompactNumberPipe,
+    TooltipDirective,
   ],
 })
 export class SharedModule {}

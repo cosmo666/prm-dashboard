@@ -1,6 +1,7 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { CommonModule } from '@angular/common';
 import { KpiCardComponent } from './kpi-card.component';
+import { TooltipDirective } from 'src/app/shared/directives/tooltip.directive';
 
 describe('KpiCardComponent', () => {
   let fixture: ComponentFixture<KpiCardComponent>;
@@ -10,7 +11,7 @@ describe('KpiCardComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [CommonModule],
-      declarations: [KpiCardComponent],
+      declarations: [KpiCardComponent, TooltipDirective],
     });
     fixture = TestBed.createComponent(KpiCardComponent);
     component = fixture.componentInstance;

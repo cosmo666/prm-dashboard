@@ -1,13 +1,23 @@
-<article class="kpi-card" [class.kpi-card--loading]="loading">
+<article
+  class="kpi-card"
+  [class.kpi-card--loading]="loading"
+  [class.kpi-card--spark]="!loading && sparkPath"
+  [appTooltip]="tooltip"
+  tooltipPosition="bottom">
   <header class="kpi-card__head">
     <span class="kpi-card__label">{{ label }}</span>
     <i *ngIf="icon" class="kpi-card__icon pi" [class]="'pi ' + icon"></i>
+    <span *ngIf="resolvedAccent && !loading"
+          class="kpi-card__accent"
+          [class]="'kpi-card__accent accent--' + resolvedAccent"></span>
   </header>
 
   <ng-container *ngIf="!loading; else skeleton">
     <div class="kpi-card__value font-mono">{{ value }}</div>
 
-    <div *ngIf="delta !== null && delta !== undefined" class="kpi-card__delta" [class]="'kpi-card__delta ' + deltaClass">
+    <div *ngIf="delta !== null && delta !== undefined"
+         class="kpi-card__delta"
+         [class]="'kpi-card__delta ' + deltaClass">
       <span class="kpi-card__delta-arrow" aria-hidden="true">
         <i class="pi" [ngClass]="{
           'pi-arrow-up':   deltaClass === 'is-up',
@@ -16,10 +26,24 @@
         }"></i>
       </span>
       <span class="kpi-card__delta-value font-mono">{{ formattedDelta }}</span>
-      <span class="kpi-card__delta-vs">vs prev period</span>
+      <span class="kpi-card__delta-vs">{{ effectiveDeltaLabel }}</span>
     </div>
 
     <div *ngIf="subtext" class="kpi-card__subtext">{{ subtext }}</div>
+
+    <div *ngIf="sparkPath" class="kpi-card__spark" aria-hidden="true">
+      <svg viewBox="0 0 100 32" preserveAspectRatio="none">
+        <defs>
+          <linearGradient [attr.id]="'kpi-spark-grad-' + sparkId" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" [attr.stop-color]="sparkColor" stop-opacity="0.22"></stop>
+            <stop offset="100%" [attr.stop-color]="sparkColor" stop-opacity="0"></stop>
+          </linearGradient>
+        </defs>
+        <path [attr.d]="sparkArea" [attr.fill]="'url(#kpi-spark-grad-' + sparkId + ')'" stroke="none"></path>
+        <path [attr.d]="sparkPath" fill="none" [attr.stroke]="sparkColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    </div>
   </ng-container>
 
   <ng-template #skeleton>

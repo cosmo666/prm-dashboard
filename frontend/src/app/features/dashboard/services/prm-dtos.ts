@@ -117,3 +117,42 @@ export interface RouteItem {
   percentage: number;
 }
 export interface RouteBreakdownResponse { items: RouteItem[]; }
+
+// ---------- Handling distribution (self vs outsourced) ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/KpiDtos.cs
+//   public record HandlingDistributionResponse(List<string> Labels, List<int> Values);
+export interface HandlingDistributionResponse {
+  labels: string[];
+  values: number[];
+}
+
+// ---------- Duration distribution buckets ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/PerformanceDtos.cs
+//   public record DurationBucket(string Label, int Count, double Percentage);
+//   public record DurationDistributionResponse(List<DurationBucket> Buckets,
+//                                              double P50, double P90, double Avg);
+export interface DurationBucket {
+  label: string;
+  count: number;
+  percentage: number;
+}
+export interface DurationDistributionResponse {
+  buckets: DurationBucket[];
+  p50: number;
+  p90: number;
+  avg: number;
+}
+
+// ---------- No-shows by airline ----------
+// Source: backend/src/PrmDashboard.Shared/DTOs/PerformanceDtos.cs
+//   public record NoShowItem(string Airline, int Total, int NoShows, double Rate);
+//   public record NoShowResponse(List<NoShowItem> Items);
+// (Frontend interface name pluralised to NoShowsResponse for parity with the
+//  /no-shows endpoint name; wire shape mirrors the C# record exactly.)
+export interface NoShowItem {
+  airline: string;
+  total: number;
+  noShows: number;
+  rate: number;
+}
+export interface NoShowsResponse { items: NoShowItem[]; }
