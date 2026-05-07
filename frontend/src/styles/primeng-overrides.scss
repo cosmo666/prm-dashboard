@@ -363,3 +363,40 @@
     border-radius: var(--radius-pill);
   }
 }
+
+// ============================================================================
+// Date-range overlay (.drp-panel) — appended to body so we override here at
+// global scope (component ::ng-deep doesn't reach body-level elements).
+// Keep the panel compact and visually aligned with the design system.
+// ============================================================================
+.ui-overlaypanel.drp-panel {
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  padding: 0;
+  // Cap so it never spans the viewport — content inside has its own max
+  max-width: 620px;
+
+  // PrimeNG paints a default arrow we don't need
+  &::before, &::after { display: none !important; }
+
+  .ui-overlaypanel-content { padding: 0; }
+
+  // Compact PrimeNG calendar inside
+  .ui-datepicker {
+    border: 0;
+    padding: 8px;
+    min-width: 280px;
+
+    .ui-datepicker-header {
+      padding: 4px 6px 8px;
+      border-bottom: 1px solid var(--app-border, #e2e8f0);
+    }
+    .ui-datepicker-title { font-size: 13px; font-weight: 500; }
+    table {
+      font-size: 12px;
+      td > a, td > span { padding: 6px 0; }
+      td > a.ui-state-active { background: var(--app-primary, #2563EB); color: #fff; border-radius: 4px; }
+    }
+  }
+}

@@ -180,7 +180,23 @@ export class LineChartComponent implements OnChanges {
         markLineData.push({
           yAxis: avg,
           lineStyle: { type: 'dashed', color: '#94a3b8', width: 1 },
-          label: { formatter: `Avg ${avg.toFixed(0)}`, position: 'end', color: '#475569', fontSize: 10 },
+          // Render the "Avg N" label INSIDE the grid (insideEndTop) with a
+          // soft white badge so it sits cleanly above the line at the right
+          // edge. Earlier `position: 'end'` painted outside the grid and got
+          // clipped by the chart container.
+          label: {
+            formatter: `Avg ${avg.toFixed(0)}`,
+            position: 'insideEndTop',
+            color: '#475569',
+            fontSize: 10,
+            fontWeight: 500,
+            padding: [2, 5],
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            borderRadius: 3,
+            borderColor: '#e2e8f0',
+            borderWidth: 1,
+            distance: -2,
+          },
         });
       }
       if (idx === 0 && annotationMarkLines.length > 0) {

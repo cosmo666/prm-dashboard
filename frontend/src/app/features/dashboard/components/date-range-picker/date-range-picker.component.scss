@@ -1,35 +1,84 @@
-:host { display: block; }
+:host { display: inline-block; }
 
 .range-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 10px;
+  padding: 0 14px;
   background: var(--app-surface);
   border: 1px solid var(--app-border);
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   color: var(--app-text);
+  font-family: 'Fira Sans', sans-serif;
+  // Cap the width and force single-line layout so the date pill sits flush
+  // with the multiselect siblings instead of wrapping mid-word at narrow
+  // widths. Truncate via ellipsis if the resolved range gets too long.
+  max-width: 280px;
+  white-space: nowrap;
 
-  &:hover { background: var(--app-surface-elevated); }
+  &:hover { background: var(--app-bg-muted, #f8fafc); }
 
-  &__label { font-weight: 600; }
-  &__range { color: var(--app-text-muted); font-size: 12px; }
+  &__icon { color: var(--app-text-muted, #64748b); flex-shrink: 0; font-size: 12px; }
+  &__caret { color: var(--app-text-muted, #64748b); flex-shrink: 0; font-size: 11px; }
+
+  // Two-line stack INSIDE the pill: small uppercase preset above the resolved
+  // range. Both clipped with ellipsis so the pill never grows past max-width.
+  &__text {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    overflow: hidden;
+    line-height: 1.15;
+    flex: 1 1 auto;
+  }
+
+  &__label {
+    font-family: 'Fira Code', ui-monospace, monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--app-text-muted, #64748b);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__range {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--app-text, #0f172a);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .font-mono { font-family: 'Fira Code', ui-monospace, monospace; }
 
+// Calendar overlay — capped width and tighter padding so it doesn't
+// dominate the viewport. Quick-presets list scrolls if it overflows.
 .drp-wrap {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  min-width: 300px;
+  gap: 12px;
+  padding: 12px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 80vh;
+  overflow: hidden;
 
   @media (min-width: 768px) {
     flex-direction: row;
-    min-width: 580px;
+    width: 580px;
   }
+}
+
+.drp-presets {
+  flex: 0 0 auto;
+  width: 200px;
+  max-height: 360px;
+  overflow-y: auto;
 }
 
 .drp-presets {

@@ -1,8 +1,10 @@
-<button type="button" class="range-btn" (click)="panel.toggle($event)">
-  <i class="pi pi-calendar"></i>
-  <span class="range-btn__label">{{ currentLabel }}</span>
-  <span class="range-btn__range font-mono">{{ rangeDisplay }}</span>
-  <i class="pi pi-chevron-down"></i>
+<button type="button" class="range-btn" (click)="panel.toggle($event)" [title]="currentLabel + ' · ' + rangeDisplay">
+  <i class="pi pi-calendar range-btn__icon" aria-hidden="true"></i>
+  <span class="range-btn__text">
+    <span class="range-btn__label">{{ currentLabel }}</span>
+    <span class="range-btn__range font-mono">{{ rangeDisplay }}</span>
+  </span>
+  <i class="pi pi-chevron-down range-btn__caret" aria-hidden="true"></i>
 </button>
 
 <p-overlayPanel #panel [showCloseIcon]="false" [appendTo]="'body'" styleClass="drp-panel">
