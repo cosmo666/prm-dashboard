@@ -1,8 +1,8 @@
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
 import { EChartOption } from 'echarts';
 import { resolvePrimary } from '../resolve-primary';
 
-export interface BarDatum { label: string; value: number; }
+export interface BarDatum { label: string; value: number; color?: string; }
 
 @Component({
   selector: 'app-bar-chart',
@@ -21,6 +21,8 @@ export class BarChartComponent implements OnChanges {
   @Input() stackedSeries?: { [code: string]: number[] };
   @Input() stackKeys?: string[];
   @Input() stackColors?: { [code: string]: string };
+
+  @Output() barClick = new EventEmitter<{ category: string; value: number }>();
 
   options: EChartOption | null = null;
 
@@ -43,7 +45,14 @@ export class BarChartComponent implements OnChanges {
       : [{
           name: 'Total',
           type: 'bar',
-          data: this.data.map(d => d.value),
+          // Per-bar color override: BarDatum.color (when present) wins over the
+          // series fallback so callers can paint individual bars (e.g. weekend
+          // days in a different hue) without falling back to stacked-series
+          // mode for a single-series chart.
+          data: this.data.map(d => ({
+            value: d.value,
+            itemStyle: d.color ? { color: d.color } : undefined,
+          })),
           itemStyle: { color: resolvePrimary() },
           emphasis: { focus: 'series' },
         }];
@@ -56,5 +65,14 @@ export class BarChartComponent implements OnChanges {
       yAxis:   { type: 'value' },
       series,
     };
+  }
+
+  onChartClick(event: any): void {
+    if (!event) { return; }
+    const category = (event.name as string) || (event.data && event.data.name);
+    if (category) {
+      const row = this.data.find(r => r.label === category);
+      this.barClick.emit({ category, value: row ? row.value : (event.value as number) || 0 });
+    }
   }
 }

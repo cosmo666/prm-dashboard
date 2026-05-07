@@ -5,6 +5,7 @@ import { FilterStore } from 'src/app/core/store/filter.store';
 import {
   KpiSummaryResponse,
   DailyTrendResponse,
+  HourlyHeatmapResponse,
   RankingsResponse,
   FilterOptionsResponse,
   FlightRankingsResponse,
@@ -79,6 +80,10 @@ export class PrmDataService {
     params.date_from = iso(prevFrom);
     params.date_to   = iso(prevEnd);
     return this.api.get<DailyTrendResponse>('/prm/trends/daily', params);
+  }
+
+  trendsHourly(): Observable<HourlyHeatmapResponse> {
+    return this.api.get<HourlyHeatmapResponse>('/prm/trends/hourly', this.params());
   }
 
   topAirlines(limit: number = 10): Observable<RankingsResponse> {

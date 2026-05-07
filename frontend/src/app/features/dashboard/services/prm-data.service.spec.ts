@@ -40,6 +40,12 @@ describe('PrmDataService', () => {
     });
   });
 
+  it('trendsHourly calls /prm/trends/hourly', () => {
+    service.trendsHourly().subscribe();
+    const args = apiSpy.get.calls.mostRecent().args;
+    expect(args[0]).toBe('/prm/trends/hourly');
+  });
+
   it('topAirlines passes limit', () => {
     service.topAirlines(7).subscribe();
     const args = apiSpy.get.calls.mostRecent().args;

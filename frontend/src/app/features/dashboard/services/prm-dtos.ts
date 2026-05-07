@@ -21,6 +21,14 @@ export interface DailyTrendResponse {
   average: number;
 }
 
+// Source: backend/src/PrmDashboard.Shared/DTOs/TrendDtos.cs (HourlyHeatmapResponse)
+// 7 days × 24 hours grid; values[day][hour] = service count.
+export interface HourlyHeatmapResponse {
+  days: string[];      // 7 entries: ['Mon','Tue',...,'Sun']
+  hours: number[];     // 24 entries: 0..23
+  values: number[][];  // values[day][hour] = service count
+}
+
 // ---------- Rankings ----------
 // Source: backend/src/PrmDashboard.Shared/DTOs/RankingDtos.cs
 export interface RankingItem {
