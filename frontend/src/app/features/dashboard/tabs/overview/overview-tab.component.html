@@ -3,41 +3,47 @@
   <div class="row row-kpis">
     <app-kpi-card
       label="Total PRM Services"
-      tooltip="Total unique PRM services delivered in the selected period. Each service counts once even if paused and resumed."
+      tooltip="The headline number — every unique PRM service delivered in the selected period. A service that was paused and resumed still counts once. Compare to the previous period (same window, shifted back) to see whether demand is trending up or down."
       [value]="(totalPrm$ | async) | compactNumber"
+      unit="services"
       accent="blue"
       [delta]="totalDelta$ | async"
       [deltaLabel]="prevPeriodLabel$ | async"
-      [subtext]="'Daily avg ' + (dailyAvg$ | async | number:'1.0-0') + ' · Peak ' + (peakDay$ | async | number)"
+      [subtext]="'Daily avg ' + (dailyAvg$ | async | number:'1.0-0') + ' · Peak day ' + (peakDay$ | async | number)"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
       label="Active Agents"
-      tooltip="Number of distinct agents who handled at least one PRM service. Self = in-house, Outsourced = contracted."
+      tooltip="Distinct agents who handled at least one PRM service in the period. Self = in-house staff on the airline's payroll. Outsourced = contracted ground-handling agents. The split signals how dependent operations are on third-party labour."
       [value]="(activeAgents$ | async) | compactNumber"
+      unit="agents"
       accent="teal"
       [subtext]="'Self ' + (agentsSelf$ | async) + ' · Outsourced ' + (agentsOutsourced$ | async)"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
-      label="Avg Services / Agent / Day"
-      tooltip="Average number of PRM services each agent handles per working day. Higher means better utilization; too high may indicate overload."
+      label="Services per Agent / Day"
+      tooltip="Average services handled per agent per active working day. Higher = better utilization; too high (above ~6/day) often means overload, longer durations, or quality risk. Computed as total services ÷ total active agents ÷ active days."
       [value]="(avgPerAgent$ | async) | number:'1.1-1'"
+      unit="/agent/day"
       accent="amber"
-      [subtext]="'Total ' + ((totalPrm$ | async) | compactNumber) + ' / ' + (activeAgents$ | async) + ' agents'"
+      [subtext]="'From ' + ((totalPrm$ | async) | compactNumber) + ' services across ' + (activeAgents$ | async) + ' agents'"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
-      label="Avg Duration (min)"
-      tooltip="Average time in minutes to complete a PRM service, from start to end. Excludes paused time for services that were interrupted."
+      label="Avg Service Duration"
+      tooltip="Average elapsed minutes from service start to end. Excludes time spent paused (e.g. waiting for a wheelchair to free up). Trending up means services are taking longer — could indicate longer routes, more complex needs, or scheduling issues."
       [value]="(avgDuration$ | async) | number:'1.0-0'"
+      unit="min"
       accent="plum"
       [delta]="durationDelta$ | async"
       [deltaLabel]="prevPeriodLabel$ | async"
+      subtext="From start to end, paused time excluded"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
       label="Fulfillment Rate"
-      tooltip="Percentage of pre-requested PRM services that were actually fulfilled. 100% means every booked request was served."
-      [value]="((fulfillmentRate$ | async) | number:'1.1-1') + '%'"
+      tooltip="Of services that were pre-booked (PRM-requested before arrival), what share was actually delivered. 100% means every booking was served. Drill into the Fulfillment tab to see the daily Provided-vs-Requested trend."
+      [value]="(fulfillmentRate$ | async) | number:'1.1-1'"
+      unit="%"
       accent="green"
-      subtext="of pre-requested PRM"
+      subtext="of pre-requested PRM bookings served"
       [loading]="loading$ | async"></app-kpi-card>
   </div>
 

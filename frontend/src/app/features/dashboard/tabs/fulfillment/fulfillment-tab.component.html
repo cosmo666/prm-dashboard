@@ -3,27 +3,35 @@
   <div class="row row-kpis">
     <app-kpi-card
       label="PRM Requested"
-      tooltip="Number of PRM services that were pre-booked by airlines or passengers before arrival."
+      tooltip="Pre-booked PRM services. These are the bookings airlines or passengers made BEFORE arrival — the schedulable demand. The remaining demand arrives as walk-ups (see Walk-up Rate)."
       [value]="(totalRequested$ | async) | compactNumber"
+      unit="bookings"
       accent="blue"
+      [subtext]="'Pre-booked · ' + ((bookedSharePct$ | async) | number:'1.0-0') + '% of total demand'"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
       label="Provided vs Requested"
-      tooltip="Ratio of services actually delivered vs those pre-requested. Above 100% means walk-up demand exceeded bookings."
-      [value]="((providedPct$ | async) | number:'1.1-1') + '%'"
+      tooltip="What share of pre-booked services were actually delivered. 100% means every booking was served. Below 100% indicates some bookings went unserved; above 100% means walk-ups outpaced bookings."
+      [value]="(providedPct$ | async) | number:'1.1-1'"
+      unit="%"
       accent="green"
+      [subtext]="((totalProvided$ | async) | compactNumber) + ' served / ' + ((totalRequested$ | async) | compactNumber) + ' booked'"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
       label="Total Provided"
-      tooltip="Total PRM services actually delivered, including both pre-requested and walk-up passengers."
+      tooltip="Every PRM service actually delivered in the period — pre-booked AND walk-up combined. This is the operational workload your agents handled."
       [value]="(totalProvided$ | async) | compactNumber"
+      unit="services"
       accent="teal"
+      [subtext]="((totalRequested$ | async) | compactNumber) + ' booked + ' + ((walkupCount$ | async) | compactNumber) + ' walk-ups'"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
       label="Walk-up Rate"
-      tooltip="Percentage of services that were not pre-booked — passengers who showed up unannounced needing PRM assistance."
-      [value]="((walkupRate$ | async) | number:'1.1-1') + '%'"
+      tooltip="Share of delivered services that were NOT pre-booked. High walk-up rates strain on-the-day staffing because the workload can't be scheduled in advance."
+      [value]="(walkupRate$ | async) | number:'1.1-1'"
+      unit="%"
       accent="amber"
+      [subtext]="((walkupCount$ | async) | compactNumber) + ' unannounced of ' + ((totalProvided$ | async) | compactNumber) + ' served'"
       [loading]="loading$ | async"></app-kpi-card>
   </div>
 

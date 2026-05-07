@@ -21,6 +21,7 @@ export class KpiCardComponent implements OnChanges {
   @Input() tooltip = '';                    // [appTooltip] on host article
   @Input() sparkData: number[] | null = null;
   @Input() deltaLabel = '';                 // overrides default "vs prev period"
+  @Input() unit = '';                       // small unit suffix beside value ("services", "min", etc.)
 
   // Stable per-instance id so SVG gradient defs don't collide across cards.
   // Computed in the constructor (not getter) per spec — Math.random() in the

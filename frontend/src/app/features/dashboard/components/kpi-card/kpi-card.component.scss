@@ -42,6 +42,18 @@
   &.accent--green { background: #10b981; }
 }
 
+// The unit suffix sits right after the big number, smaller and muted, so
+// users see "575 services" / "54 min" / "16 agents" without losing the
+// scannability of the number itself.
+.kpi-card__value-unit {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--app-text-muted, #64748b);
+  margin-left: 6px;
+  letter-spacing: 0;
+}
+
 .kpi-card__spark {
   height: 36px;
   margin: 4px -4px -4px;

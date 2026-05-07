@@ -13,7 +13,10 @@
   </header>
 
   <ng-container *ngIf="!loading; else skeleton">
-    <div class="kpi-card__value font-mono">{{ value }}</div>
+    <div class="kpi-card__value font-mono">
+      <span class="kpi-card__value-num">{{ value }}</span>
+      <span *ngIf="unit" class="kpi-card__value-unit">{{ unit }}</span>
+    </div>
 
     <div *ngIf="delta !== null && delta !== undefined"
          class="kpi-card__delta"

@@ -49,6 +49,10 @@ export class FulfillmentTabComponent implements OnInit, OnDestroy {
   providedPct$ = new BehaviorSubject<number>(0);
   walkupRate$ = new BehaviorSubject<number>(0);
 
+  // Derived subtext data
+  walkupCount$ = new BehaviorSubject<number>(0);    // totalProvided - totalRequested (clamped ≥0)
+  bookedSharePct$ = new BehaviorSubject<number>(0); // pre-booked share of total demand
+
   // Charts
   dualAxisSeries$ = new BehaviorSubject<LineSeries[]>([]);
   timeOfDay$ = new BehaviorSubject<BarDatum[]>([]);
@@ -78,10 +82,19 @@ export class FulfillmentTabComponent implements OnInit, OnDestroy {
     ).subscribe(
       r => {
         // ── KPIs from RequestedVsProvidedKpiResponse ──
-        this.totalRequested$.next(r.rvp.totalRequested || 0);
-        this.totalProvided$.next(r.rvp.totalProvided || 0);
+        const totalReq = r.rvp.totalRequested || 0;
+        const totalProv = r.rvp.totalProvided || 0;
+        this.totalRequested$.next(totalReq);
+        this.totalProvided$.next(totalProv);
         this.providedPct$.next(r.rvp.fulfillmentRate || 0);
         this.walkupRate$.next(r.rvp.walkUpRate || 0);
+
+        // Walk-ups = provided - pre-booked (clamped ≥ 0). Booked-share is
+        // the inverse view of walk-up rate, computed against TOTAL provided
+        // so it reads as "X% of demand was scheduled in advance".
+        const walkups = Math.max(0, totalProv - totalReq);
+        this.walkupCount$.next(walkups);
+        this.bookedSharePct$.next(totalProv > 0 ? (totalReq / totalProv) * 100 : 0);
 
         // ── Daily Provided vs Requested (dual-axis bar + line) ──
         // Slice the date to its DD suffix for the x-axis label so labels

@@ -3,27 +3,35 @@
   <div class="row row-kpis">
     <app-kpi-card
       label="Pause Rate"
-      tooltip="Percentage of services that were paused mid-way and resumed later. High pause rates may indicate workflow interruptions or resource conflicts."
-      [value]="((pauseRate$ | async) | number:'1.1-1') + '%'"
+      tooltip="Share of PRM services that were paused mid-delivery and resumed later. A paused service breaks an agent's flow — high rates often signal resource conflicts, equipment shortages, or schedule clashes between concurrent services."
+      [value]="(pauseRate$ | async) | number:'1.1-1'"
+      unit="%"
       accent="amber"
+      subtext="Services paused & resumed mid-flow"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
-      label="Outsourced Services"
-      tooltip="Share of PRM services handled by contracted (outsourced) agents vs in-house staff. Higher outsourcing may indicate staffing gaps."
-      [value]="((outsourcedPct$ | async) | number:'1.1-1') + '%'"
+      label="Outsourced Share"
+      tooltip="Percentage of services delivered by contracted (third-party) agents vs in-house staff. Above 50% often means the airline is operating thin in-house — useful for capacity planning and contract negotiation."
+      [value]="(outsourcedPct$ | async) | number:'1.1-1'"
+      unit="%"
       accent="plum"
+      subtext="Handled by contracted agents"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
-      label="Avg Services per Agent"
-      tooltip="Total services divided by total active agents. Indicates average workload per agent in the selected period."
+      label="Services per Agent"
+      tooltip="Average workload per active agent across the entire period (not per-day). Quick utilization check — divide by the number of working days for a per-day benchmark."
       [value]="(avgPerAgent$ | async) | number:'1.1-1'"
+      unit="/agent"
       accent="blue"
+      subtext="Total demand spread across agents"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
       label="No-Show Rate"
-      tooltip="Percentage of passengers who booked PRM assistance but did not show up for the service. Impacts resource planning and staffing efficiency."
-      [value]="((noShowRate$ | async) | number:'1.1-1') + '%'"
+      tooltip="Share of pre-booked passengers who didn't show up for their PRM service. Each no-show is wasted prep time. The Strategic Trends section below breaks this down by airline so you can see which carriers' bookings are most reliable."
+      [value]="(noShowRate$ | async) | number:'1.1-1'"
+      unit="%"
       accent="teal"
+      subtext="Booked PRM passengers who never arrived"
       [loading]="loading$ | async"></app-kpi-card>
   </div>
 
