@@ -18,7 +18,7 @@
           (onChange)="setAirline($event)"
           defaultLabel="Airline"
           [appendTo]="'body'"
-          [filter]="true">
+          [filter]="false">
         </p-multiSelect>
       </div>
 
@@ -29,7 +29,7 @@
           (onChange)="setService($event)"
           defaultLabel="Service"
           [appendTo]="'body'"
-          [filter]="true">
+          [filter]="false">
         </p-multiSelect>
       </div>
 
@@ -39,7 +39,8 @@
           [(ngModel)]="handledBy"
           (onChange)="setHandledBy($event)"
           defaultLabel="Handled by"
-          [appendTo]="'body'">
+          [appendTo]="'body'"
+          [filter]="false">
         </p-multiSelect>
       </div>
 
@@ -101,15 +102,15 @@
     <app-date-range-picker class="fb-cell"></app-date-range-picker>
 
     <app-form-field label="Airline" class="fb-cell">
-      <p-multiSelect [options]="airlineOptions" [(ngModel)]="airline" (onChange)="setAirline($event)" [appendTo]="'body'" [filter]="true"></p-multiSelect>
+      <p-multiSelect [options]="airlineOptions" [(ngModel)]="airline" (onChange)="setAirline($event)" [appendTo]="'body'" [filter]="false"></p-multiSelect>
     </app-form-field>
 
     <app-form-field label="Service" class="fb-cell">
-      <p-multiSelect [options]="serviceOptions" [(ngModel)]="service" (onChange)="setService($event)" [appendTo]="'body'" [filter]="true"></p-multiSelect>
+      <p-multiSelect [options]="serviceOptions" [(ngModel)]="service" (onChange)="setService($event)" [appendTo]="'body'" [filter]="false"></p-multiSelect>
     </app-form-field>
 
     <app-form-field label="Handled By" class="fb-cell">
-      <p-multiSelect [options]="handledByOptions" [(ngModel)]="handledBy" (onChange)="setHandledBy($event)" [appendTo]="'body'"></p-multiSelect>
+      <p-multiSelect [options]="handledByOptions" [(ngModel)]="handledBy" (onChange)="setHandledBy($event)" [appendTo]="'body'" [filter]="false"></p-multiSelect>
     </app-form-field>
 
     <button type="button" class="ui-button ui-button-secondary fb-clear" (click)="clearAll()" *ngIf="hasAnyFilter()">
