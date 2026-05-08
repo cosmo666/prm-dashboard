@@ -34,8 +34,8 @@ import { SankeyChartComponent } from './charts/sankey-chart/sankey-chart.compone
 import { HeatmapChartComponent } from './charts/heatmap-chart/heatmap-chart.component';
 import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-card.component';
 import { SavedViewsMenuComponent } from './components/saved-views-menu/saved-views-menu.component';
+import { DevTenantPickerComponent } from './components/dev-tenant-picker/dev-tenant-picker.component';
 import { CompactNumberPipe } from './pipes/compact-number.pipe';
-import { TooltipDirective } from './directives/tooltip.directive';
 
 // NgxEchartsModule.forRoot is called once at AppModule level so the echarts
 // factory provider lives in the root injector. SharedModule only re-exports
@@ -60,8 +60,8 @@ import { TooltipDirective } from './directives/tooltip.directive';
     HeatmapChartComponent,
     KpiCardComponent,
     SavedViewsMenuComponent,
+    DevTenantPickerComponent,
     CompactNumberPipe,
-    TooltipDirective,
   ],
   exports: [
     CommonModule, FormsModule, ReactiveFormsModule, RouterModule,
@@ -77,8 +77,8 @@ import { TooltipDirective } from './directives/tooltip.directive';
     SankeyChartComponent, HeatmapChartComponent,
     KpiCardComponent,
     SavedViewsMenuComponent,
+    DevTenantPickerComponent,
     CompactNumberPipe,
-    TooltipDirective,
   ],
 })
 export class SharedModule {}

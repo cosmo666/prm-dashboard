@@ -12,6 +12,10 @@
     </div>
 
     <div class="topbar-actions">
+      <!-- Dev-only: hostname-gated tenant switcher. Self-hides on
+           any non-localhost host. -->
+      <app-dev-tenant-picker></app-dev-tenant-picker>
+
       <div class="topbar-user" *ngIf="(authStore.employee$ | async) as emp">
         <span class="user-avatar">{{ initials(emp.displayName) }}</span>
         <span class="user-meta">

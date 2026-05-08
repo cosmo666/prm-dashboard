@@ -1,7 +1,7 @@
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { CommonModule } from '@angular/common';
 import { KpiCardComponent } from './kpi-card.component';
-import { TooltipDirective } from 'src/app/shared/directives/tooltip.directive';
 
 describe('KpiCardComponent', () => {
   let fixture: ComponentFixture<KpiCardComponent>;
@@ -11,7 +11,14 @@ describe('KpiCardComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [CommonModule],
-      declarations: [KpiCardComponent, TooltipDirective],
+      declarations: [KpiCardComponent],
+      // [pTooltip] is the migration target for the deleted [appTooltip]
+      // directive. The card template references the attribute; this
+      // spec doesn't exercise tooltip behaviour. NO_ERRORS_SCHEMA
+      // (not CUSTOM_ELEMENTS_SCHEMA) is required because pTooltip is
+      // an unknown ATTRIBUTE/directive, not an unknown element —
+      // CUSTOM_ELEMENTS_SCHEMA only swallows unknown elements.
+      schemas: [NO_ERRORS_SCHEMA],
     });
     fixture = TestBed.createComponent(KpiCardComponent);
     component = fixture.componentInstance;

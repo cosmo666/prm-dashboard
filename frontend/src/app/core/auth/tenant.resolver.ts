@@ -5,6 +5,7 @@ import { finalize, tap } from 'rxjs/operators';
 import { ApiClient } from '../api/api.client';
 import { ProgressService } from '../progress/progress.service';
 import { TenantStore, Tenant } from '../store/tenant.store';
+import { readDevTenantOverride } from '../../shared/components/dev-tenant-picker/dev-tenant-picker.component';
 
 @Injectable({ providedIn: 'root' })
 export class TenantResolver implements Resolve<Tenant | null> {
@@ -29,9 +30,12 @@ export class TenantResolver implements Resolve<Tenant | null> {
   private extractSlugFromHost(): string {
     const host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1') {
-      return 'acme';
+      // Dev-only: DevTenantPicker may have stashed an override slug in
+      // localStorage. The override is validated against DEV_TENANTS so
+      // an unknown slug still falls through to the default.
+      return readDevTenantOverride() || 'aeroground';
     }
     const match = host.match(/^([a-z][a-z0-9-]*)\./);
-    return match ? match[1] : 'acme';
+    return match ? match[1] : 'aeroground';
   }
 }

@@ -18,7 +18,7 @@ export class KpiCardComponent implements OnChanges {
 
   // ── New props ──
   @Input() accent: KpiAccent = null;       // small dot in header + sparkline stroke
-  @Input() tooltip = '';                    // [appTooltip] on host article
+  @Input() tooltip = '';                    // [pTooltip] on host article
   @Input() sparkData: number[] | null = null;
   @Input() deltaLabel = '';                 // overrides default "vs prev period"
   @Input() unit = '';                       // small unit suffix beside value ("services", "min", etc.)
