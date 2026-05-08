@@ -47,6 +47,17 @@ import { CompactNumberPipe } from './pipes/compact-number.pipe';
     CommonModule,
     NgxEchartsModule,
     ProgressSpinnerModule,
+    // The next three are needed at IMPORT level (not just exports) so
+    // components declared INSIDE SharedModule can reach them during
+    // AOT template compilation:
+    //   • TooltipModule       — pTooltip on KpiCardComponent + DevTenantPickerComponent
+    //   • OverlayPanelModule  — p-overlayPanel on SavedViewsMenuComponent
+    //   • FormsModule         — [(ngModel)] on SavedViewsMenuComponent's save input
+    // ng build --configuration production is the gate that catches the
+    // omission; karma + JIT compile happen to be more permissive.
+    TooltipModule,
+    OverlayPanelModule,
+    FormsModule,
   ],
   declarations: [
     FormFieldComponent,
