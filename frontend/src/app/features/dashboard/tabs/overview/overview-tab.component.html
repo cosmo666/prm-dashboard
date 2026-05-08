@@ -62,19 +62,19 @@
       subtitle="Self vs Outsourced"
       [data]="handling$ | async"
       [loading]="loading$ | async"
+      [isPie]="true"
       (segmentClick)="onHandlingClick($event)"></app-donut-chart>
   </div>
 
   <!-- Row 3: Service Types + Duration Distribution + Locations -->
   <div class="row row-charts-1-1-1">
-    <app-donut-chart
+    <app-share-bars
       title="Service Type Breakdown"
-      subtitle="Top 5 categories by volume"
-      [data]="serviceTypes$ | async"
-      [centerTotal]="totalPrm$ | async"
-      centerCaption="OF TOTAL"
+      subtitle="All categories · share of total PRM"
+      [data]="serviceTypeBars$ | async"
+      [total]="totalPrm$ | async"
       [loading]="loading$ | async"
-      (segmentClick)="onServiceTypeClick($event)"></app-donut-chart>
+      (rowClick)="onServiceTypeClick($event)"></app-share-bars>
     <app-bar-chart
       title="Service Duration Spread"
       subtitle="How long services take"

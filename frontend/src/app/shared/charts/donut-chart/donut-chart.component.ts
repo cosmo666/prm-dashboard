@@ -23,6 +23,13 @@ export class DonutChartComponent implements OnChanges {
   // centring — no caption means the bounding box collapses to one line and
   // `top: 'middle'` centres the number perfectly.
   @Input() centerCaption = '';
+  // Render as a solid pie (no center hole) instead of a donut. Pie mode
+  // is the right call for binary part-of-whole (e.g. Self vs Outsourced)
+  // because a single ECharts label can't be reliably centered inside the
+  // hole of a donut once the legend pushes the series off the canvas
+  // mid-line — pie mode sidesteps the alignment problem entirely by
+  // making the center text moot.
+  @Input() isPie = false;
   @Output() segmentClick = new EventEmitter<{ name: string; value: number }>();
 
   options: EChartOption | null = null;
@@ -57,44 +64,51 @@ export class DonutChartComponent implements OnChanges {
       // number, accepting that the bounding-box-centred title will sit
       // a few px above the donut's centre — visible but the big number
       // remains anchored to the chart's vertical midline.
-      title: this.centerCaption
-        ? {
-            text: total.toLocaleString(),
-            subtext: this.centerCaption,
-            left: 'center',
-            top: 'middle',
-            textAlign: 'center',
-            textStyle: {
-              fontSize: 22,
-              fontWeight: 600,
-              fontFamily: '"Fira Sans", sans-serif',
-              color: '#0f172a',
-            },
-            subtextStyle: {
-              fontSize: 10,
-              fontWeight: 500,
-              fontFamily: '"Fira Code", ui-monospace, monospace',
-              color: '#64748b',
-            },
-            itemGap: 4,
-          } as any
-        : {
-            text: total.toLocaleString(),
-            left: 'center',
-            top: 'middle',
-            textAlign: 'center',
-            textStyle: {
-              fontSize: 24,
-              fontWeight: 600,
-              fontFamily: '"Fira Sans", sans-serif',
-              color: '#0f172a',
-            },
-          } as any,
+      // Pie mode has NO center hole, so there's nothing to put a number
+      // inside — the slice labels already carry count + percentage. We
+      // suppress the title entirely in that mode to avoid the centering
+      // drift that happens when a donut's center label has to compete
+      // with the bottom legend.
+      title: this.isPie
+        ? undefined
+        : (this.centerCaption
+          ? {
+              text: total.toLocaleString(),
+              subtext: this.centerCaption,
+              left: 'center',
+              top: 'middle',
+              textAlign: 'center',
+              textStyle: {
+                fontSize: 22,
+                fontWeight: 600,
+                fontFamily: '"Fira Sans", sans-serif',
+                color: '#0f172a',
+              },
+              subtextStyle: {
+                fontSize: 10,
+                fontWeight: 500,
+                fontFamily: '"Fira Code", ui-monospace, monospace',
+                color: '#64748b',
+              },
+              itemGap: 4,
+            } as any
+          : {
+              text: total.toLocaleString(),
+              left: 'center',
+              top: 'middle',
+              textAlign: 'center',
+              textStyle: {
+                fontSize: 24,
+                fontWeight: 600,
+                fontFamily: '"Fira Sans", sans-serif',
+                color: '#0f172a',
+              },
+            } as any),
       series: [{
         type: 'pie',
-        // Slightly tighter ring so the segment value labels outside the
-        // slices have room to breathe before colliding with the chart edge.
-        radius: ['54%', '74%'],
+        // Pie mode: full disc (inner radius 0). Donut mode: ring with
+        // a transparent center where the title can live.
+        radius: this.isPie ? ['0%', '70%'] : ['54%', '74%'],
         // Dead center — matches title's anchor exactly. The bottom legend
         // (legend.bottom: 4%) sits below the chart with enough clearance.
         center: ['50%', '50%'],

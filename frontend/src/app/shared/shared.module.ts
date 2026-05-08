@@ -28,6 +28,7 @@ import { BaseChartComponent } from './charts/base-chart/base-chart.component';
 import { BarChartComponent } from './charts/bar-chart/bar-chart.component';
 import { LineChartComponent } from './charts/line-chart/line-chart.component';
 import { DonutChartComponent } from './charts/donut-chart/donut-chart.component';
+import { ShareBarsComponent } from './charts/share-bars/share-bars.component';
 import { HorizontalBarChartComponent } from './charts/horizontal-bar-chart/horizontal-bar-chart.component';
 import { SankeyChartComponent } from './charts/sankey-chart/sankey-chart.component';
 import { HeatmapChartComponent } from './charts/heatmap-chart/heatmap-chart.component';
@@ -52,6 +53,7 @@ import { TooltipDirective } from './directives/tooltip.directive';
     BarChartComponent,
     LineChartComponent,
     DonutChartComponent,
+    ShareBarsComponent,
     HorizontalBarChartComponent,
     SankeyChartComponent,
     HeatmapChartComponent,
@@ -68,7 +70,8 @@ import { TooltipDirective } from './directives/tooltip.directive';
     OverlayPanelModule, TableModule,
     NgxEchartsModule,
     FormFieldComponent, BaseChartComponent, BarChartComponent,
-    LineChartComponent, DonutChartComponent, HorizontalBarChartComponent,
+    LineChartComponent, DonutChartComponent, ShareBarsComponent,
+    HorizontalBarChartComponent,
     SankeyChartComponent, HeatmapChartComponent,
     KpiCardComponent,
     CompactNumberPipe,

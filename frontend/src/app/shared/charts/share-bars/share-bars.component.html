@@ -1,0 +1,36 @@
+<div class="share-bars-card">
+  <header class="share-bars-card__head" *ngIf="title || subtitle">
+    <h3 class="share-bars-card__title" *ngIf="title">{{ title }}</h3>
+    <p class="share-bars-card__sub" *ngIf="subtitle">{{ subtitle }}</p>
+  </header>
+
+  <div class="share-bars__loading" *ngIf="loading">
+    <div class="share-bars__skeleton" *ngFor="let _ of [1,2,3,4,5,6]"></div>
+  </div>
+
+  <p class="share-bars__empty" *ngIf="!loading && !hasData()">
+    No data matches current filters
+  </p>
+
+  <ul class="share-bars" *ngIf="!loading && hasData()">
+    <li *ngFor="let r of rows"
+        class="share-bar"
+        [title]="r.name + (r.label ? ' · ' + r.label : '') + ' · ' + (r.value | number) + ' (' + (r.pct | number:'1.1-1') + '%)'"
+        (click)="onRowClick(r)">
+      <div class="share-bar__name">
+        <span class="share-bar__dot" [style.background]="r.color || '#94a3b8'"></span>
+        <span class="share-bar__code">{{ r.name }}</span>
+        <span class="share-bar__label" *ngIf="r.label">{{ r.label }}</span>
+      </div>
+      <div class="share-bar__track">
+        <div class="share-bar__fill"
+             [style.width.%]="r.widthPct"
+             [style.background]="r.color || '#94a3b8'"></div>
+      </div>
+      <div class="share-bar__metrics">
+        <span class="share-bar__value">{{ r.value | number }}</span>
+        <span class="share-bar__pct">{{ r.pct | number:'1.1-1' }}%</span>
+      </div>
+    </li>
+  </ul>
+</div>

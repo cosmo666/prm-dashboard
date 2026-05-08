@@ -6,6 +6,7 @@ import { PrmDataService } from '../../services/prm-data.service';
 import { LineSeries } from 'src/app/shared/charts/line-chart/line-chart.component';
 import { BarDatum } from 'src/app/shared/charts/bar-chart/bar-chart.component';
 import { DonutDatum } from 'src/app/shared/charts/donut-chart/donut-chart.component';
+import { ShareBarDatum } from 'src/app/shared/charts/share-bars/share-bars.component';
 import { ChartAnnotation } from '../../utils/annotations';
 
 // Self/Outsourced colors are domain-fixed (not tenant-themed) — Self in
@@ -17,6 +18,36 @@ const HANDLING_COLORS: { [name: string]: string } = {
   OUTSOURCED: '#fb8c00',
   Self: '#1e88e5',
   Outsourced: '#fb8c00',
+};
+
+// Per-SSR-code palette and one-line label, mirroring the values used
+// on the Service Breakup tab. Kept local to this file (rather than
+// hoisted to a shared constants module) because both tabs touch the
+// same nine codes — a future fourth use-site is the trigger to move
+// these into a shared `prm-domain` module.
+const SSR_COLORS: { [code: string]: string } = {
+  WCHR: '#2563EB',
+  WCHC: '#1e3a8a',
+  WCHS: '#3b82f6',
+  WCMP: '#6366f1',
+  MAAS: '#0ea5e9',
+  UMNR: '#8b5cf6',
+  DPNA: '#a855f7',
+  BLND: '#10b981',
+  MEDA: '#f59e0b',
+  DEAF: '#22c55e',
+};
+const SSR_LABELS: { [code: string]: string } = {
+  WCHR: 'Wheelchair · Ramp',
+  WCHC: 'Wheelchair · Cabin',
+  WCHS: 'Wheelchair · Steps',
+  WCMP: 'Wheelchair · Manual',
+  MAAS: 'Meet & Assist',
+  UMNR: 'Unaccompanied Minor',
+  DPNA: 'Develop. Disability',
+  BLND: 'Blind / Low Vision',
+  MEDA: 'Medical Case',
+  DEAF: 'Deaf / Hard of Hearing',
 };
 
 @Component({
@@ -52,7 +83,7 @@ export class OverviewTabComponent implements OnInit, OnDestroy {
   // Charts
   dailyTrendSeries$ = new BehaviorSubject<LineSeries[]>([]);
   handling$ = new BehaviorSubject<DonutDatum[]>([]);
-  serviceTypes$ = new BehaviorSubject<DonutDatum[]>([]);
+  serviceTypeBars$ = new BehaviorSubject<ShareBarDatum[]>([]);
   durationBuckets$ = new BehaviorSubject<BarDatum[]>([]);
   locations$ = new BehaviorSubject<BarDatum[]>([]);
 
@@ -118,10 +149,15 @@ export class OverviewTabComponent implements OnInit, OnDestroy {
           color: HANDLING_COLORS[l],
         })));
 
-        // Top 5 service types
-        this.serviceTypes$.next((r.services.items || []).slice(0, 5).map(s => ({
+        // ALL service types (no slice). Share-bars panel handles the
+        // ranking + share-of-total in a single block, so we no longer
+        // truncate to top-5 — the bottom rows still get rendered as
+        // small bars and their share matches the cards row exactly.
+        this.serviceTypeBars$.next((r.services.items || []).map(s => ({
           name: s.label,
           value: s.count,
+          color: SSR_COLORS[s.label] || '#94a3b8',
+          label: SSR_LABELS[s.label] || '',
         })));
 
         // Duration buckets
