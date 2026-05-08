@@ -101,10 +101,12 @@ export class LoginComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Click-to-prefill: tap a demo user row to drop their creds into the form.
-   *  patchValue() updates the FormControl but doesn't fire native DOM input
-   *  events, so <app-form-field>'s floated-label state would stay stuck on
-   *  "empty". Re-fire `input` on each underlying control so the label rises. */
+  /**
+   * Click-to-prefill: tap a demo user row to drop their creds into the form.
+   * patchValue() updates the FormControl but doesn't fire native DOM input
+   * events, so <app-form-field>'s floated-label state would stay stuck on
+   * "empty". Re-fire `input` on each underlying control so the label rises.
+   */
   prefill(username: string): void {
     this.form.patchValue({ username, password: DEMO_PASSWORD });
     setTimeout(() => {

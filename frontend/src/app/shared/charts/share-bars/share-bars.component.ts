@@ -48,9 +48,11 @@ export class ShareBarsComponent {
   @Input() limit = 10;
   @Output() rowClick = new EventEmitter<{ name: string; value: number }>();
 
-  /** Rows sorted descending, capped at `limit`, with per-row pct computed
-   *  against the resolved denominator. Computed inline (not memoised) —
-   *  the data is small (≤9 rows) so the cost is irrelevant. */
+  /**
+   * Rows sorted descending, capped at `limit`, with per-row pct computed
+   * against the resolved denominator. Computed inline (not memoised) —
+   * the data is small (≤9 rows) so the cost is irrelevant.
+   */
   get rows(): Array<ShareBarDatum & { pct: number; widthPct: number }> {
     if (!this.data || this.data.length === 0) { return []; }
     const sorted = this.data.slice().sort((a, b) => b.value - a.value).slice(0, this.limit);
@@ -73,7 +75,9 @@ export class ShareBarsComponent {
     this.rowClick.emit({ name: d.name, value: d.value });
   }
 
-  /** True when the data is non-empty. Lets the empty-state branch in the
-   *  template render an inline message without checking length twice. */
+  /**
+   * True when the data is non-empty. Lets the empty-state branch in the
+   * template render an inline message without checking length twice.
+   */
   hasData(): boolean { return !!this.data && this.data.length > 0; }
 }

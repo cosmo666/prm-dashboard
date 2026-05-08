@@ -232,15 +232,19 @@ export class ServiceBreakupTabComponent implements OnInit, OnDestroy {
     return activeServices.indexOf(code) >= 0;
   }
 
-  /** Friendly description of an SSR code (e.g. "Wheelchair · Ramp" for WCHR).
-   *  Falls back to the code itself if we don't have a label mapped — that
-   *  way a future SSR shows up gracefully instead of breaking the layout. */
+  /**
+   * Friendly description of an SSR code (e.g. "Wheelchair · Ramp" for WCHR).
+   * Falls back to the code itself if we don't have a label mapped — that
+   * way a future SSR shows up gracefully instead of breaking the layout.
+   */
   labelFor(code: string): string {
     return SSR_LABELS[code] || code;
   }
 
-  /** Tinted dot color matched to the same SSR palette used by the trend
-   *  chart, so the card and the stacked bar legend visually agree. */
+  /**
+   * Tinted dot color matched to the same SSR palette used by the trend
+   * chart, so the card and the stacked bar legend visually agree.
+   */
   colorFor(code: string): string {
     return SSR_COLORS[code] || '#94a3b8';
   }
