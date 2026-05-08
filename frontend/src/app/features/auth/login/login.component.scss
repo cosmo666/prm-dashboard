@@ -4,10 +4,20 @@
 
 :host { display: block; }
 
-.login-form {
+// Column-flex wrapper that stacks the form on top of the demo-creds
+// helper. The parent .login-body is a row-flex container (set in the
+// global _login-parallax partial), so without this wrapper the demo
+// panel becomes a flex sibling of the form and renders side-by-side.
+.login-stack {
   width: 100%;
   max-width: 400px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-form {
+  width: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -49,4 +59,103 @@
   20%, 80% { transform: translateX(2px); }
   30%, 50%, 70% { transform: translateX(-3px); }
   40%, 60% { transform: translateX(3px); }
+}
+
+// ── Demo credentials helper ──────────────────────────────────────
+// Sits below the form, full-width of the form column. Each row is
+// the username on the left and a strip of airport-code chips on the
+// right. Click anywhere on the row to prefill the form.
+.login-demo {
+  width: 100%;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--app-border, #e2e8f0);
+}
+
+.login-demo__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.login-demo__eyebrow {
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--app-text-muted, #64748b);
+}
+
+.login-demo__pw {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 11px;
+  color: var(--app-text-muted, #64748b);
+
+  code {
+    font-family: 'Fira Code', ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--app-text, #0f172a);
+    background: var(--app-bg-muted, #f1f5f9);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+}
+
+.login-demo__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.login-demo__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--app-bg-muted, #f8fafc);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+  font-family: 'Fira Sans', sans-serif;
+
+  &:hover {
+    border-color: var(--app-primary, #2563EB);
+    background: var(--app-surface, #fff);
+  }
+
+  &:active { transform: translateY(1px); }
+}
+
+.login-demo__user {
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--app-text, #0f172a);
+  letter-spacing: 0.02em;
+}
+
+.login-demo__airports {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.login-demo__chip {
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--app-primary, #2563EB);
+  background: var(--app-primary-soft, rgba(37, 99, 235, 0.1));
+  padding: 2px 6px;
+  border-radius: 4px;
 }
