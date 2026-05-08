@@ -71,6 +71,8 @@
       title="Service Type Breakdown"
       subtitle="Top 5 categories by volume"
       [data]="serviceTypes$ | async"
+      [centerTotal]="totalPrm$ | async"
+      centerCaption="OF TOTAL"
       [loading]="loading$ | async"
       (segmentClick)="onServiceTypeClick($event)"></app-donut-chart>
     <app-bar-chart
