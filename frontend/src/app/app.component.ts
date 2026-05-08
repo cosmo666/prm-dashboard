@@ -5,7 +5,10 @@ import { TenantStore, Tenant } from './core/store/tenant.store';
 
 @Component({
   selector: 'app-root',
-  template: '<router-outlet></router-outlet>',
+  template: `
+    <router-outlet></router-outlet>
+    <app-toast-container></app-toast-container>
+  `,
   styles: [':host { display: block; min-height: 100vh; }'],
 })
 export class AppComponent implements OnInit, OnDestroy {

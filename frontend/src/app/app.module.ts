@@ -8,6 +8,7 @@ import { NgxEchartsModule } from 'ngx-echarts';
 import { AppRoutingModule } from './app-routing.module';
 import { CoreModule } from './core/core.module';
 import { AppComponent } from './app.component';
+import { ToastContainerComponent } from './shared/components/toast-container/toast-container.component';
 
 // Exported (not inline arrow) so the AOT compiler can statically reference
 // it from the @NgModule decorator metadata. Function expressions are
@@ -17,7 +18,11 @@ export function loadEcharts() {
 }
 
 @NgModule({
-  declarations: [AppComponent],
+  // Global shell components (ToastContainer here, ProgressBar +
+  // CommandPalette in subsequent tasks) live in AppModule, not
+  // SharedModule — they're singletons mounted once in AppComponent,
+  // not re-used by feature modules.
+  declarations: [AppComponent, ToastContainerComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
