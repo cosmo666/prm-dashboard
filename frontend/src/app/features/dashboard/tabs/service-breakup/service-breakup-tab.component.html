@@ -1,14 +1,30 @@
 <div class="service-content" *ngIf="(loading$ | async) !== null">
-  <!-- Row 1: 9 service summary cards -->
+  <!-- Row 1: 9 service summary cards.
+       Each card shows the IATA SSR code (operator vocabulary), a one-line
+       human-readable label so non-operators can scan the row, the count
+       with an explicit "services" unit, and the share-of-total context.
+       Click a card to filter the rest of the dashboard to just that SSR
+       (toggles back to all on second click). -->
   <ng-container *ngIf="(filters.service$ | async) as activeServices">
     <div class="row row-service-cards">
       <div *ngFor="let s of (summaries$ | async)"
            class="service-card"
            [class.active]="isCardActive(s.type, activeServices)"
+           [title]="labelFor(s.type) + ' · click to filter'"
            (click)="onCardClick(s.type)">
-        <div class="service-type">{{ s.type }}</div>
-        <div class="service-count">{{ s.count | number }}</div>
-        <div class="service-pct">{{ s.pct | number:'1.1-1' }}%</div>
+        <div class="service-card__head">
+          <span class="service-card__dot" [style.background]="colorFor(s.type)"></span>
+          <span class="service-type">{{ s.type }}</span>
+        </div>
+        <div class="service-card__label">{{ labelFor(s.type) }}</div>
+        <div class="service-card__metric">
+          <span class="service-count">{{ s.count | number }}</span>
+          <span class="service-unit">services</span>
+        </div>
+        <div class="service-pct">
+          <strong>{{ s.pct | number:'1.1-1' }}%</strong>
+          <span>of total PRM</span>
+        </div>
       </div>
     </div>
   </ng-container>

@@ -10,6 +10,23 @@ import { BarDatum } from 'src/app/shared/charts/bar-chart/bar-chart.component';
 // codes returned by /breakdowns/by-service-type for the seed tenants.
 const SERVICE_TYPES: string[] = ['WCHR', 'WCHC', 'MAAS', 'WCHS', 'DPNA', 'UMNR', 'BLND', 'MEDA', 'WCMP'];
 
+// Human-readable label per IATA SSR code. The codes themselves are
+// the operator vocabulary (used inside the airline / handler), but
+// stakeholders reviewing the dashboard appreciate one-line context
+// so they don't have to memorise the IATA glossary.
+const SSR_LABELS: { [code: string]: string } = {
+  WCHR: 'Wheelchair · Ramp',
+  WCHC: 'Wheelchair · Cabin',
+  WCHS: 'Wheelchair · Steps',
+  WCMP: 'Wheelchair · Manual',
+  MAAS: 'Meet & Assist',
+  UMNR: 'Unaccompanied Minor',
+  DPNA: 'Develop. Disability',
+  BLND: 'Blind / Low Vision',
+  MEDA: 'Medical Case',
+  DEAF: 'Deaf / Hard of Hearing',
+};
+
 // Per-SSR-code palette. WCHR is the dominant primary (anchored to --app-primary
 // hex). Others use distinct hues so 9-segment stacks remain legible. Codes not
 // in this map fall back to slate gray (#94a3b8) at the call site.
@@ -213,5 +230,18 @@ export class ServiceBreakupTabComponent implements OnInit, OnDestroy {
   isCardActive(code: string, activeServices: string[] | null): boolean {
     if (!activeServices) { return false; }
     return activeServices.indexOf(code) >= 0;
+  }
+
+  /** Friendly description of an SSR code (e.g. "Wheelchair · Ramp" for WCHR).
+   *  Falls back to the code itself if we don't have a label mapped — that
+   *  way a future SSR shows up gracefully instead of breaking the layout. */
+  labelFor(code: string): string {
+    return SSR_LABELS[code] || code;
+  }
+
+  /** Tinted dot color matched to the same SSR palette used by the trend
+   *  chart, so the card and the stacked bar legend visually agree. */
+  colorFor(code: string): string {
+    return SSR_COLORS[code] || '#94a3b8';
   }
 }
