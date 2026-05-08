@@ -1,0 +1,60 @@
+// Trigger button only — the panel content lives in
+// styles/primeng-overrides.scss under .ui-overlaypanel.views-panel
+// because PrimeNG portals the overlay to <body> when appendTo="body",
+// which puts it outside this component's encapsulation reach.
+:host { display: inline-flex; }
+
+.views-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--app-surface, #fff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 8px;
+  font-family: var(--font-sans, 'Fira Sans', sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--app-text, #0f172a);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 140ms ease;
+
+  &:hover {
+    border-color: var(--app-border-strong, #cbd5e1);
+    background: var(--app-surface-elevated, #fff);
+  }
+
+  &:active { transform: translateY(1px); }
+}
+
+.views-btn__icon {
+  font-size: 12px;
+  color: var(--app-text-muted, #64748b);
+}
+
+.views-btn__label { line-height: 1; }
+
+// Count badge — primary-tinted soft pill so the user sees at a glance
+// how many views they've saved. Hidden when count = 0.
+.views-btn__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--app-primary-soft, color-mix(in srgb, var(--app-primary, #2563EB) 16%, #fff));
+  color: var(--app-primary, #2563EB);
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.views-btn__caret {
+  font-size: 10px;
+  color: var(--app-text-muted, #64748b);
+  flex-shrink: 0;
+}

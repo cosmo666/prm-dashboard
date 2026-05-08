@@ -1,0 +1,52 @@
+<button type="button" class="views-btn" (click)="op.toggle($event)"
+        [attr.aria-label]="'Saved views (' + store.countSnapshot + ')'">
+  <i class="pi pi-bookmark views-btn__icon"></i>
+  <span class="views-btn__label">Views</span>
+  <span class="views-btn__badge font-mono" *ngIf="(store.views$ | async)?.length > 0">
+    {{ (store.views$ | async)?.length }}
+  </span>
+  <i class="pi pi-chevron-down views-btn__caret"></i>
+</button>
+
+<p-overlayPanel #op [dismissable]="true" appendTo="body" styleClass="views-panel">
+  <div class="views-wrap">
+    <div class="views-head">
+      <span class="views-head__label">Saved views</span>
+      <span class="views-head__count font-mono" *ngIf="(store.views$ | async)?.length > 0">
+        {{ (store.views$ | async)?.length }}
+      </span>
+    </div>
+
+    <div class="views-empty" *ngIf="(store.views$ | async)?.length === 0">
+      <div class="views-empty__title">No saved views yet</div>
+      <div class="views-empty__hint">Save the current filter combination below to restore it later.</div>
+    </div>
+
+    <div class="views-list" *ngIf="(store.views$ | async)?.length > 0">
+      <div class="view-row" *ngFor="let v of store.views$ | async; trackBy: trackById"
+           [class.active]="isActive(v)">
+        <button type="button" class="view-row__main" (click)="apply(v); op.hide()">
+          <div class="view-row__name">{{ v.name }}</div>
+          <div class="view-row__meta font-mono">{{ describe(v) }}</div>
+        </button>
+        <button type="button" class="view-row__del" aria-label="Delete view"
+                (click)="remove(v.id, $event)">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="views-save">
+      <div class="views-save__label">Save current view</div>
+      <div class="views-save__row">
+        <input type="text" class="views-save__input font-mono"
+               placeholder="e.g. BLR · WCHR · MTD"
+               maxlength="48" [(ngModel)]="draftName"
+               (keydown.enter)="saveCurrent($event)"
+               (keydown.escape)="draftName = ''" />
+        <button type="button" class="views-save__btn"
+                [disabled]="!canSave()" (click)="saveCurrent($event)">Save</button>
+      </div>
+    </div>
+  </div>
+</p-overlayPanel>

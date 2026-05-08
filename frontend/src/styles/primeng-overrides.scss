@@ -579,3 +579,234 @@
     }
   }
 }
+
+// ============================================================================
+// Saved-views overlay (.views-panel) — same body-portal trick as .drp-panel.
+// Mirrors the styles main's frontend ships under .mat-mdc-menu-panel for the
+// SavedViews menu, translated to .ui-overlaypanel + project tokens.
+// ============================================================================
+.ui-overlaypanel.views-panel {
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  padding: 0;
+  min-width: 300px;
+  max-width: 340px;
+  margin-top: 6px;
+
+  &::before, &::after { display: none !important; }
+
+  .ui-overlaypanel-content { padding: 0; }
+
+  .views-wrap {
+    padding: 6px;
+    font-family: var(--font-sans, 'Fira Sans', sans-serif);
+  }
+
+  .views-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px 10px;
+    border-bottom: 1px solid var(--app-border, #e2e8f0);
+    margin-bottom: 4px;
+  }
+
+  .views-head__label {
+    font-family: var(--font-mono, 'Fira Code', monospace);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--app-text-muted, #64748b);
+  }
+
+  .views-head__count {
+    font-size: 10px;
+    color: var(--app-text-muted, #64748b);
+    background: var(--app-bg-muted, #f1f5f9);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .views-empty {
+    padding: 16px 12px 18px;
+  }
+
+  .views-empty__title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--app-text, #0f172a);
+    margin-bottom: 4px;
+  }
+
+  .views-empty__hint {
+    font-size: 11px;
+    color: var(--app-text-muted, #64748b);
+    line-height: 1.5;
+  }
+
+  .views-list {
+    max-height: 260px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 0 0 4px;
+  }
+
+  .view-row {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    border-radius: 6px;
+    position: relative;
+
+    &:hover { background: var(--app-bg-muted, #f1f5f9); }
+
+    // Active = currently-applied filter combination. Tenant-tinted bg so
+    // the user can see at a glance "this is what the dashboard reflects".
+    &.active {
+      background: var(--app-primary-soft, color-mix(in srgb, var(--app-primary, #2563EB) 16%, #fff));
+    }
+  }
+
+  .view-row__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 10px 8px 12px;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    color: var(--app-text, #0f172a);
+    cursor: pointer;
+    text-align: left;
+    min-width: 0;
+    font-family: var(--font-sans, 'Fira Sans', sans-serif);
+  }
+
+  .view-row__name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--app-text, #0f172a);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .view-row.active .view-row__name {
+    color: var(--app-primary, #2563EB);
+    font-weight: 600;
+  }
+
+  .view-row__meta {
+    font-size: 10px;
+    color: var(--app-text-muted, #64748b);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // Delete button — hidden by default, fades in on row hover. Wider hit
+  // target than visual size so accidental clicks are rare. Hover paints
+  // the button danger-tinted so the user knows it's destructive.
+  .view-row__del {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    min-height: 36px;
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    color: var(--app-text-muted, #64748b);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 160ms ease, background 160ms ease, color 160ms ease;
+
+    .pi { font-size: 11px; }
+  }
+
+  .view-row:hover .view-row__del { opacity: 1; }
+
+  .view-row__del:hover {
+    background: var(--app-surface, #fff);
+    color: #ef4444;
+  }
+
+  .views-save {
+    margin-top: 4px;
+    padding: 10px 12px 10px;
+    border-top: 1px solid var(--app-border, #e2e8f0);
+  }
+
+  .views-save__label {
+    font-family: var(--font-mono, 'Fira Code', monospace);
+    color: var(--app-text-muted, #64748b);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .views-save__row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .views-save__input {
+    flex: 1;
+    min-width: 0;
+    height: 32px;
+    padding: 0 10px;
+    background: var(--app-bg-muted, #f1f5f9);
+    border: 1px solid var(--app-border, #e2e8f0);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--app-text, #0f172a);
+    transition: border-color 160ms ease, background 160ms ease;
+
+    &::placeholder {
+      color: var(--app-text-muted, #64748b);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--app-primary, #2563EB);
+      background: var(--app-surface, #fff);
+    }
+  }
+
+  .views-save__btn {
+    flex-shrink: 0;
+    height: 32px;
+    padding: 0 14px;
+    background: var(--app-text, #0f172a);
+    border: 1px solid var(--app-text, #0f172a);
+    border-radius: 6px;
+    font-family: var(--font-sans, 'Fira Sans', sans-serif);
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, opacity 160ms ease;
+
+    &:hover:not(:disabled) {
+      background: var(--app-primary, #2563EB);
+      border-color: var(--app-primary, #2563EB);
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+  }
+}

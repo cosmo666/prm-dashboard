@@ -160,6 +160,17 @@
   flex: 0 0 auto;
 }
 
+// Right-aligned chrome — saved-views menu today, eventually command-
+// palette button + dev-tenant-picker. `margin-left: auto` consumes
+// the row's flex slack so the actions sit flush against the right
+// edge regardless of how many tabs render on the left.
+.control-row__actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .tab-pill {
   display: inline-flex;
   align-items: center;

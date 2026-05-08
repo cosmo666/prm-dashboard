@@ -33,6 +33,7 @@ import { HorizontalBarChartComponent } from './charts/horizontal-bar-chart/horiz
 import { SankeyChartComponent } from './charts/sankey-chart/sankey-chart.component';
 import { HeatmapChartComponent } from './charts/heatmap-chart/heatmap-chart.component';
 import { KpiCardComponent } from '../features/dashboard/components/kpi-card/kpi-card.component';
+import { SavedViewsMenuComponent } from './components/saved-views-menu/saved-views-menu.component';
 import { CompactNumberPipe } from './pipes/compact-number.pipe';
 import { TooltipDirective } from './directives/tooltip.directive';
 
@@ -58,6 +59,7 @@ import { TooltipDirective } from './directives/tooltip.directive';
     SankeyChartComponent,
     HeatmapChartComponent,
     KpiCardComponent,
+    SavedViewsMenuComponent,
     CompactNumberPipe,
     TooltipDirective,
   ],
@@ -74,6 +76,7 @@ import { TooltipDirective } from './directives/tooltip.directive';
     HorizontalBarChartComponent,
     SankeyChartComponent, HeatmapChartComponent,
     KpiCardComponent,
+    SavedViewsMenuComponent,
     CompactNumberPipe,
     TooltipDirective,
   ],

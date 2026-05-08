@@ -30,7 +30,8 @@
     </div>
   </header>
 
-  <!-- Tabs row -->
+  <!-- Tabs row + right-aligned chrome (saved-views menu, future
+       command palette trigger) -->
   <div class="control-row" role="tablist" aria-label="Dashboard tabs">
     <nav class="control-row__tabs" aria-label="Dashboard sections">
       <a *ngFor="let t of tabs"
@@ -40,6 +41,9 @@
          queryParamsHandling="preserve"
          role="tab">{{ t.label }}</a>
     </nav>
+    <div class="control-row__actions">
+      <app-saved-views-menu></app-saved-views-menu>
+    </div>
   </div>
 
   <!-- Filter row — full-width dedicated strip so all controls stay on one
