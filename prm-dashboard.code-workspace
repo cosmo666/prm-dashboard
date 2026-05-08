@@ -1,0 +1,27 @@
+{
+  "folders": [
+    {
+      "name": "main (Angular 17 + TS 5.4)",
+      "path": "."
+    },
+    {
+      "name": "angular-8-rewrite (Angular 8 + TS 3.4)",
+      "path": ".worktrees/angular-8-rewrite"
+    }
+  ],
+  "settings": {
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "files.exclude": {
+      "**/.git": true,
+      "**/.DS_Store": true,
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.cache": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.angular": true
+    }
+  }
+}
