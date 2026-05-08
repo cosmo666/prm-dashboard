@@ -107,17 +107,24 @@ export class DonutChartComponent implements OnChanges {
         // is a separate (echarts-5-only) prop that doesn't disable
         // this — `hoverAnimation: false` is the right knob in v4.
         hoverAnimation: false,
-        // Show value + percentage outside each segment so the user sees
-        // the breakdown at a glance without hovering.
-        label: {
-          show: true,
-          position: 'outside',
-          formatter: '{c} ({d}%)',
-          fontFamily: '"Fira Code", ui-monospace, monospace',
-          fontSize: 11,
-          color: '#0f172a',
-        },
-        labelLine: { show: true, length: 6, length2: 4, smooth: true, lineStyle: { color: '#cbd5e1' } },
+        // Show value + percentage outside each segment when there's
+        // MORE than one segment. With a single 100% segment the outside
+        // label is redundant with the centre text AND its connector line
+        // sticks awkwardly out the bottom of a closed ring — the centre
+        // already carries the count, so suppress the outside label/line.
+        label: this.data.length > 1
+          ? {
+              show: true,
+              position: 'outside',
+              formatter: '{c} ({d}%)',
+              fontFamily: '"Fira Code", ui-monospace, monospace',
+              fontSize: 11,
+              color: '#0f172a',
+            }
+          : { show: false },
+        labelLine: this.data.length > 1
+          ? { show: true, length: 6, length2: 4, smooth: true, lineStyle: { color: '#cbd5e1' } }
+          : { show: false },
         // Hover feedback is a SOFT shadow on the hovered slice — no
         // size change, no border tint that visually enlarges. The
         // shadow is contained inside the slice's existing geometry so

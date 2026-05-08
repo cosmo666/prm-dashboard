@@ -196,6 +196,13 @@
 // Multiselect / dropdown PANELS — the popup that opens on click. Match
 // the calendar overlay's chrome (10px radius + drop shadow + 1px border)
 // so every dropdown family in the dashboard reads as one design system.
+//
+// Width: PrimeNG 8.0.3 by default lets the panel grow with content. The
+// triggers in the filter row are ~180-220px wide; without a width cap
+// the panel renders ~280px wide which visually overshoots the trigger.
+// Pinning the panel to a tight 220px max + 200px min keeps it visually
+// flush with the trigger pill below — narrow enough to feel anchored,
+// wide enough to fit two-letter IATA airline codes + checkbox + scrollbar.
 .ui-dropdown-panel,
 .ui-multiselect-panel {
   background: var(--app-surface, #fff);
@@ -204,10 +211,9 @@
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
   font-family: 'Fira Sans', sans-serif;
   overflow: hidden;
-  // Cap the panel width to a reasonable max — long airline lists otherwise
-  // stretch the overlay across half the viewport.
-  max-width: 280px;
+  width: 220px;
   min-width: 200px;
+  max-width: 240px;
 }
 
 // Filter section (header with search box + select-all)

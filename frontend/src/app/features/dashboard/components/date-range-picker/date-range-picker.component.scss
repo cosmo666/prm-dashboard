@@ -40,21 +40,25 @@
 
 .font-mono { font-family: 'Fira Code', ui-monospace, monospace; }
 
-// Calendar overlay — capped width and tighter padding so it doesn't
-// dominate the viewport. Quick-presets list scrolls if it overflows.
+// Calendar overlay — content-driven width. Earlier `width: 580px` left
+// ~50px of empty space on the right because the inner content (200px
+// presets + 12px gap + ~280px calendar = ~492px) was narrower than the
+// container. Switching to `width: auto` collapses the wrap to its
+// content's intrinsic size, eliminating the right-side gap. `max-width`
+// keeps the popup from exploding on wide displays if presets/calendar
+// ever grow.
 .drp-wrap {
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding: 12px;
-  width: 100%;
+  width: auto;
   max-width: 580px;
   max-height: 80vh;
   overflow: hidden;
 
   @media (min-width: 768px) {
     flex-direction: row;
-    width: 580px;
   }
 }
 
@@ -63,6 +67,10 @@
   width: 200px;
   max-height: 360px;
   overflow-y: auto;
+}
+
+.drp-cal {
+  flex: 0 0 auto;
 }
 
 .drp-presets {
@@ -108,4 +116,4 @@
   &__range { color: var(--app-text-muted); font-size: 12px; }
 }
 
-.drp-cal { min-width: 300px; }
+// (min-width handled inline at .drp-cal definition above)
