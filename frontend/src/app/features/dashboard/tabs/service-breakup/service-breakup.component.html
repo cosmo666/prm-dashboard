@@ -6,8 +6,10 @@
          [class.active]="filters.service().includes(s.type)"
          (click)="clickServiceCard(s.type)">
       <div class="service-type">{{ s.type }}</div>
-      <div class="service-count">{{ s.count | number }}</div>
-      <div class="service-pct">{{ s.pct | number:'1.1-1' }}%</div>
+      <div class="service-count">
+        {{ s.count | number }}<span class="service-unit">services</span>
+      </div>
+      <div class="service-pct">{{ s.pct | number:'1.1-1' }}% of total</div>
     </div>
   </div>
 

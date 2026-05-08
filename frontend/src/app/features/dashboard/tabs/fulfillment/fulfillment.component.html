@@ -3,27 +3,23 @@
   <div class="row row-kpis">
     <app-kpi-card
       label="PRM Requested"
-      tooltip="Number of PRM services that were pre-booked by airlines or passengers before arrival."
+      tooltip="Number of PRM services that were pre-booked by airlines or passengers before arrival. Walk-ups are counted separately."
       [value]="totalRequested() | compactNumber"
-      accent="blue"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
-      label="Provided vs Requested"
-      tooltip="Ratio of services actually delivered vs those pre-requested. Above 100% means walk-up demand exceeded bookings."
+      label="Pre-booked Share"
+      tooltip="Share of delivered services that were pre-booked. The remainder are walk-ups — passengers who arrived without prior notice. A low value means demand is largely unannounced."
       [value]="((providedPct() | number:'1.1-1') ?? '') + '%'"
-      accent="green"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Total Provided"
       tooltip="Total PRM services actually delivered, including both pre-requested and walk-up passengers."
       [value]="totalProvided() | compactNumber"
-      accent="teal"
       [loading]="loading()"></app-kpi-card>
     <app-kpi-card
       label="Walk-up Rate"
-      tooltip="Percentage of services that were not pre-booked — passengers who showed up unannounced needing PRM assistance."
+      tooltip="Percentage of delivered services that were not pre-booked — passengers who showed up unannounced needing PRM assistance."
       [value]="((walkupRate() | number:'1.1-1') ?? '') + '%'"
-      accent="amber"
       [loading]="loading()"></app-kpi-card>
   </div>
 
@@ -31,11 +27,13 @@
   <div class="row row-charts-full">
     <app-line-chart
       title="Daily Provided vs Requested"
-      subtitle="Pre-requested services vs services actually provided"
+      subtitle="Pre-requested bookings vs services actually delivered (single shared scale — walk-ups drive the gap)"
       [series]="dualAxisSeries()"
       [loading]="loading()"
-      [dualAxis]="true"
-      [showAvgLine]="false"></app-line-chart>
+      [dualAxis]="false"
+      [showAvgLine]="false"
+      yLabel="PRM services (count)"
+      unit="services"></app-line-chart>
   </div>
 
   <!-- Row 3: Time of Day + Cumulative pace -->
