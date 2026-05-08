@@ -15,91 +15,103 @@ Multi-tenant analytics POC for **Passenger with Reduced Mobility (PRM)** ground 
 
 ## Architecture
 
-### Service topology
+### The big picture — how data flows end-to-end
+
+The shortest possible mental model: **flat files on disk → a SQL engine → a JSON API → an interactive dashboard**. Nothing in between is a database server, an ORM, or a caching layer.
 
 ```mermaid
-flowchart TB
-    Browser["Browser<br/>https://&lt;slug&gt;.prm-app.com"]
+flowchart LR
+    P[("📦 Parquet files<br/>one folder per tenant<br/>(data/aeroground/…)")]
+    D["🦆 DuckDB<br/>in-process SQL engine<br/>(no server, no ORM)"]
+    API["⚙️ API layer<br/>.NET microservices<br/>(typed JSON over HTTPS)"]
+    UI["🖥️ Frontend<br/>Angular dashboard<br/>(charts · KPIs · filters)"]
 
-    subgraph HostExposed["Host-exposed"]
-        Frontend["Frontend container<br/>nginx<br/>host :4200 → :80"]
-        Gateway["API Gateway<br/>Ocelot<br/>host :5000 → :8080"]
-    end
+    P -->|read directly| D
+    D -->|query results| API
+    API -->|JSON| UI
 
-    subgraph Internal["Internal Docker network (NOT host-exposed)"]
-        direction LR
-        Auth["AuthService :8080<br/>login · refresh · /me"]
-        Tenant["TenantService :8080<br/>/config · /airports"]
-        Prm["PrmService :8080<br/>25 analytics endpoints"]
-    end
-
-    subgraph Volume["./data (read-only volume mount)"]
-        direction LR
-        Master[("master/<br/>tenants · employees<br/>employee_airports")]
-        T1[("aeroground/<br/>prm_services")]
-        T2[("skyserve/<br/>prm_services")]
-        T3[("globalprm/<br/>prm_services")]
-    end
-
-    Browser -->|SPA assets| Frontend
-    Browser -->|HTTPS · Bearer JWT<br/>+ httpOnly refresh cookie| Gateway
-    Gateway -->|/api/auth/**| Auth
-    Gateway -->|/api/tenants/**| Tenant
-    Gateway -->|/api/prm/**| Prm
-    Auth -.->|DuckDB| Master
-    Tenant -.->|DuckDB| Master
-    Prm -.->|DuckDB| T1
-    Prm -.->|DuckDB| T2
-    Prm -.->|DuckDB| T3
+    style P fill:#e7f1e8,stroke:#2d6a3c,color:#111
+    style D fill:#fff5e6,stroke:#b35a00,color:#111
+    style API fill:#eceafc,stroke:#5b5bd6,color:#111
+    style UI fill:#e0f2fe,stroke:#0369a1,color:#111
 ```
 
-Gateway is the only host-exposed backend service (`${GATEWAY_PORT:-5000}:8080`). Auth / Tenant / PRM are reachable only on the internal Docker network. The frontend container is exposed on host port 4200. Gateway has `depends_on: service_healthy` wiring so it won't accept traffic until all three backends are healthy.
+Each layer does one thing: **Parquet** stores the data in a column-oriented format, **DuckDB** runs SQL against those files in-process (no separate database server), the **API** wraps those queries behind authentication + multi-tenant rules, and the **frontend** turns JSON responses into charts.
 
-### Layered architecture
-
-Inside each runtime service:
+### Service topology — what's running where
 
 ```mermaid
 flowchart TB
-    subgraph Frontend["Angular 17 SPA — frontend/src/app"]
-        direction TB
-        FE_Routes["Routes + Guards<br/>(authGuard, tenantResolver)"]
-        FE_Features["Feature components<br/>dashboard tabs: overview · top10 · service-breakup<br/>fulfillment · insights<br/>+ auth/login, home"]
-        FE_Shared["Shared<br/>Charts (BaseChartComponent),<br/>TopBar, AirportSelector, Pipes"]
-        FE_Stores["Signal Stores<br/>AuthStore, TenantStore,<br/>FilterStore, NavigationStore,<br/>SavedViewsStore"]
-        FE_Api["ApiClient + AuthInterceptor<br/>(Bearer + 401 auto-refresh)"]
+    Browser["🌐 Browser<br/>aeroground.prm-app.com"]
 
-        FE_Routes --> FE_Features
-        FE_Features --> FE_Shared
-        FE_Features --> FE_Stores
-        FE_Features --> FE_Api
-        FE_Stores --> FE_Api
+    Frontend["🖥️ Angular app<br/>(served by nginx)"]
+    Gateway["🚪 API Gateway<br/>single entry point"]
+
+    subgraph Backend["Backend services (private network)"]
+        direction LR
+        Auth["🔐 Auth<br/>login · refresh"]
+        Tenant["🏢 Tenant<br/>config · airports"]
+        Prm["📊 PRM Analytics<br/>25 endpoints"]
     end
 
-    Wire[["HTTPS via Gateway"]]
-
-    subgraph Backend[".NET 8 microservice — PrmService (representative)"]
-        direction TB
-        BE_Middleware["Middleware chain<br/>CorrelationId → [Authorize] (ClockSkew=0)<br/>→ TenantSlugClaimCheck → AirportAccess<br/>→ ExceptionHandler (RFC 7807)"]
-        BE_Controllers["Controllers (thin)<br/>inherit PrmControllerBase"]
-        BE_Services["Query services<br/>Kpi · Trend · Ranking · Breakdown<br/>Performance · Record · Filter"]
-        BE_Base["BaseQueryService<br/>BuildWhereClause() · ResolveTenantParquet()<br/>GroupCountAsync() · DistinctAsync()"]
-        BE_Helpers["SQL helpers<br/>HhmmSql.ToMinutes, HhmmSql.ActiveMinutesExpr"]
-        BE_Duck["IDuckDbContext<br/>PooledDuckDbSession (Singleton pool)"]
-        BE_Store[("data/&lt;slug&gt;/prm_services.parquet<br/>data/master/*.parquet")]
-
-        BE_Middleware --> BE_Controllers
-        BE_Controllers --> BE_Services
-        BE_Services --> BE_Base
-        BE_Services -.uses.-> BE_Helpers
-        BE_Base --> BE_Duck
-        BE_Duck --> BE_Store
+    subgraph Data["📁 ./data folder"]
+        direction LR
+        Master[("master<br/>(users + tenants)")]
+        T1[("aeroground")]
+        T2[("skyserve")]
+        T3[("globalprm")]
     end
+
+    Browser --> Frontend
+    Browser -->|API calls| Gateway
+    Gateway --> Auth
+    Gateway --> Tenant
+    Gateway --> Prm
+    Auth -.-> Master
+    Tenant -.-> Master
+    Prm -.-> T1
+    Prm -.-> T2
+    Prm -.-> T3
+```
+
+The **Gateway** is the only backend service exposed to the host (port 5000). Auth, Tenant, and PRM live on the internal Docker network and aren't reachable from outside. The frontend is exposed on port 4200. Gateway waits for all three backends to report healthy before accepting traffic.
+
+### Layered architecture — what each side is responsible for
+
+```mermaid
+flowchart TB
+    subgraph Frontend["🖥️ Angular Frontend"]
+        direction TB
+        FE_Pages["Pages<br/>Login · Home · Dashboard tabs"]
+        FE_State["State stores<br/>filters, auth, tenant branding"]
+        FE_Charts["Chart wrappers<br/>(loading · empty · render)"]
+        FE_API["API client<br/>(attaches token, auto-refreshes)"]
+
+        FE_Pages --> FE_Charts
+        FE_Pages --> FE_State
+        FE_State --> FE_API
+        FE_Pages --> FE_API
+    end
+
+    Wire[["HTTPS · JSON"]]
+
+    subgraph Backend["⚙️ .NET Backend service"]
+        direction TB
+        BE_Guard["Security checks<br/>1. Valid JWT?<br/>2. Tenant matches?<br/>3. Airport allowed?"]
+        BE_Logic["Query services<br/>KPIs · Trends · Rankings<br/>Breakdowns · Performance · Records"]
+        BE_SQL["SQL builder<br/>(turns filters into WHERE clauses)"]
+
+        BE_Guard --> BE_Logic
+        BE_Logic --> BE_SQL
+    end
+
+    Data[("📦 Parquet files<br/>per-tenant + master")]
 
     Frontend --> Wire --> Backend
+    BE_SQL ==>|DuckDB| Data
 ```
 
-AuthService and TenantService follow the same shape; their query services read `master/employees.parquet` and `master/tenants.parquet` respectively via the same `IDuckDbContext` + `BaseQueryService` stack.
+The frontend doesn't know or care about Parquet — it just consumes JSON. The backend doesn't know or care about charts — it just returns rows. The same backend shape is reused by Auth and Tenant services; only the table they read from changes.
 
 ### Request flow (authenticated dashboard call)
 
@@ -424,34 +436,21 @@ Filters are the central UX in this dashboard — every chart, KPI card, and tabl
 sequenceDiagram
     autonumber
     actor User
-    participant URL as Browser URL
-    participant FS as FilterStore<br/>(Signal Store)
-    participant Tab as Dashboard Tab<br/>component
-    participant API as ApiClient +<br/>AuthInterceptor
-    participant GW as Gateway<br/>(Ocelot)
-    participant MW as PrmService<br/>middleware chain
-    participant QS as Query Service<br/>(e.g. KpiService)
-    participant BQ as BaseQueryService
-    participant DB as DuckDB +<br/>Parquet
+    participant App as 🖥️ Angular app
+    participant URL as 🔗 Browser URL
+    participant API as ⚙️ Backend
+    participant DB as 📦 Parquet via DuckDB
 
-    User->>FS: selects airline "AI"<br/>(AirportSelector / FilterBar / DateRangePicker)
-    FS->>URL: sync → ?airport=DEL&airline=AI&date_from=…
-    FS-->>Tab: signal fires → computed() re-evaluates
-    Tab->>API: GET /api/prm/kpis/summary?airport=DEL&airline=AI
-    API->>GW: + Authorization: Bearer &lt;JWT&gt;<br/>+ Host: aeroground.prm-app.com
-    GW->>MW: + X-Tenant-Slug: aeroground<br/>(derived from subdomain)
-    MW->>MW: JwtBearer (ClockSkew=0)<br/>TenantSlugClaimCheck (presence + match)<br/>AirportAccess (every ?airport= ∈ JWT airports[])
-    MW->>QS: request reaches controller → KpiService
-    QS->>BQ: BuildWhereClause(filters)
-    BQ-->>QS: (sqlFragment, DuckDBParameter[])
-    QS->>BQ: ResolveTenantParquet("aeroground")
-    BQ-->>QS: data/aeroground/prm_services.parquet<br/>(or throw → 404 if missing)
-    QS->>DB: await using session;<br/>parameterised SELECT … FROM 'path'<br/>WHERE sqlFragment
-    DB-->>QS: rows
-    QS-->>Tab: typed DTO → JSON
-    Tab->>Tab: render chart / KPI card
+    User->>App: Picks an airline filter
+    App->>URL: Update query params<br/>?airport=DEL&airline=AI
+    App->>API: GET /api/prm/kpis/summary
+    API->>API: Security checks:<br/>1. Valid JWT?<br/>2. Right tenant?<br/>3. Airport allowed?
+    API->>DB: SELECT … WHERE airport='DEL'<br/>AND airline='AI'
+    DB-->>API: Result rows
+    API-->>App: Typed JSON response
+    App->>User: Re-render charts + KPI cards
 
-    Note over User,URL: Reloading the URL rehydrates FilterStore,<br/>so filters survive F5 and are shareable.
+    Note over App,URL: On reload, the app rehydrates filters<br/>from the URL — so refreshing keeps state<br/>and links are shareable.
 ```
 
 **Key invariants:**
@@ -549,31 +548,22 @@ The gateway fans out `/api/**` to three services. The 25 PRM analytics endpoints
 
 ```mermaid
 flowchart LR
-    GW["/api/**<br/>(Ocelot Gateway)<br/>adds X-Tenant-Slug<br/>from subdomain"]
+    GW["🚪 Gateway<br/>/api/**"]
 
-    subgraph A["/api/auth/** — AuthService"]
-        direction TB
-        A1["POST /login<br/>(needs X-Tenant-Slug)"]
-        A2["POST /refresh<br/>(httpOnly cookie)"]
-        A3["POST /logout"]
-        A4["GET /me"]
+    subgraph A["🔐 Auth · /api/auth"]
+        A1["login · logout<br/>refresh · me"]
     end
 
-    subgraph T["/api/tenants/** — TenantService"]
-        direction TB
-        T1["GET /config?slug=<br/>(public branding)"]
-        T2["GET /airports<br/>(RBAC-scoped)"]
+    subgraph T["🏢 Tenant · /api/tenants"]
+        T1["config (branding)<br/>airports (RBAC list)"]
     end
 
-    subgraph P["/api/prm/** — PrmService (25 endpoints)"]
+    subgraph P["📊 PRM Analytics · /api/prm — 25 endpoints"]
         direction TB
-        Kpis["<b>kpis (3)</b><br/>summary · handling-distribution<br/>requested-vs-provided"]
-        Filters["<b>filters (1)</b><br/>options"]
-        Trends["<b>trends (4)</b><br/>daily · monthly · hourly<br/>requested-vs-provided"]
-        Rankings["<b>rankings (4)</b><br/>airlines · flights · agents · services"]
-        Breakdowns["<b>breakdowns (6)</b><br/>service-type · agent-type · airline<br/>location · route · agent-service-matrix"]
-        Performance["<b>performance (5)</b><br/>duration-distribution · duration-stats<br/>no-shows · pause-analysis<br/>duration-by-agent-type"]
-        Records["<b>records (2)</b><br/>paged list · segments (pause/resume detail)"]
+        P1["KPIs (3) · Filters (1)"]
+        P2["Trends (4) · Rankings (4)"]
+        P3["Breakdowns (6) · Performance (5)"]
+        P4["Records (2)"]
     end
 
     GW --> A

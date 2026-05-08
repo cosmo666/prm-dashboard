@@ -184,15 +184,37 @@ docker compose restart auth tenant prm
 
 ## Claude Code infrastructure
 
-**Rules** (`.claude/rules/`):
+See [`.claude/README.md`](.claude/README.md) for the full layout. The summary:
 
-- `architecture.md` — system architecture, component responsibilities, data flow (PRM-specific)
-- `dotnet-backend.md` — .NET 8 conventions, DuckDB + Parquet patterns, multi-tenant access, JWT auth, anti-patterns
-- `angular-frontend.md` — Angular 17 standalone-component conventions, NgRx Signal Store, ECharts wrappers, RBAC patterns
+**Subagents** (`.claude/agents/`):
+
+- `planner` — plans feature implementation: file changes, ordered steps, cross-cutting concerns (tenant/RBAC/dedup/HHMM), test plan
+- `architect` — design decisions with tradeoffs: 2–4 options, recommendation, follow-ups including the decision-record row to add to this file
+- `code-reviewer` — reviews changes for correctness, security, conventions; cites issues as `file:line`
+
+**Rules** (`.claude/rules/` — always loaded with this file):
+
+- `architecture.md` — system architecture, request flow, multi-tenant invariants
+- `dotnet-backend.md` — .NET 8 conventions, DuckDB + Parquet, JWT, anti-patterns
+- `angular-frontend.md` — Angular 17 standalone, NgRx Signal Store, ECharts wrappers, RBAC
+- `coding-style.md` — file org, naming, error handling, comments, immutability
+- `development-workflow.md` — research-first, implementation order, pre-commit checklist
+- `security.md` — secrets, auth, tenant isolation, RBAC, container hardening
+- `testing.md` — xUnit layers (unit / fixture / `WebApplicationFactory`), conventions
+- `performance.md` — DuckDB hot paths, Angular signals, bundle size
+- `git-workflow.md` — conventional commits, branch naming, PR process
+- `agents.md` — index of subagents and triggers
+- `auto-sync.md` — CLAUDE.md ↔ .claude/ sync rules
+- `memory-decisions.md` / `memory-sessions.md` / `memory-profile.md` / `memory-preferences.md` / `memory-private.md` — project-level memory
 
 **Skills** (`.claude/skills/`):
 
 - `prm-domain/` — PRM domain knowledge: IATA SSR codes (WCHR/WCHC/MAAS/etc.), HHMM time encoding, pause/resume dedup pattern, common SQL aggregations, time-of-day patterns, airline region color coding. **Use this whenever writing dashboard queries, charts, or any code that touches `prm_services` data.**
+
+**Hooks** (`.claude/hooks/`, opt-in via `settings.json`):
+
+- `check-sync.sh` — Stop hook flagging drift between `.claude/` files and CLAUDE.md
+- `stop-reflect.sh` — Stop hook prompting memory updates after fix/discovery sessions
 
 ## How Claude should use this infrastructure
 
@@ -201,6 +223,7 @@ docker compose restart auth tenant prm
 1. Read the relevant rule file (`dotnet-backend.md` or `angular-frontend.md`) for the layer you're touching
 2. Invoke the `prm-domain` skill if the work touches PRM data, queries, charts, or dashboards
 3. Skim the **Architecture decisions** table above to avoid contradicting prior choices
+4. Consider dispatching the `planner` agent for multi-step work or the `architect` agent for decisions with tradeoffs
 
 **When making a non-trivial decision:**
 
