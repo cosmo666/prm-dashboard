@@ -10,12 +10,12 @@
       [subtext]="'Pre-booked · ' + ((bookedSharePct$ | async) | number:'1.0-0') + '% of total demand'"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
-      label="Provided vs Requested"
-      tooltip="What share of pre-booked services were actually delivered. 100% means every booking was served. Below 100% indicates some bookings went unserved; above 100% means walk-ups outpaced bookings."
+      label="Pre-booked Share"
+      tooltip="Share of delivered services that were pre-booked (requested ahead of arrival). The remainder arrived as walk-ups. This is mathematically 100% − Walk-up Rate; both views are shown so the staffing trade-off (scheduled demand vs reactive demand) is explicit."
       [value]="(providedPct$ | async) | number:'1.1-1'"
       unit="%"
       accent="green"
-      [subtext]="((totalProvided$ | async) | compactNumber) + ' served / ' + ((totalRequested$ | async) | compactNumber) + ' booked'"
+      [subtext]="((totalRequested$ | async) | compactNumber) + ' booked of ' + ((totalProvided$ | async) | compactNumber) + ' served'"
       [loading]="loading$ | async"></app-kpi-card>
     <app-kpi-card
       label="Total Provided"
@@ -35,15 +35,20 @@
       [loading]="loading$ | async"></app-kpi-card>
   </div>
 
-  <!-- Row 2: Daily Provided vs Requested (full-width dual-axis) -->
+  <!-- Row 2: Daily Provided vs Requested (full-width, single y-axis).
+       Single shared axis is the honest view: walk-ups dwarf pre-booked
+       services, so the orange Requested line correctly sits near zero
+       against the tall blue Provided bars. A dual y-axis would rescale
+       each series independently and falsely make them look comparable. -->
   <div class="row row-charts-full">
     <app-line-chart
       title="Daily Provided vs Requested"
-      subtitle="Pre-requested services vs services actually provided"
+      subtitle="Services delivered (Provided) vs the pre-booked subset (Requested)"
       [series]="dualAxisSeries$ | async"
       [loading]="loading$ | async"
-      [dualAxis]="true"
-      [showAvgLine]="false"></app-line-chart>
+      [dualAxis]="false"
+      [showAvgLine]="false"
+      yLabel="PRM services (count)"></app-line-chart>
   </div>
 
   <!-- Row 3: Peak Hours + Cumulative pace -->
