@@ -1,2 +1,55 @@
-:host { display: block; }
-:host ::ng-deep .ui-multiselect { width: 100%; min-width: 220px; }
+:host { display: inline-block; }
+
+// Airport chip toggle group — replaces the multiselect that was truncating
+// long airport names. Each chip shows the IATA code (3-letter) so width is
+// predictable; full name is in the title-attribute tooltip on hover.
+.airport-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  background: var(--app-bg-muted, #f1f5f9);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 8px;
+  height: 36px;
+}
+
+.airport-chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  min-width: 44px;
+  padding: 0 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--app-text-muted, #64748b);
+  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+
+  &:hover:not(.is-active) {
+    color: var(--app-text, #0f172a);
+    background: var(--app-surface, #fff);
+  }
+
+  &.is-active {
+    background: var(--app-primary, #2563EB);
+    color: var(--app-primary-on, #fff);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--app-primary, #2563EB);
+    outline-offset: 2px;
+  }
+}
+
+.airport-chip__code {
+  font-variant-numeric: tabular-nums;
+}

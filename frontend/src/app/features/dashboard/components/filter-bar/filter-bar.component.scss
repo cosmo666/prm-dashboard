@@ -168,20 +168,9 @@
   font-weight: 500;
 }
 
-// Drop the legacy <app-form-field> chrome around the airport selector when
-// it lives in inline mode — we only want the bare multiselect.
-:host ::ng-deep .filter-inline app-airport-selector .app-form-field {
-  margin-bottom: 0;
-  padding-top: 0;
-
-  .field-label,
-  .field-underline { display: none; }
-}
-
-:host ::ng-deep .filter-inline app-airport-selector .ui-multiselect {
-  min-width: 200px;
-  max-width: 260px;
-}
+// Airport selector is no longer a multiselect — it's an inline chip
+// toggle group. The component handles its own height/chrome (36px to
+// match the dropdown siblings) so no overrides needed here.
 
 // Date-range picker exposes a single `.range-btn` — match the 36px pill
 // height and chrome so it sits flush with the multiselects.
