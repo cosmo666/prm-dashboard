@@ -8,6 +8,7 @@ import { TenantStore, Tenant } from './core/store/tenant.store';
   template: `
     <app-progress-bar></app-progress-bar>
     <router-outlet></router-outlet>
+    <app-command-palette></app-command-palette>
     <app-toast-container></app-toast-container>
   `,
   styles: [':host { display: block; min-height: 100vh; }'],

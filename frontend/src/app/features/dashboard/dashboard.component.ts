@@ -4,6 +4,7 @@ import { combineLatest, Observable, Subject } from 'rxjs';
 import { debounceTime, map, skip, take, takeUntil } from 'rxjs/operators';
 import { FilterStore } from 'src/app/core/store/filter.store';
 import { AuthStore } from 'src/app/core/store/auth.store';
+import { NavigationStore } from 'src/app/core/store/navigation.store';
 
 interface TabDef { label: string; route: string; }
 
@@ -31,6 +32,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private authStore: AuthStore,
+    private navStore: NavigationStore,
   ) {
     // Human-readable summary of the active secondary filters. Mirrors main's
     // `filterSummary` computed signal — built from the three secondary arrays
@@ -78,6 +80,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
       // all" mode — required so cleared filters disappear from the URL instead
       // of lingering. 'merge' would keep stale params; ''/undefined replaces.
       this.router.navigate([], { relativeTo: this.route, queryParams: qp, queryParamsHandling: '' });
+    });
+
+    // Tab-switch requests from the command palette. skip(1) suppresses
+    // the BehaviorSubject's initial null emission so we only react to
+    // actual user-triggered requests.
+    this.navStore.requestedTab$.pipe(skip(1), takeUntil(this.destroy$)).subscribe(req => {
+      if (req === null) { return; }
+      const tab = TABS[req.index];
+      if (!tab) { return; }
+      this.router.navigate([tab.route], {
+        relativeTo: this.route,
+        queryParamsHandling: 'preserve',
+      });
     });
   }
 
