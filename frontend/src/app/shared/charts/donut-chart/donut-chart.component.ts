@@ -100,6 +100,13 @@ export class DonutChartComponent implements OnChanges {
         center: ['50%', '50%'],
         avoidLabelOverlap: true,
         itemStyle: { borderColor: '#fff', borderWidth: 2 },
+        // KEY: disable the slice-grow animation on hover. Echarts 4's
+        // pie series defaults `hoverAnimation: true` which expands the
+        // hovered slice ~10px outward, clipping its own outside label
+        // and the connector lines of adjacent slices. `emphasis.scale`
+        // is a separate (echarts-5-only) prop that doesn't disable
+        // this — `hoverAnimation: false` is the right knob in v4.
+        hoverAnimation: false,
         // Show value + percentage outside each segment so the user sees
         // the breakdown at a glance without hovering.
         label: {
@@ -111,16 +118,15 @@ export class DonutChartComponent implements OnChanges {
           color: '#0f172a',
         },
         labelLine: { show: true, length: 6, length2: 4, smooth: true, lineStyle: { color: '#cbd5e1' } },
-        // Hover emphasis: keep the slice STATIC — no scale/expand — and
-        // don't restyle the label, otherwise the expanding slice clips its
-        // own value label and the connector line. A subtle border-tint on
-        // the hovered slice is enough hover feedback.
+        // Hover feedback is a SOFT shadow on the hovered slice — no
+        // size change, no border tint that visually enlarges. The
+        // shadow is contained inside the slice's existing geometry so
+        // it can never overlap adjacent labels or connector lines.
         emphasis: {
-          scale: false,
-          scaleSize: 0,
-          focus: 'none',
-          label: { show: true, fontSize: 11, fontWeight: 'normal', color: '#0f172a' },
-          itemStyle: { borderColor: '#0f172a', borderWidth: 2 },
+          itemStyle: {
+            shadowBlur: 6,
+            shadowColor: 'rgba(15, 23, 42, 0.25)',
+          },
         },
         data: this.data.map(d => ({
           name: d.name,
