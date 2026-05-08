@@ -9,6 +9,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { CoreModule } from './core/core.module';
 import { AppComponent } from './app.component';
 import { ToastContainerComponent } from './shared/components/toast-container/toast-container.component';
+import { ProgressBarComponent } from './shared/components/progress-bar/progress-bar.component';
 
 // Exported (not inline arrow) so the AOT compiler can statically reference
 // it from the @NgModule decorator metadata. Function expressions are
@@ -22,7 +23,7 @@ export function loadEcharts() {
   // CommandPalette in subsequent tasks) live in AppModule, not
   // SharedModule — they're singletons mounted once in AppComponent,
   // not re-used by feature modules.
-  declarations: [AppComponent, ToastContainerComponent],
+  declarations: [AppComponent, ToastContainerComponent, ProgressBarComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

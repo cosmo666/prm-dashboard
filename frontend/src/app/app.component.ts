@@ -6,6 +6,7 @@ import { TenantStore, Tenant } from './core/store/tenant.store';
 @Component({
   selector: 'app-root',
   template: `
+    <app-progress-bar></app-progress-bar>
     <router-outlet></router-outlet>
     <app-toast-container></app-toast-container>
   `,

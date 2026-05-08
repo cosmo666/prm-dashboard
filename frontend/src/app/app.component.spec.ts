@@ -1,3 +1,4 @@
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { AppComponent } from './app.component';
@@ -7,6 +8,13 @@ describe('AppComponent', () => {
     TestBed.configureTestingModule({
       imports: [RouterTestingModule],
       declarations: [AppComponent],
+      // The AppComponent template mounts shell singletons (toast,
+      // progress bar, eventually command palette) by selector. We
+      // don't want to wire those up here — this spec only checks
+      // that AppComponent itself constructs and renders router-outlet.
+      // CUSTOM_ELEMENTS_SCHEMA lets the test ignore unknown shell
+      // tags without flagging them as template errors.
+      schemas: [CUSTOM_ELEMENTS_SCHEMA],
     });
   });
 
