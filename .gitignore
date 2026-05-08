@@ -146,3 +146,7 @@ lcov.info
 
 # Git worktrees
 .worktrees/
+
+# Claude Code — runtime state and private memory
+.claude/scheduled_tasks.lock
+.claude/rules/memory-private.md
