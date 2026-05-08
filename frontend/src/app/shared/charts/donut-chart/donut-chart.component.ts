@@ -28,20 +28,24 @@ export class DonutChartComponent implements OnChanges {
       // horizontally at exactly 50%. Layout matches main's pattern.
       legend: {
         orient: 'horizontal',
-        bottom: 0,
+        // `4%` clears below the donut + outside-segment labels without
+        // creeping into them. `bottom: 0` was clipping at the chart edge.
+        bottom: '4%',
         left: 'center',
         textStyle: { fontSize: 12 },
         itemGap: 18,
       },
-      // Two-line center label rendered via the `title` component — the
-      // ONE positioning surface in echarts 4 that reliably anchors text
-      // dead-center via `left: 'center', top: 'middle'`. `subtext`
-      // becomes the smaller "TOTAL" caption below the count.
+      // Center label via `title` with `top: 'middle'` + `left: 'center'`.
+      // BOTH the donut series (center: ['50%', '50%']) AND the title sit
+      // at the exact geometric center of the chart canvas — echarts'
+      // built-in 'middle' / 'center' keywords centre by ELEMENT MIDPOINT
+      // (not top edge), so the title's geometric centre lands precisely
+      // where the donut's geometric centre lands. No more drift.
       title: {
         text: total.toLocaleString(),
         subtext: 'TOTAL',
         left: 'center',
-        top: '42%',
+        top: 'middle',
         textAlign: 'center',
         textStyle: {
           fontSize: 22,
@@ -55,15 +59,16 @@ export class DonutChartComponent implements OnChanges {
           fontFamily: '"Fira Code", ui-monospace, monospace',
           color: '#64748b',
         },
-        itemGap: 6,
+        itemGap: 4,
       } as any,
       series: [{
         type: 'pie',
-        radius: ['58%', '78%'],
-        // Centered horizontally; nudge slightly up of vertical center
-        // so the segment value labels don't crowd the legend at the
-        // bottom.
-        center: ['50%', '46%'],
+        // Slightly tighter ring so the segment value labels outside the
+        // slices have room to breathe before colliding with the chart edge.
+        radius: ['54%', '74%'],
+        // Dead center — matches title's anchor exactly. The bottom legend
+        // (legend.bottom: 4%) sits below the chart with enough clearance.
+        center: ['50%', '50%'],
         avoidLabelOverlap: true,
         itemStyle: { borderColor: '#fff', borderWidth: 2 },
         // Show value + percentage outside each segment so the user sees
