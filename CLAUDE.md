@@ -17,12 +17,15 @@ Multi-tenant PRM (Passenger with Reduced Mobility) analytics POC for airport gro
 | Auth | `BCrypt.Net-Next` (password hashing), `System.IdentityModel.Tokens.Jwt` (JWT) |
 | Refresh-token store | `InMemoryRefreshTokenStore` (AuthService) — process-local, forgotten on restart |
 | API Gateway | Ocelot (latest for .NET 8) |
-| Frontend framework | Angular 17+ (standalone components, no NgModules) |
-| UI library | Angular Material 3 (custom theme) |
-| Charts | Apache ECharts via `ngx-echarts` |
-| Frontend state | NgRx Signal Store (`@ngrx/signals`) |
+| Frontend (primary) | **Angular 17+** standalone components in [`frontend/`](frontend/) — host port **4200** |
+| Frontend (host-app parity) | **Angular 8.2.14 + PrimeNG 8.0.3** in [`frontend-v8/`](frontend-v8/) — host port **4300** |
+| UI library (Angular 17) | Angular Material 3 (custom theme) |
+| UI library (Angular 8) | PrimeNG 8.0.3 (`.ui-*` class prefix) + PrimeIcons 2.0.0 + PrimeFlex 1.3.1 |
+| Charts | Apache ECharts via `ngx-echarts` (both frontends) |
+| Frontend state (Angular 17) | NgRx Signal Store (`@ngrx/signals`) |
+| Frontend state (Angular 8) | Plain RxJS BehaviorSubject services |
 | Seed data format | CSV committed under `data/` — refresh the sibling Parquet via `tools/PrmDashboard.ParquetBuilder` |
-| Container orchestration | Docker Compose |
+| Container orchestration | Docker Compose — both frontends share the same `gateway`/`auth`/`tenant`/`prm` containers |
 
 **Shared library** (`backend/src/PrmDashboard.Shared/`) holds the DuckDB abstractions (`IDuckDbContext`, `TenantParquetPaths`, `DataPathOptions`, `DataPathValidator`), DTOs, and pure helper functions. All 4 microservices reference it. Never add business logic there — just data shapes.
 
@@ -54,7 +57,7 @@ backend/
 data/                                       # Committed: CSVs are the human-readable seed, Parquet is the query format
   master/                                  # tenants.{csv,parquet}, employees.{csv,parquet}, employee_airports.{csv,parquet}
   {tenant-slug}/                           # prm_services.{csv,parquet} — one folder per tenant
-frontend/                                   # Angular 17 SPA (lazy-loaded features, standalone components)
+frontend/                                   # Angular 17 SPA — host :4200 (lazy-loaded features, standalone components)
   src/app/
     core/                                  # Singletons: auth, api, theme, progress, stores (Tenant/Auth/Filter/Navigation)
     features/auth/login/                   # Login page (split layout, mouse-parallax dark panel)
@@ -65,6 +68,14 @@ frontend/                                   # Angular 17 SPA (lazy-loaded featur
     shared/components/                     # TopBar, AirportSelector, ProgressBar
     shared/directives/                     # [appTooltip] — replaces matTooltip
     shared/pipes/                          # CompactNumberPipe (15.2k / 1.5M / —)
+frontend-v8/                                # Angular 8.2 + PrimeNG 8.0.3 — host :4300 (NgModules, BehaviorSubject stores)
+  Dockerfile                               # Node 12 builder + nginx runtime (sha256-pinned)
+  Dockerfile.dev                           # Phase 0 dev container (Node 12 + chromium + Angular CLI 8.3.3)
+  nginx.conf                               # /api/* proxied to gateway:8080 with X-Tenant-Slug from subdomain
+  src/app/                                 # Mirrors Angular 17 feature layout — 5-tab dashboard, same DTOs
+    core/                                  # api/auth/store(/theme/toast/progress) — Plain RxJS, no NgRx
+    features/{auth,home,dashboard,not-found,primeng-smoke}/  # Each = its own lazy NgModule
+    shared/{charts,components,pipes}/      # ECharts wrappers, form-field, toast, palette, etc.
 docs/
   e2e-checklist.md                         # Manual verification scenarios
   superpowers/specs/                       # Archived design specs (historical project record)
@@ -83,7 +94,7 @@ dotnet build                               # Build all projects
 dotnet run --project src/PrmDashboard.AuthService   # Run a single service locally
 ```
 
-**Frontend** (Phase 7+):
+**Frontend (Angular 17, primary):**
 
 ```bash
 cd frontend
@@ -93,13 +104,27 @@ npm run build                              # Production build
 npm test                                   # Karma + Jasmine
 ```
 
+**Frontend (Angular 8, host-app parity)** — all commands run inside the dev container; host has no Node 12:
+
+```bash
+# from the repo root
+docker compose --profile dev build frontend-v8-dev          # one-time image build
+docker compose run --rm frontend-v8-dev npm install
+docker compose run --rm frontend-v8-dev npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox
+docker compose run --rm frontend-v8-dev npm run lint        # TSLint, must pass before commit
+docker compose run --rm frontend-v8-dev npx ng build --configuration=production
+docker compose run --rm frontend-v8-dev npx tsc --noEmit -p tsconfig.app.json
+```
+
 **Full stack:**
 
 ```bash
 cp .env.example .env
 # Before first run: replace JWT_SECRET in .env — the placeholder is rejected by JwtStartupValidator
-docker compose up --build                  # gateway (5000), auth, tenant, prm, frontend (4200)
+docker compose up --build                  # gateway :5000, auth/tenant/prm, frontend :4200, frontend-v8 :4300
 ```
+
+Both frontends hit the same gateway (`http://gateway:8080` over the internal Docker network → `http://localhost:5000` from the host) and read the same per-tenant Parquet files. Switching between `http://aeroground.localhost:4200` and `http://aeroground.localhost:4300` shows the same tenant in two UI stacks.
 
 **Refreshing the seed data:**
 
@@ -149,6 +174,7 @@ docker compose restart auth tenant prm
 | 2026-04-23 | Frontend `forkJoin` subscribe results are type-inferred (not `(r: any)`) | Every dashboard tab discarded the typed DTO shape at the `next:` handler. Type-check now catches a backend DTO change at compile time. |
 | 2026-04-23 | All Dockerfile base images pinned to sha256 digests (`mcr.microsoft.com/dotnet/{sdk,aspnet}:8.0@sha256:…`, `node:20-alpine@sha256:…`, `nginx:alpine@sha256:…`) | Tag-only references are mutable — a rebuild six months from now could silently pull a different image and break the build or change runtime behaviour. Digest pins make Docker images reproducibility guarantees. |
 | 2026-04-23 | CSVs + Parquet under `data/` are committed; ParquetBuilder is the only data tool | Seed data is the human-readable source of truth in git; regenerate Parquet with `dotnet run --project backend/tools/PrmDashboard.ParquetBuilder -- --dir ./data` after editing any CSV. Simpler than an external DB seed pipeline and requires no setup on a fresh clone. |
+| 2026-05-11 | Dual frontends on `main`: Angular 17 (`frontend/`, :4200) and Angular 8 + PrimeNG (`frontend-v8/`, :4300) share the same backend | The user's host application is Angular 8 + PrimeNG 8.0.3; the v8 build was imported via `git read-tree --prefix=frontend-v8/` from the `angular-8-rewrite` branch so it lives alongside the Angular 17 UI on `main`. Both frontends proxy `/api` to the same Ocelot gateway and read the same per-tenant Parquet files — switching ports is the only difference at runtime. CORS allowlists on auth/tenant/prm/gateway extended to include `{localhost,aeroground.localhost,skyserve.localhost,globalprm.localhost}:4300`. |
 
 ## Conventions
 

@@ -202,7 +202,7 @@ The repo ships committed CSVs **and** pre-generated Parquet under `data/` (maste
 docker compose up -d --build                # build + start in the background
 ```
 
-This brings up five containers — `prm-gateway` (host :5000), `prm-auth`, `prm-tenant`, `prm-prm` (internal only), and `prm-frontend` (host :4200). Gateway has `depends_on: service_healthy` wiring so it won't accept traffic until the three backends are healthy.
+This brings up six containers — `prm-gateway` (host :5000), `prm-auth`, `prm-tenant`, `prm-prm` (internal only), `prm-frontend` (host :4200, Angular 17), and `prm-frontend-v8` (host :4300, Angular 8 + PrimeNG). Gateway has `depends_on: service_healthy` wiring so it won't accept traffic until the three backends are healthy. Both frontends talk to the same gateway and share the same tenant data.
 
 ### URLs
 
@@ -210,10 +210,12 @@ Once `docker compose up` is running, open any of these:
 
 | Service | URL | What it is |
 | --- | --- | --- |
-| **Frontend — bare localhost** | <http://localhost:4200> | Opens the app with a dev-only dropdown in the top bar to pick a tenant. Easiest path on a fresh machine. |
-| **Frontend — AeroGround tenant** | <http://aeroground.localhost:4200> | Prod-like URL; `TenantResolver` picks the slug `aeroground` from the subdomain automatically. |
-| **Frontend — SkyServe tenant** | <http://skyserve.localhost:4200> | Same pattern, slug `skyserve`. |
-| **Frontend — GlobalPRM tenant** | <http://globalprm.localhost:4200> | Same pattern, slug `globalprm`. |
+| **Angular 17 — bare localhost** | <http://localhost:4200> | Opens the Angular 17 app with a dev-only tenant dropdown. Easiest path on a fresh machine. |
+| **Angular 17 — AeroGround tenant** | <http://aeroground.localhost:4200> | Prod-like URL; `TenantResolver` picks the slug `aeroground` from the subdomain. |
+| **Angular 17 — SkyServe tenant** | <http://skyserve.localhost:4200> | Same pattern, slug `skyserve`. |
+| **Angular 17 — GlobalPRM tenant** | <http://globalprm.localhost:4200> | Same pattern, slug `globalprm`. |
+| **Angular 8 — bare localhost** | <http://localhost:4300> | Angular 8.2 + PrimeNG 8.0.3 build of the same app; hits the same backend. |
+| **Angular 8 — tenant subdomains** | <http://{slug}.localhost:4300> | `aeroground` / `skyserve` / `globalprm`, same subdomain → slug convention. |
 | **API Gateway** | <http://localhost:5000/api> | All backend calls; every request needs `Authorization: Bearer <jwt>` and `X-Tenant-Slug`. Try <http://localhost:5000/api/tenants/config?slug=aeroground> for an anonymous branding check. |
 
 The three backend services (`auth`, `tenant`, `prm`) are **intentionally not exposed to the host** — they're reachable only from inside the Docker network. Use the gateway as the single API entry point.
@@ -227,12 +229,13 @@ The three backend services (`auth`, `tenant`, `prm`) are **intentionally not exp
 ### Common commands
 
 ```bash
-docker compose ps                          # what's running
-docker compose logs -f frontend            # tail logs for one service
-docker compose up -d --build frontend      # rebuild + restart just the frontend (UI changes)
-docker compose restart auth tenant prm     # restart backends (e.g. after refreshing Parquet)
-docker compose stop                        # stop containers (keep state)
-docker compose down                        # tear it all down
+docker compose ps                              # what's running
+docker compose logs -f frontend                # tail logs for one service
+docker compose up -d --build frontend          # rebuild + restart Angular 17 frontend
+docker compose up -d --build frontend-v8       # rebuild + restart Angular 8 frontend
+docker compose restart auth tenant prm         # restart backends (e.g. after refreshing Parquet)
+docker compose stop                            # stop containers (keep state)
+docker compose down                            # tear it all down
 ```
 
 ### Local dev (without Docker)

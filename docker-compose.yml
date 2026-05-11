@@ -19,6 +19,10 @@ services:
       - Cors__AllowedOrigins__1=http://aeroground.localhost:4200
       - Cors__AllowedOrigins__2=http://skyserve.localhost:4200
       - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
+      - Cors__AllowedOrigins__4=http://localhost:4300
+      - Cors__AllowedOrigins__5=http://aeroground.localhost:4300
+      - Cors__AllowedOrigins__6=http://skyserve.localhost:4300
+      - Cors__AllowedOrigins__7=http://globalprm.localhost:4300
     depends_on:
       auth:
         condition: service_healthy
@@ -51,6 +55,10 @@ services:
       - Cors__AllowedOrigins__1=http://aeroground.localhost:4200
       - Cors__AllowedOrigins__2=http://skyserve.localhost:4200
       - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
+      - Cors__AllowedOrigins__4=http://localhost:4300
+      - Cors__AllowedOrigins__5=http://aeroground.localhost:4300
+      - Cors__AllowedOrigins__6=http://skyserve.localhost:4300
+      - Cors__AllowedOrigins__7=http://globalprm.localhost:4300
     volumes:
       - ./data:/app/data:ro
     healthcheck:
@@ -76,6 +84,10 @@ services:
       - Cors__AllowedOrigins__1=http://aeroground.localhost:4200
       - Cors__AllowedOrigins__2=http://skyserve.localhost:4200
       - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
+      - Cors__AllowedOrigins__4=http://localhost:4300
+      - Cors__AllowedOrigins__5=http://aeroground.localhost:4300
+      - Cors__AllowedOrigins__6=http://skyserve.localhost:4300
+      - Cors__AllowedOrigins__7=http://globalprm.localhost:4300
     volumes:
       - ./data:/app/data:ro
     healthcheck:
@@ -101,6 +113,10 @@ services:
       - Cors__AllowedOrigins__1=http://aeroground.localhost:4200
       - Cors__AllowedOrigins__2=http://skyserve.localhost:4200
       - Cors__AllowedOrigins__3=http://globalprm.localhost:4200
+      - Cors__AllowedOrigins__4=http://localhost:4300
+      - Cors__AllowedOrigins__5=http://aeroground.localhost:4300
+      - Cors__AllowedOrigins__6=http://skyserve.localhost:4300
+      - Cors__AllowedOrigins__7=http://globalprm.localhost:4300
     volumes:
       - ./data:/app/data:ro
     healthcheck:
@@ -121,4 +137,40 @@ services:
     depends_on:
       gateway:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  frontend-v8:
+    build:
+      context: ./frontend-v8
+      dockerfile: Dockerfile
+    container_name: prm-frontend-v8
+    restart: unless-stopped
+    ports:
+      - "4300:80"
+    depends_on:
+      gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  frontend-v8-dev:
+    profiles: ["dev"]
+    build:
+      context: ./frontend-v8
+      dockerfile: Dockerfile.dev
+    image: prm-frontend-v8-dev:local
+    working_dir: /app
+    volumes:
+      - ./frontend-v8:/app
+    entrypoint: []
+    command: sh
 
