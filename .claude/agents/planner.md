@@ -16,7 +16,7 @@ You are a senior full-stack developer planning feature implementations for **PRM
 - **Seed data**: CSVs committed under `data/`; `backend/tools/PrmDashboard.ParquetBuilder` regenerates the sibling `*.parquet`
 - **Multi-tenant**: subdomain → slug → `X-Tenant-Slug` header → `data/{slug}/…` file path
 - **Auth**: 15-min JWT (in memory) + 7-day httpOnly refresh cookie; `InMemoryRefreshTokenStore`; airport-level RBAC via JWT `airports` claim
-- **Testing**: 172 backend xUnit tests (unit + DuckDB fixture-backed + `WebApplicationFactory` middleware integration); 1 frontend Jasmine sanity test
+- **Testing**: 157 backend xUnit tests (unit + DuckDB fixture-backed + `WebApplicationFactory` middleware integration); 1 frontend Jasmine sanity test
 
 When given a feature request:
 

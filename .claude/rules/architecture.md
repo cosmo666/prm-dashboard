@@ -15,7 +15,7 @@ prm-dashboard/
 │   │   ├── PrmDashboard.PrmService/     # /prm — 25 analytics endpoints over DuckDB
 │   │   └── PrmDashboard.Gateway/        # Ocelot routing + subdomain → X-Tenant-Slug
 │   ├── tools/PrmDashboard.ParquetBuilder/  # CSV → Parquet via embedded DuckDB
-│   └── tests/PrmDashboard.Tests/        # xUnit (172 passing)
+│   └── tests/PrmDashboard.Tests/        # xUnit (157 passing)
 ├── data/                                # Committed: CSV (seed) + Parquet (query format)
 │   ├── master/                          # tenants, employees, employee_airports
 │   └── {slug}/                          # prm_services per tenant

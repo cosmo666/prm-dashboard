@@ -1,7 +1,7 @@
 # Testing — PRM Dashboard
 
 ## Current state
-- **Backend**: 172/172 xUnit tests passing — unit + DuckDB-fixture-backed + `WebApplicationFactory` middleware integration.
+- **Backend**: 157/157 xUnit tests passing — unit + DuckDB-fixture-backed + `WebApplicationFactory` middleware integration.
 - **Frontend**: 1/1 Karma + Jasmine sanity test, ESLint clean (0 errors, 28 intentional `no-explicit-any` warnings on ECharts handlers).
 - See `docs/e2e-checklist.md` for manual verification scenarios.
 

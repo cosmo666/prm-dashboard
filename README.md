@@ -2,7 +2,7 @@
 
 Multi-tenant analytics POC for **Passenger with Reduced Mobility (PRM)** ground handling services. Airports and ground-handling companies use this to monitor wheelchair assists, medical-assist services, and other accessibility operations across their locations.
 
-> **Status:** POC feature-complete. Runtime data layer is DuckDB over per-tenant Parquet; seed CSVs + generated Parquet are committed under `data/`. **172/172 backend tests + 1/1 frontend tests passing.** See [docs/e2e-checklist.md](docs/e2e-checklist.md) for manual verification scenarios.
+> **Status:** POC feature-complete. Runtime data layer is DuckDB over per-tenant Parquet; seed CSVs + generated Parquet are committed under `data/`. **157/157 backend tests + 1/1 frontend tests passing.** See [docs/e2e-checklist.md](docs/e2e-checklist.md) for manual verification scenarios.
 
 ## What it does
 
@@ -275,7 +275,7 @@ ParquetBuilder uses embedded DuckDB (`COPY … FORMAT 'parquet'`) — no externa
 ## Build & Test
 
 ```bash
-# Backend — 172/172 tests passing
+# Backend — 157/157 tests passing
 cd backend
 dotnet build                                          # 0 errors, 0 warnings
 dotnet test                                           # xUnit
@@ -714,7 +714,7 @@ prm-dashboard/
 │   ├── tools/
 │   │   └── PrmDashboard.ParquetBuilder/# Utility: CSV → Parquet via embedded DuckDB (refresh after editing a CSV)
 │   └── tests/
-│       └── PrmDashboard.Tests/         # 172 tests across all services + integration fixtures
+│       └── PrmDashboard.Tests/         # 157 tests across all services + integration fixtures
 ├── data/                               # Committed: CSVs are the seed, Parquet is the query format
 │   ├── master/                         # tenants.{csv,parquet}, employees.{csv,parquet}, employee_airports.{csv,parquet}
 │   └── {tenant-slug}/                  # prm_services.{csv,parquet} — one folder per tenant

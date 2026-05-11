@@ -283,7 +283,7 @@ When adding a new tenant, the flow is:
 
 ## Current status
 
-POC feature-complete with **two parallel frontends on `main`** talking to a single backend. Runtime data layer is DuckDB over per-tenant Parquet; seed CSVs + generated Parquet are committed under `data/`. **172/172 backend tests passing.** Both frontends build clean and serve healthy in `docker compose up`.
+POC feature-complete with **two parallel frontends on `main`** talking to a single backend. Runtime data layer is DuckDB over per-tenant Parquet; seed CSVs + generated Parquet are committed under `data/`. **157/157 backend tests passing.** Both frontends build clean and serve healthy in `docker compose up`.
 
 ### Capability snapshot
 
@@ -297,7 +297,7 @@ POC feature-complete with **two parallel frontends on `main`** talking to a sing
 | **Seed data** | ✅ | 3 tenants, 12 employees, ~20k PRM records across Dec 2025 – Mar 2026. Committed as CSVs under `data/`; Parquet refreshed via `PrmDashboard.ParquetBuilder` |
 | **Frontend — Angular 17 (`frontend/`, :4200)** | ✅ | Standalone components, NgRx Signal Store, 5-tab dashboard, 6 ECharts wrappers, `@angular-eslint` lint gate, production build clean |
 | **Frontend — Angular 8 (`frontend-v8/`, :4300)** | ✅ | NgModules, BehaviorSubject stores, PrimeNG 8.0.3 (`.ui-*`), 5-tab dashboard at feature parity, TSLint clean, production build clean, dev container (Node 12 + chromium) for installs/tests/builds |
-| **Test coverage** | ✅ | 172 backend (unit + fixture-backed DuckDB + `WebApplicationFactory` middleware integration) + frontend sanity tests on both Angular builds |
+| **Test coverage** | ✅ | 157 backend (unit + fixture-backed DuckDB + `WebApplicationFactory` middleware integration) + frontend sanity tests on both Angular builds |
 
 ### Hardening (2026-04-22 → 2026-04-23)
 

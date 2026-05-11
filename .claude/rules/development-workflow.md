@@ -43,7 +43,7 @@ Follow the README's "Onboarding a new tenant" flow:
 - [ ] `await using` for `PooledDuckDbSession`
 - [ ] Each `DuckDBParameter` re-created per command (not shared across two commands)
 - [ ] `dotnet build` clean (0 warnings)
-- [ ] `dotnet test` passes (all 172+ tests)
+- [ ] `dotnet test` passes (all 157+ tests)
 
 ### Frontend
 - [ ] Standalone components only (no NgModules)
