@@ -1,0 +1,153 @@
+<div class="top10-content" *ngIf="(loading$ | async) !== null">
+  <!-- Top-X selector -->
+  <div class="topx-bar" role="group" aria-label="Number of items to show">
+    <span class="topx-bar__label label-micro">Show top</span>
+    <button type="button"
+            *ngFor="let n of topXOptions"
+            class="topx-chip"
+            [class.topx-chip--active]="(topX$ | async) === n"
+            [attr.aria-pressed]="(topX$ | async) === n"
+            (click)="setTopX(n)">{{ n }}</button>
+  </div>
+
+  <!-- Row 1: Top airlines + Top flights -->
+  <div class="row row-charts-1-1">
+    <app-bar-chart
+      [title]="'Top ' + (topX$ | async) + ' Airlines'"
+      subtitle="Highest PRM service demand by carrier"
+      [data]="topAirlines$ | async"
+      [loading]="loading$ | async"
+      xLabel="Airline (IATA code)"
+      yLabel="PRM services (count)"
+      unit="services"
+      (barClick)="onAirlineClick($event)"></app-bar-chart>
+    <app-bar-chart
+      [title]="'Top ' + (topX$ | async) + ' Flights'"
+      subtitle="Serviced PRM count per flight, with requested overlay"
+      [data]="topFlights$ | async"
+      [loading]="loading$ | async"
+      seriesName="Serviced"
+      [lineSeries]="topFlightsRequested$ | async"
+      lineSeriesName="Requested"
+      xLabel="Flight number"
+      yLabel="PRM services (count)"
+      unit="services"
+      (barClick)="onFlightClick($event)"></app-bar-chart>
+  </div>
+
+  <!-- Row 2: Editorial agents table -->
+  <div class="agents-card">
+    <header class="agents-card__head">
+      <div class="agents-card__title-wrap">
+        <span class="label-micro">Personnel</span>
+        <h3 class="agents-card__title">Top {{ topX$ | async }} Agents</h3>
+      </div>
+      <div class="agents-card__meta">
+        <div class="label-micro">Ranked by</div>
+        <div class="agents-card__meta-value font-data">PRM count</div>
+      </div>
+    </header>
+
+    <div class="agents-table" role="table" [attr.aria-label]="'Top ' + (topX$ | async) + ' agents by PRM count'">
+      <!-- Header row -->
+      <div class="agents-row agents-row--head" role="row">
+        <div class="cell cell--rank" role="columnheader">Rank</div>
+        <div class="cell cell--agent" role="columnheader">Agent</div>
+        <div class="cell cell--num" role="columnheader">PRM</div>
+        <div class="cell cell--num" role="columnheader">Avg Min</div>
+        <div class="cell cell--num" role="columnheader">Avg PRM/Day</div>
+        <div class="cell cell--most-serviced" role="columnheader">Most Serviced</div>
+        <div class="cell cell--code" role="columnheader">Airline</div>
+        <div class="cell cell--num" role="columnheader"
+             pTooltip="Distinct days this agent handled at least one PRM service in the selected period. Cadence label: ≥ 20 = daily, 10–19 = frequent, 5–9 = regular, 1–4 = occasional."
+             tooltipPosition="left">Active Days</div>
+      </div>
+
+      <!-- Loading skeleton -->
+      <ng-container *ngIf="(loading$ | async); else dataOrEmpty">
+        <div class="agents-row agents-row--skeleton" *ngFor="let i of skeletonAgents" role="row" aria-busy="true">
+          <div class="cell cell--rank" role="cell"><div class="skeleton-block" style="width: 24px; height: 20px;"></div></div>
+          <div class="cell cell--agent" role="cell">
+            <div class="skeleton-block" style="width: 60%; height: 14px; margin-bottom: 6px;"></div>
+            <div class="skeleton-block" style="width: 40%; height: 11px;"></div>
+          </div>
+          <div class="cell cell--num" role="cell"><div class="skeleton-block" style="width: 32px; height: 16px; margin-left: auto;"></div></div>
+          <div class="cell cell--num" role="cell"><div class="skeleton-block" style="width: 40px; height: 18px; margin-left: auto;"></div></div>
+          <div class="cell cell--num" role="cell"><div class="skeleton-block" style="width: 34px; height: 16px; margin-left: auto;"></div></div>
+          <div class="cell cell--most-serviced" role="cell"><div class="skeleton-block" style="width: 72px; height: 14px;"></div></div>
+          <div class="cell cell--code" role="cell"><div class="skeleton-block" style="width: 24px; height: 14px;"></div></div>
+          <div class="cell cell--num" role="cell"><div class="skeleton-block" style="width: 20px; height: 14px; margin-left: auto;"></div></div>
+        </div>
+      </ng-container>
+
+      <ng-template #dataOrEmpty>
+        <ng-container *ngIf="(topAgents$ | async) as agents">
+          <div *ngIf="agents.length === 0" class="agents-empty" role="status">
+            <div class="agents-empty__title">No agents</div>
+            <div class="agents-empty__hint">No agent activity in the selected period.</div>
+          </div>
+
+          <div *ngFor="let agent of agents"
+               class="agents-row"
+               [ngClass]="rankClass(agent.rank)"
+               role="row"
+               (click)="onAgentRowClick(agent)">
+            <div class="cell cell--rank" role="cell">
+              <span class="rank-num font-display">{{ formatRank(agent.rank) }}</span>
+            </div>
+            <div class="cell cell--agent" role="cell">
+              <div class="agent-name">{{ agent.name }}</div>
+              <div class="agent-no font-data">#{{ agent.agentNo }}</div>
+            </div>
+            <div class="cell cell--num" role="cell">
+              <span class="font-data">{{ agent.count | number }}</span>
+            </div>
+            <div class="cell cell--num" role="cell">
+              <span class="duration-badge font-data" [ngClass]="durationClass(agent.avgDuration)">
+                {{ agent.avgDuration | number:'1.0-0' }}<span class="duration-unit">min</span>
+              </span>
+            </div>
+            <div class="cell cell--num" role="cell">
+              <span class="per-day-value font-data">{{ agent.avgPerDay | number:'1.1-1' }}<span class="per-day-unit">/day</span></span>
+            </div>
+            <div class="cell cell--most-serviced" role="cell">
+              <span class="most-serviced-value font-data">
+                <span class="most-serviced-count">{{ agent.topServiceCount | number }}</span><span class="most-serviced-sep">/</span><span class="most-serviced-total">{{ agent.count | number }}</span>
+              </span>
+              <span class="code-chip font-data">{{ agent.topService }}</span>
+            </div>
+            <div class="cell cell--code" role="cell">
+              <span class="code-chip font-data">{{ agent.topAirline }}</span>
+            </div>
+            <div class="cell cell--num cell--days" role="cell">
+              <span class="days-value font-data">{{ agent.daysActive }}<span class="days-unit">d</span></span>
+              <span class="days-label">{{ daysLabel(agent.daysActive) }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Row 3: Top routes + No-show rate -->
+  <div class="row row-charts-1-1">
+    <app-horizontal-bar-chart
+      title="Busiest Routes"
+      subtitle="Top routes by PRM service volume"
+      [data]="topRoutes$ | async"
+      [loading]="loading$ | async"
+      xLabel="PRM services (count)"
+      yLabel="Route (departure → arrival)"
+      unit="services"
+      (barClick)="onRouteClick($event)"></app-horizontal-bar-chart>
+    <app-bar-chart
+      title="No-Show Rate"
+      subtitle="Passengers who booked PRM but didn't show up"
+      [data]="noShows$ | async"
+      [loading]="loading$ | async"
+      xLabel="Airline (IATA code)"
+      yLabel="No-show rate (%)"
+      unit="%"
+      (barClick)="onNoShowAirlineClick($event)"></app-bar-chart>
+  </div>
+</div>

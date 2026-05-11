@@ -1,0 +1,109 @@
+// ─── <app-form-field> floating-label treatment ────────────────────────────
+// Distinguishing detail: floated labels render in Fira Code uppercase,
+// echoing the operations-console theme.
+
+.app-form-field {
+  position: relative;
+  margin-bottom: var(--space-4);
+  padding-top: 18px; // room for the floated label
+
+  .field-label {
+    position: absolute;
+    top: 22px;
+    left: 0;
+    pointer-events: none;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    font-weight: 400;
+    color: var(--app-text-muted);
+    line-height: 1;
+    transition:
+      transform var(--motion-base) var(--motion-out),
+      color     var(--motion-base) var(--motion-ease),
+      font-size var(--motion-base) var(--motion-ease),
+      letter-spacing var(--motion-base) var(--motion-ease);
+    transform-origin: left center;
+    will-change: transform, font-size;
+  }
+
+  .field-content {
+    display: block;
+
+    // host any input/dropdown/calendar inside; let the inner control
+    // own its visuals (we override .ui-inputtext globally).
+    > input,
+    > textarea,
+    > .ui-inputtext,
+    > .ui-dropdown,
+    > .ui-multiselect,
+    > .ui-calendar {
+      width: 100%;
+      background: transparent;
+      border: none;
+      padding: 6px 0 8px;
+      font-family: var(--font-sans);
+      font-size: var(--text-base);
+      line-height: 1.4;
+      color: var(--app-text);
+      outline: none;
+    }
+  }
+
+  // 1px static rail
+  .field-underline {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--app-border);
+    pointer-events: none;
+    overflow: visible;
+
+    // 2px primary fill that scaleX-grows from center on focus
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      background: var(--app-primary);
+      transform: scaleX(0);
+      transform-origin: center;
+      transition: transform var(--motion-base) var(--motion-out);
+    }
+  }
+
+  // ── States ──────────────────────────────────────────────────────────────
+  &.is-focused .field-underline::after { transform: scaleX(1); }
+
+  &.is-focused .field-label,
+  &.is-floating .field-label,
+  &.has-value .field-label {
+    transform: translateY(-22px);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-widest);
+    text-transform: uppercase;
+    color: var(--app-primary);
+  }
+
+  &.has-error {
+    .field-underline { background: var(--app-danger); }
+    .field-underline::after { background: var(--app-danger); transform: scaleX(1); }
+    .field-label { color: var(--app-danger); }
+  }
+
+  // hint / error helper line
+  .field-hint,
+  .field-error {
+    margin-top: var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    line-height: var(--leading-snug);
+  }
+  .field-hint  { color: var(--app-text-faint); }
+  .field-error { color: var(--app-danger); }
+}

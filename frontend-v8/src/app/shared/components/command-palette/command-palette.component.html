@@ -1,0 +1,54 @@
+<ng-container *ngIf="isOpen">
+  <div class="cp-backdrop" (click)="close()" aria-hidden="true"></div>
+  <div class="cp-modal" role="dialog" aria-modal="true" aria-label="Command palette"
+       (click)="$event.stopPropagation()">
+    <div class="cp-search">
+      <i class="pi pi-search cp-search__icon" aria-hidden="true"></i>
+      <input #searchInput type="text" class="cp-search__input"
+             placeholder="Type a command or search..."
+             autocomplete="off" spellcheck="false"
+             [ngModel]="query"
+             (ngModelChange)="onQueryChange($event)"
+             (keydown)="onKeydown($event)" />
+      <button type="button" class="cp-search__esc font-mono"
+              aria-label="Close" (click)="close()">esc</button>
+    </div>
+
+    <div class="cp-divider"></div>
+
+    <div class="cp-list" role="listbox" #listEl>
+      <div class="cp-empty" *ngIf="filtered.length === 0">
+        <div class="cp-empty__title">No matching commands</div>
+        <div class="cp-empty__hint">Try "dashboard", "theme", or "sign out"</div>
+      </div>
+      <ng-container *ngIf="filtered.length > 0">
+        <div class="cp-group" *ngFor="let group of grouped">
+          <div class="cp-group__head">{{ group.section }}</div>
+          <button type="button" class="cp-row" role="option"
+                  *ngFor="let cmd of group.items"
+                  [class.selected]="cmd.id === selectedId"
+                  [attr.data-cmd-id]="cmd.id"
+                  (mouseenter)="selectById(cmd.id)"
+                  (click)="run(cmd)">
+            <span class="cp-row__icon" [innerHTML]="cmd.icon || defaultIcon"></span>
+            <span class="cp-row__label">{{ cmd.label }}</span>
+            <span class="cp-row__kbd font-mono" *ngIf="cmd.shortcut">{{ cmd.shortcut }}</span>
+          </button>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="cp-divider"></div>
+
+    <div class="cp-footer">
+      <span class="cp-footer__hint font-mono">
+        <span class="cp-kbd">↑↓</span> navigate
+        <span class="cp-sep">·</span>
+        <span class="cp-kbd">↵</span> run
+        <span class="cp-sep">·</span>
+        <span class="cp-kbd">esc</span> close
+      </span>
+      <span class="cp-footer__count font-mono">{{ filtered.length }} commands</span>
+    </div>
+  </div>
+</ng-container>

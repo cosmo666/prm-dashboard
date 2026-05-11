@@ -1,0 +1,85 @@
+<div class="service-content" *ngIf="(loading$ | async) !== null">
+  <!-- Row 1: 9 service summary cards.
+       Each card shows the IATA SSR code (operator vocabulary), a one-line
+       human-readable label so non-operators can scan the row, the count
+       with an explicit "services" unit, and the share-of-total context.
+       Click a card to filter the rest of the dashboard to just that SSR
+       (toggles back to all on second click). -->
+  <ng-container *ngIf="(filters.service$ | async) as activeServices">
+    <div class="row row-service-cards">
+      <div *ngFor="let s of (summaries$ | async)"
+           class="service-card"
+           [class.active]="isCardActive(s.type, activeServices)"
+           [title]="labelFor(s.type) + ' · click to filter'"
+           (click)="onCardClick(s.type)">
+        <div class="service-card__head">
+          <span class="service-card__dot" [style.background]="colorFor(s.type)"></span>
+          <span class="service-type">{{ s.type }}</span>
+        </div>
+        <div class="service-card__label">{{ labelFor(s.type) }}</div>
+        <div class="service-card__metric">
+          <span class="service-count">{{ s.count | number }}</span>
+          <span class="service-unit">services</span>
+        </div>
+        <div class="service-pct">
+          <strong>{{ s.pct | number:'1.1-1' }}%</strong>
+          <span>of total PRM</span>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Row 2: Matrix table + stacked monthly trend -->
+  <div class="row row-matrix-trend">
+    <div class="matrix-card">
+      <div class="chart-title">Monthly Service Matrix</div>
+      <div class="matrix-scroll">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th *ngFor="let t of serviceTypes">{{ t }}</th>
+              <th class="total-col">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of (matrix$ | async)">
+              <td class="month-cell">{{ row.month }}</td>
+              <td *ngFor="let t of serviceTypes"
+                  [class.max-cell]="isMaxInColumn(t, row.counts[t])">
+                {{ row.counts[t] | number }}
+              </td>
+              <td class="total-col"><strong>{{ row.total | number }}</strong></td>
+            </tr>
+            <tr *ngIf="((matrix$ | async) || []).length === 0">
+              <td [attr.colspan]="serviceTypes.length + 2" class="empty">
+                No data matches current filters
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <app-line-chart
+      title="Service Trend (Top 5)"
+      [series]="trendSeries$ | async"
+      [loading]="loading$ | async"
+      [showAvgLine]="false"
+      [stacked]="true"></app-line-chart>
+  </div>
+
+  <!-- Row 3: Services by Category + Day-of-Week -->
+  <div class="row row-charts-1-1">
+    <app-bar-chart
+      title="Services by Category"
+      [data]="serviceCountBars$ | async"
+      [loading]="loading$ | async"
+      (barClick)="onServiceBarClick($event)"></app-bar-chart>
+    <app-bar-chart
+      title="Weekly Pattern"
+      [data]="dowBars$ | async"
+      [loading]="loading$ | async"
+      (barClick)="onDowClick($event)"></app-bar-chart>
+  </div>
+</div>

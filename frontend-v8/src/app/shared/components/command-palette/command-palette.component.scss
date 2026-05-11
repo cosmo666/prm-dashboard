@@ -1,0 +1,251 @@
+// Command palette — Linear-style Cmd/Ctrl-K modal. The host renders
+// nothing visible; *ngIf in the template adds the backdrop + modal
+// only when isOpen flips true.
+:host { display: contents; }
+
+@keyframes cpFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes cpModalIn {
+  from { opacity: 0; transform: translate(-50%, -4px) scale(0.97); }
+  to   { opacity: 1; transform: translate(-50%, 0)    scale(1); }
+}
+
+// Full-viewport backdrop catches click-outside-to-close and dims the
+// underlying dashboard. Backdrop-filter blurs anything behind for a
+// modal focal effect; the -webkit- prefix is for WebKit/iOS.
+.cp-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9998;
+  animation: cpFadeIn 180ms ease;
+}
+
+.cp-modal {
+  position: fixed;
+  top: 18%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  width: 560px;
+  max-width: calc(100vw - 32px);
+  max-height: 60vh;
+  background: var(--app-surface, #fff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: var(--elev-3, 0 10px 25px rgba(15, 23, 42, 0.10), 0 20px 40px rgba(15, 23, 42, 0.06));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 9999;
+  animation: cpModalIn 300ms cubic-bezier(0.2, 0, 0, 1);
+  font-family: var(--font-sans, 'Fira Sans', sans-serif);
+}
+
+.cp-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.cp-search__icon {
+  color: var(--app-text-muted, #64748b);
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.cp-search__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-sans, 'Fira Sans', sans-serif);
+  font-size: 16px;
+  color: var(--app-text, #0f172a);
+  padding: 0;
+}
+
+.cp-search__input::placeholder {
+  color: var(--app-text-muted, #64748b);
+}
+
+.cp-search__esc {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: var(--app-bg-muted, #f1f5f9);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 4px;
+  color: var(--app-text-muted, #64748b);
+  font-size: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 160ms ease, border-color 160ms ease;
+
+  &:hover {
+    color: var(--app-text, #0f172a);
+    border-color: var(--app-border-strong, #cbd5e1);
+  }
+}
+
+.cp-divider {
+  height: 1px;
+  background: var(--app-border, #e2e8f0);
+}
+
+.cp-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 6px 10px;
+  min-height: 0;
+}
+
+.cp-empty {
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.cp-empty__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--app-text, #0f172a);
+  margin-bottom: 4px;
+}
+
+.cp-empty__hint {
+  font-size: 11px;
+  color: var(--app-text-muted, #64748b);
+}
+
+.cp-group { margin-top: 6px; }
+.cp-group:first-child { margin-top: 0; }
+
+.cp-group__head {
+  padding: 10px 12px 6px;
+  color: var(--app-text-muted, #64748b);
+  font-family: var(--font-mono, 'Fira Code', monospace);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+// Each row is a button (keyboard-focusable, accessible). The
+// border-left accent highlights the keyboard-selected row in the
+// tenant primary color.
+.cp-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 6px;
+  font-family: var(--font-sans, 'Fira Sans', sans-serif);
+  font-size: 13px;
+  color: var(--app-text, #0f172a);
+  cursor: pointer;
+  text-align: left;
+  transition: background 140ms ease, border-color 140ms ease;
+
+  &.selected {
+    background: var(--app-bg-muted, #f1f5f9);
+    border-left-color: var(--app-primary, #2563EB);
+  }
+}
+
+.cp-row__icon {
+  color: var(--app-text-muted, #64748b);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.cp-row.selected .cp-row__icon {
+  color: var(--app-primary, #2563EB);
+}
+
+.cp-row__label {
+  flex: 1;
+  color: var(--app-text, #0f172a);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cp-row.selected .cp-row__label {
+  color: var(--app-primary, #2563EB);
+  font-weight: 500;
+}
+
+.cp-row__kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background: var(--app-bg-muted, #f1f5f9);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 4px;
+  color: var(--app-text-muted, #64748b);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.cp-row.selected .cp-row__kbd {
+  background: var(--app-surface, #fff);
+}
+
+.cp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--app-bg-muted, #f1f5f9);
+}
+
+.cp-footer__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--app-text-muted, #64748b);
+  font-size: 10px;
+}
+
+.cp-kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  background: var(--app-surface, #fff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 3px;
+  color: var(--app-text, #0f172a);
+  font-size: 10px;
+}
+
+.cp-sep {
+  color: var(--app-border-strong, #cbd5e1);
+}
+
+.cp-footer__count {
+  color: var(--app-text-muted, #64748b);
+  font-size: 10px;
+}
+
+@media (max-width: 640px) {
+  .cp-modal {
+    top: 8%;
+    width: calc(100vw - 24px);
+  }
+  .cp-search__input { font-size: 15px; }
+}

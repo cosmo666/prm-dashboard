@@ -1,0 +1,131 @@
+// Dev-only tenant switcher. The whole component self-hides via
+// *ngIf="visible" on any non-localhost host, but the styling here
+// keeps it visually distinct anyway — dashed amber border, monospace
+// slug — so it never gets confused with a production control on the
+// rare occasion it does render.
+:host { display: inline-flex; }
+
+.devpick { position: relative; }
+
+.devpick__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px dashed #f59e0b;
+  border-radius: 6px;
+  font-family: var(--font-sans, 'Fira Sans', sans-serif);
+  font-size: 11px;
+  color: var(--app-text, #0f172a);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+
+  &:hover {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: #d97706;
+  }
+}
+
+.devpick__tag {
+  font-family: var(--font-mono, 'Fira Code', monospace);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #d97706;
+}
+
+.devpick__sep { color: var(--app-text-muted, #64748b); }
+
+.devpick__slug {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--app-text, #0f172a);
+}
+
+.devpick__caret {
+  font-size: 9px;
+  color: var(--app-text-muted, #64748b);
+}
+
+// Absolute dropdown — anchored to the trigger's right edge so the
+// menu doesn't overflow off the right side of a tight top-bar.
+.devpick__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 240px;
+  background: var(--app-surface, #fff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.10), 0 4px 12px rgba(15, 23, 42, 0.08);
+  padding: 4px;
+  z-index: 100;
+  font-family: var(--font-sans, 'Fira Sans', sans-serif);
+}
+
+.devpick__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid var(--app-border, #e2e8f0);
+  margin-bottom: 4px;
+}
+
+.devpick__menu-title {
+  font-family: var(--font-mono, 'Fira Code', monospace);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--app-text-muted, #64748b);
+}
+
+.devpick__hint {
+  font-size: 10px;
+  color: var(--app-text-muted, #64748b);
+}
+
+.devpick__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 140ms ease;
+
+  &:hover { background: var(--app-bg-muted, #f1f5f9); }
+
+  &.is-active {
+    background: var(--app-primary-soft, color-mix(in srgb, var(--app-primary, #2563EB) 16%, #fff));
+  }
+}
+
+.devpick__item-slug {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--app-text, #0f172a);
+  min-width: 80px;
+}
+
+.devpick__item-name {
+  flex: 1;
+  font-size: 11px;
+  color: var(--app-text-muted, #64748b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devpick__check {
+  font-size: 11px;
+  color: var(--app-primary, #2563EB);
+  flex-shrink: 0;
+}

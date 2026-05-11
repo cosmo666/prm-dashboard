@@ -1,0 +1,68 @@
+// Most visual styling lives in src/styles/_kpi-cards.scss (Phase 0).
+// Component-scoped rules below are additive — accent dot + inline sparkline.
+// Kept here so the existing global styles don't have to grow new selectors.
+
+// Fill the parent grid cell so all 5 cards render at the same height in
+// the Overview KPI row. The taller card (delta + deltaLabel + subtext)
+// defines the row height; cards with less content stretch via flex to
+// match. Min-height anchors a baseline so the row never collapses below
+// 132px when every card is short.
+:host {
+  display: flex;
+  height: 100%;
+}
+
+:host ::ng-deep .kpi-card {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 132px;
+  // Pin foot (delta + subtext) to the bottom regardless of line count so
+  // the value (the actual signal) sits at a consistent vertical position
+  // across cards.
+  justify-content: space-between;
+}
+
+.kpi-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kpi-card__accent {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-left: auto;
+
+  &.accent--blue  { background: #2563EB; }
+  &.accent--teal  { background: #0d9488; }
+  &.accent--amber { background: #d4a017; }
+  &.accent--plum  { background: #8e4ec6; }
+  &.accent--green { background: #10b981; }
+}
+
+// The unit suffix sits right after the big number, smaller and muted, so
+// users see "575 services" / "54 min" / "16 agents" without losing the
+// scannability of the number itself.
+.kpi-card__value-unit {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--app-text-muted, #64748b);
+  margin-left: 6px;
+  letter-spacing: 0;
+}
+
+.kpi-card__spark {
+  height: 36px;
+  margin: 4px -4px -4px;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+}
+
+.kpi-card--spark { min-height: 150px; }

@@ -1,0 +1,64 @@
+// Fixed bottom-right toast stack. pointer-events: none on the host so
+// the empty state never blocks clicks; each .toast re-enables pointer
+// events for itself so click-to-dismiss works.
+:host {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.toast-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  // Dark surface against either light or dark theme — toasts are a
+  // signal layer, not a card. --app-text resolves to slate-900 in
+  // light mode and slate-200 in dark mode, so we pin the toast bg
+  // to slate-900 explicitly so it stays visually distinct from the
+  // dashboard surface in both themes.
+  background: #0F172A;
+  color: #F8FAFC;
+  font-family: var(--font-sans, 'Fira Sans', sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border-radius: 6px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.12);
+  pointer-events: auto;
+  cursor: pointer;
+  animation: toastIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  max-width: 360px;
+}
+
+.toast__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--app-primary, #2563EB);
+  flex-shrink: 0;
+}
+
+.toast__text {
+  line-height: 1.35;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

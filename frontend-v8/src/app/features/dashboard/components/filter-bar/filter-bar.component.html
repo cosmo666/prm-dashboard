@@ -1,0 +1,116 @@
+<!--
+  Inline mode: single horizontal row, no per-field labels above. The
+  PrimeNG multiselect's [defaultLabel] doubles as the empty placeholder
+  ("All airlines" / "All services" / "Both"). Active-filter chips
+  render OUTSIDE this component (in the dashboard template) so they
+  sit at the dashboard's left edge instead of indented to where the
+  filter-bar starts.
+-->
+<ng-container *ngIf="inline; else stacked">
+  <div class="fb-inline-wrap">
+    <div class="filter-inline">
+      <app-airport-selector class="fb-cell fb-cell--airport"></app-airport-selector>
+      <app-date-range-picker class="fb-cell fb-cell--date"></app-date-range-picker>
+
+      <div class="fb-cell fb-cell--ms">
+        <p-multiSelect
+          [options]="airlineOptions"
+          [(ngModel)]="airline"
+          (onChange)="setAirline($event)"
+          defaultLabel="All airlines"
+          [appendTo]="'body'"
+          [filter]="false">
+        </p-multiSelect>
+      </div>
+
+      <div class="fb-cell fb-cell--ms">
+        <p-multiSelect
+          [options]="serviceOptions"
+          [(ngModel)]="service"
+          (onChange)="setService($event)"
+          defaultLabel="All services"
+          [appendTo]="'body'"
+          [filter]="false">
+        </p-multiSelect>
+      </div>
+
+      <div class="fb-cell fb-cell--ms">
+        <p-multiSelect
+          [options]="handledByOptions"
+          [(ngModel)]="handledBy"
+          (onChange)="setHandledBy($event)"
+          defaultLabel="Both"
+          [appendTo]="'body'"
+          [filter]="false">
+        </p-multiSelect>
+      </div>
+
+      <button
+        type="button"
+        class="fb-clear-inline"
+        (click)="clearAll()"
+        *ngIf="hasAnyFilter()"
+        title="Clear all filters">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <span>Clear</span>
+      </button>
+    </div>
+
+  </div>
+</ng-container>
+
+<!--
+  Stacked mode (default): each control wears its own labelled <app-form-field>
+  shell, and active filters appear as removable chips beneath the row.
+-->
+<ng-template #stacked>
+  <div class="filter-bar">
+    <app-airport-selector class="fb-cell"></app-airport-selector>
+    <app-date-range-picker class="fb-cell"></app-date-range-picker>
+
+    <app-form-field label="Airline" class="fb-cell">
+      <p-multiSelect [options]="airlineOptions" [(ngModel)]="airline" (onChange)="setAirline($event)" [appendTo]="'body'" [filter]="false"></p-multiSelect>
+    </app-form-field>
+
+    <app-form-field label="Service" class="fb-cell">
+      <p-multiSelect [options]="serviceOptions" [(ngModel)]="service" (onChange)="setService($event)" [appendTo]="'body'" [filter]="false"></p-multiSelect>
+    </app-form-field>
+
+    <app-form-field label="Handled By" class="fb-cell">
+      <p-multiSelect [options]="handledByOptions" [(ngModel)]="handledBy" (onChange)="setHandledBy($event)" [appendTo]="'body'" [filter]="false"></p-multiSelect>
+    </app-form-field>
+
+    <button type="button" class="ui-button ui-button-secondary fb-clear" (click)="clearAll()" *ngIf="hasAnyFilter()">
+      Clear
+    </button>
+  </div>
+
+  <div class="filter-bar__chips" *ngIf="hasAnyFilter()">
+    <button type="button" class="chip-pill" *ngFor="let v of airline" (click)="removeAirline(v)" [attr.aria-label]="'Remove airline filter: ' + v">
+      <span class="chip-pill__key">Airline</span>
+      <span class="chip-pill__sep">·</span>
+      <span class="chip-pill__val">{{ v }}</span>
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button type="button" class="chip-pill" *ngFor="let v of service" (click)="removeService(v)" [attr.aria-label]="'Remove service filter: ' + v">
+      <span class="chip-pill__key">Service</span>
+      <span class="chip-pill__sep">·</span>
+      <span class="chip-pill__val">{{ v }}</span>
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button type="button" class="chip-pill" *ngFor="let v of handledBy" (click)="removeHandledBy(v)" [attr.aria-label]="'Remove handled-by filter: ' + handledByLabel(v)">
+      <span class="chip-pill__key">Handled</span>
+      <span class="chip-pill__sep">·</span>
+      <span class="chip-pill__val">{{ handledByLabel(v) }}</span>
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+</ng-template>

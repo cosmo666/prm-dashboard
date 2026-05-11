@@ -1,0 +1,92 @@
+// ─── Semantic color tokens (light + dark) ─────────────────────────────────
+// Slate-based scale + indigo primary + amber accent.
+// --app-primary is the only "primary" token that's set directly. Hover,
+// active, soft, softer, and on-primary are DERIVED via color-mix() so that
+// a per-tenant primaryColor override on :root cascades through every variant
+// without needing a JS step to compute hover/active hex values.
+
+:root {
+  // Brand
+  --app-primary:           #2563EB;  // base. Overridden at runtime by AppComponent for per-tenant.
+  --app-primary-hover:     color-mix(in srgb, var(--app-primary) 88%, #000);
+  --app-primary-active:    color-mix(in srgb, var(--app-primary) 76%, #000);
+  --app-primary-soft:      color-mix(in srgb, var(--app-primary) 16%, #fff);
+  --app-primary-softer:    color-mix(in srgb, var(--app-primary)  6%, #fff);
+  --app-primary-on:        #FFFFFF;
+
+  // Accent (rare — primary CTA only)
+  --app-accent:            #F97316;
+  --app-accent-soft:       #FFEDD5;
+  --app-accent-on:         #FFFFFF;
+
+  // States
+  --app-success:           #10B981;
+  --app-success-soft:      #D1FAE5;
+  --app-warning:           #F59E0B;
+  --app-warning-soft:      #FEF3C7;
+  --app-danger:            #EF4444;
+  --app-danger-soft:       #FEE2E2;
+
+  // Surfaces (light theme)
+  --app-bg:                #F8FAFC;  // page bg
+  --app-bg-muted:          #F1F5F9;  // sections, hover bg
+  --app-surface:           #FFFFFF;  // cards
+  --app-surface-elevated:  #FFFFFF;  // modals, popovers
+  --app-overlay:           rgba(15, 23, 42, 0.55);
+
+  // Text ramp
+  --app-text:              #0F172A;  // headings
+  --app-text-body:         #1E293B;  // body
+  --app-text-muted:        #475569;  // secondary
+  --app-text-faint:        #94A3B8;  // labels, hints
+
+  // Borders
+  --app-border:            #E2E8F0;
+  --app-border-strong:     #CBD5E1;
+  --app-border-focus:      var(--app-primary);
+
+  // Misc
+  --app-divider:           #E2E8F0;
+  --app-shadow-color:      15, 23, 42;  // for rgba() compositing
+}
+
+[data-theme="dark"] {
+  // In dark mode default to a lighter primary that has stronger contrast on
+  // dark surfaces. A tenant override via :root inline style still wins (higher
+  // specificity), which is intentional — branding > theme contrast.
+  --app-primary:           #3B82F6;
+  --app-primary-hover:     color-mix(in srgb, var(--app-primary) 84%, #fff);
+  --app-primary-active:    color-mix(in srgb, var(--app-primary) 70%, #fff);
+  --app-primary-soft:      color-mix(in srgb, var(--app-primary) 22%, #0B1220);
+  --app-primary-softer:    color-mix(in srgb, var(--app-primary) 12%, #0B1220);
+  --app-primary-on:        #0F172A;
+
+  --app-accent:            #FB923C;
+  --app-accent-soft:       #7C2D12;
+  --app-accent-on:         #0F172A;
+
+  --app-success:           #34D399;
+  --app-success-soft:      #064E3B;
+  --app-warning:           #FBBF24;
+  --app-warning-soft:      #78350F;
+  --app-danger:            #F87171;
+  --app-danger-soft:       #7F1D1D;
+
+  --app-bg:                #0B1220;
+  --app-bg-muted:          #111827;
+  --app-surface:           #1E293B;
+  --app-surface-elevated:  #243042;
+  --app-overlay:           rgba(0, 0, 0, 0.65);
+
+  --app-text:              #F8FAFC;
+  --app-text-body:         #E2E8F0;
+  --app-text-muted:        #94A3B8;
+  --app-text-faint:        #64748B;
+
+  --app-border:            #334155;
+  --app-border-strong:     #475569;
+  --app-border-focus:      var(--app-primary);
+
+  --app-divider:           #334155;
+  --app-shadow-color:      0, 0, 0;
+}

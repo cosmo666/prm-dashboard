@@ -1,0 +1,358 @@
+:host { display: block; }
+
+// ─── Stacked (default) layout ─────────────────────────────────────────────
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 12px 0;
+}
+
+.fb-cell {
+  flex: 1 1 200px;
+  min-width: 200px;
+  max-width: 240px;
+}
+
+.fb-clear {
+  height: 36px;
+  flex: 0 0 auto;
+}
+
+// ─── Inline layout (used in the dashboard's combined tabs+filters row) ────
+//
+// Goals (tightened in the angular-17-parity pass):
+//   * 5 controls + clear sit beside the tab pills on a single row at
+//     >=1280px viewport widths;
+//   * every control 32px tall (was 36px) — denser without sacrificing
+//     comfortable touch targets;
+//   * controls render as themed pills (rounded 7px, surface bg, soft
+//     border, primary focus ring) — NOT the generic PrimeNG default look;
+//   * Clear button hugs the FAR RIGHT via margin-left: auto so it never
+//     gets crowded by populated dropdowns;
+//   * active filters appear as removable chips below the row,
+//     left-aligned with the dropdowns.
+.fb-inline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.filter-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+// Three-zone layout via paired auto margins:
+//   [tabs (in dashboard control-row)] [auto] [airport] [auto] [date | airline | service | handled | clear]
+//
+// `margin-left: auto` on .fb-cell--airport AND .fb-cell--date splits any
+// remaining horizontal slack INSIDE the filter-bar evenly between the
+// two locations. The result: airport sits centered between the tabs
+// and the right-aligned dropdown cluster, with breathing room on
+// either side that grows with the viewport.
+.filter-inline .fb-cell--airport,
+.filter-inline .fb-cell--date {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+// Multiselect cells share the available row width but are capped so the
+// row stays compact even with a wide viewport. They're locked to the
+// right-aligned dropdown cluster (no auto margins; they flow normally
+// after the date pill which IS pushed right via its margin-left: auto).
+.filter-inline .fb-cell {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.filter-inline .fb-cell--ms {
+  flex: 0 1 140px;
+  min-width: 110px;
+  max-width: 160px;
+}
+
+// ─── Themed multiselect — modern pills, not generic ──────────────────────
+// PrimeNG 8.0.3 doesn't honor CSS custom properties; we override `.ui-*`
+// rules with `::ng-deep` so the per-tenant `--app-primary` and slate ramp
+// cascade through. 32px height across every control. Soft surface bg,
+// hairline slate border, primary focus ring with 3px soft halo. Caret is a
+// PrimeIcons chevron painted via the parent `::after` so the alignment is
+// independent of PrimeNG's default trigger box.
+:host ::ng-deep .filter-inline .ui-multiselect,
+:host ::ng-deep .filter-inline .ui-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 32px;
+  min-height: 32px;
+  background: var(--app-surface, #fff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 7px;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 12px;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
+}
+
+:host ::ng-deep .filter-inline .ui-multiselect:hover,
+:host ::ng-deep .filter-inline .ui-dropdown:hover {
+  border-color: var(--app-border-strong, #cbd5e1);
+  background: var(--app-bg-muted, #f8fafc);
+}
+
+:host ::ng-deep .filter-inline .ui-multiselect.ui-state-focus,
+:host ::ng-deep .filter-inline .ui-dropdown.ui-state-focus {
+  border-color: var(--app-primary, #2563EB);
+  background: var(--app-surface, #fff);
+  box-shadow: 0 0 0 3px var(--app-primary-soft, rgba(37, 99, 235, 0.16));
+}
+
+// Label vertically centered via line-height matching the pill's content
+// area (30px = 32px pill - 2 × 1px border). Right-padding reserves room
+// for the caret so long values truncate before colliding.
+:host ::ng-deep .filter-inline .ui-multiselect-label-container,
+:host ::ng-deep .filter-inline .ui-multiselect-label,
+:host ::ng-deep .filter-inline .ui-dropdown-label {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 26px 0 11px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--app-text, #0f172a);
+  font-family: 'Fira Sans', sans-serif;
+  background: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Empty-state placeholder — reads in the regular sans face since the
+// labels themselves are now full phrases ("All airlines", "All services",
+// "Both") rather than uppercase field names.
+:host ::ng-deep .filter-inline .ui-multiselect-label.ui-multiselect-label-empty,
+:host ::ng-deep .filter-inline .ui-dropdown-label.ui-dropdown-label-empty {
+  color: var(--app-text-muted, #94a3b8);
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+// Hide PrimeNG's default trigger element — we paint a clean chevron via
+// the multiselect parent's ::after, anchored at right: 10px and vertically
+// centered.
+:host ::ng-deep .filter-inline .ui-multiselect-trigger,
+:host ::ng-deep .filter-inline .ui-dropdown-trigger {
+  display: none !important;
+}
+
+:host ::ng-deep .filter-inline .ui-multiselect::after,
+:host ::ng-deep .filter-inline .ui-dropdown::after {
+  content: '\e902';            // pi-chevron-down (PrimeIcons 2.0.0)
+  font-family: 'primeicons';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--app-text-muted, #64748b);
+  pointer-events: none;
+  transition: color 160ms ease;
+}
+
+:host ::ng-deep .filter-inline .ui-multiselect:hover::after,
+:host ::ng-deep .filter-inline .ui-dropdown:hover::after,
+:host ::ng-deep .filter-inline .ui-multiselect.ui-state-focus::after,
+:host ::ng-deep .filter-inline .ui-dropdown.ui-state-focus::after {
+  color: var(--app-primary, #2563EB);
+}
+
+// Selected-count chip — render in primary color so the user knows multiple
+// values are active without opening the dropdown.
+:host ::ng-deep .filter-inline .ui-multiselect-label:not(.ui-multiselect-label-empty) {
+  color: var(--app-text, #0f172a);
+  font-weight: 500;
+}
+
+// Date-range picker exposes a single `.range-btn` — match the 32px pill
+// height + 12px font so it sits flush with the multiselects.
+:host ::ng-deep .filter-inline app-date-range-picker .range-btn {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  gap: 6px;
+  border-radius: 7px;
+  border: 1px solid var(--app-border, #e2e8f0);
+  background: var(--app-surface, #fff);
+  font-family: 'Fira Sans', sans-serif;
+  font-weight: 500;
+  color: var(--app-text, #0f172a);
+  box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+
+  &:hover {
+    border-color: var(--app-border-strong, #cbd5e1);
+    background: var(--app-bg-muted, #f8fafc);
+  }
+
+  &:focus,
+  &:focus-visible {
+    border-color: var(--app-primary, #2563EB);
+    box-shadow: 0 0 0 3px var(--app-primary-soft, rgba(37, 99, 235, 0.16));
+    outline: none;
+  }
+}
+
+// Airport selector chip group — shrink the container from 36px to 32px
+// so it matches the dropdown siblings. The inner .airport-chip stays at
+// 28px tall (its own component owns that), centered inside the container.
+//
+// Per-chip width bumped to ~64px (was 44px) + 14px horizontal padding so
+// the airport row feels visually heavier — it's the most-used filter on
+// the dashboard and was previously dwarfed by the 140px dropdown pills
+// to its right.
+:host ::ng-deep .filter-inline app-airport-selector .airport-chips {
+  height: 32px;
+  padding: 2px;
+  border-radius: 7px;
+}
+
+:host ::ng-deep .filter-inline app-airport-selector .airport-chip {
+  min-width: 64px;
+  padding: 0 14px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+
+// Inline clear button — flows naturally at the end of the right-aligned
+// cluster (date + 3 dropdowns + clear). The cluster's right-anchor is
+// already established by margin-left: auto on .fb-cell--date, so Clear
+// doesn't need its own auto margin.
+.fb-clear-inline {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  background: var(--app-surface, #fff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 7px;
+  color: var(--app-text-muted, #64748b);
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+  flex: 0 0 auto;
+
+  &:hover {
+    border-color: var(--app-danger, #ef4444);
+    color: var(--app-danger, #ef4444);
+    background: var(--app-danger-soft, #fee2e2);
+  }
+
+  svg { opacity: 0.85; }
+}
+
+// ─── Active-filter chips ─────────────────────────────────────────────────
+// Removable chips: KEY · VALUE × — the whole chip is the click surface.
+// Hover flips to primary so the X reads as the obvious affordance.
+//
+// The container is ALWAYS rendered (no *ngIf wrapper in the template) and
+// pinned to a min-height that matches a chip's outer height. With this
+// in place, picking the first filter doesn't yank the controls upward
+// to fill the previously-collapsed chips slot — the layout below the
+// row stays anchored. Empty state: a 24px tall transparent strip below
+// the filters that reads as deliberate breathing room.
+.filter-bar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  justify-content: flex-start;
+  min-height: 24px;
+}
+
+.chip-pill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  background: var(--app-primary-soft, rgba(37, 99, 235, 0.12));
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 11px;
+  color: var(--app-primary, #2563EB);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+
+  &:hover {
+    background: var(--app-primary, #2563EB);
+    color: var(--app-primary-on, #fff);
+    transform: translateY(-1px);
+  }
+
+  svg {
+    margin-left: 2px;
+    opacity: 0.7;
+  }
+
+  &:hover svg { opacity: 1; }
+}
+
+.chip-pill__key {
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+}
+
+.chip-pill__sep {
+  opacity: 0.5;
+}
+
+.chip-pill__val {
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-size: 11px;
+}
+
+// ─── Stacked-mode height parity (still useful — labels are above) ─────────
+:host ::ng-deep .filter-bar .ui-multiselect,
+:host ::ng-deep .filter-bar .ui-dropdown {
+  width: 100%;
+  min-height: 36px;
+}
+
+@media (max-width: 1100px) {
+  // Below 1100px we can no longer fit tabs + 5 controls + clear on one
+  // line. The filter-bar wraps below the tabs. Allow each multiselect to
+  // grow a bit so the row reads as full pills instead of cramped pills.
+  .filter-inline .fb-cell--ms { flex: 1 1 130px; min-width: 130px; max-width: none; }
+}
+
+@media (max-width: 768px) {
+  .filter-inline { gap: 6px; }
+  .filter-inline .fb-cell {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}

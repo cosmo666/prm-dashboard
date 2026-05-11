@@ -1,0 +1,34 @@
+<button type="button" class="range-btn" (click)="panel.toggle($event)" [title]="currentLabel + ' · ' + rangeDisplay">
+  <i class="pi pi-calendar range-btn__icon" aria-hidden="true"></i>
+  <span class="range-btn__range font-mono">{{ rangeDisplay }}</span>
+  <i class="pi pi-chevron-down range-btn__caret" aria-hidden="true"></i>
+</button>
+
+<p-overlayPanel #panel [showCloseIcon]="false" [appendTo]="'body'" styleClass="drp-panel">
+  <div class="drp-wrap" (click)="$event.stopPropagation()">
+    <div class="drp-presets">
+      <div class="drp-presets__head">Quick presets</div>
+      <ul class="drp-presets__list">
+        <li *ngFor="let p of presets">
+          <button type="button"
+                  class="drp-preset"
+                  [class.is-active]="(filters.datePreset$ | async) === p.key"
+                  (click)="selectPreset(p.key, $event)">
+            <span class="drp-preset__label">{{ p.label }}</span>
+            <span class="drp-preset__range font-mono">{{ presetRange(p.key) }}</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <div class="drp-cal">
+      <p-calendar
+        [(ngModel)]="rangeValue"
+        selectionMode="range"
+        [inline]="true"
+        [showWeek]="false"
+        (onSelect)="onCalendarSelect()">
+      </p-calendar>
+    </div>
+  </div>
+</p-overlayPanel>

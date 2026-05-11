@@ -1,0 +1,242 @@
+// ─── Login layout ──────────────────────────────────────────────────────────
+// Editorial split: form panel (white) + dark slate operations panel.
+// Panel uses an SVG grid background and a single horizontal "scan" line
+// that fades in once on load. NOT generic radial blobs.
+
+.login-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  min-height: 100vh;
+  background: var(--app-bg);
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  // ── Left: form panel ────────────────────────────────────────────────────
+  .login-form-panel {
+    background: var(--app-surface);
+    color: var(--app-text-body);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: var(--space-6) var(--space-7);
+    position: relative;
+    overflow: hidden;
+
+    // tiny topographic-line decoration in the bottom-left corner
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 240px;
+      height: 240px;
+      background-image: repeating-linear-gradient(
+        135deg,
+        var(--app-border) 0,
+        var(--app-border) 1px,
+        transparent 1px,
+        transparent 14px
+      );
+      opacity: 0.5;
+      pointer-events: none;
+      mask-image: radial-gradient(ellipse at bottom left, black 0%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse at bottom left, black 0%, transparent 70%);
+    }
+
+    .login-brand {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+
+      .brand-mark {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: var(--app-primary);
+        display: grid;
+        place-items: center;
+        color: var(--app-primary-on);
+        font-family: var(--font-mono);
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      .brand-name {
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: var(--text-md);
+        letter-spacing: var(--tracking-tight);
+        color: var(--app-text);
+      }
+
+      .brand-divider {
+        color: var(--app-text-faint);
+        margin: 0 var(--space-1);
+      }
+
+      .brand-tenant {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--app-text-muted);
+      }
+    }
+
+    .login-body {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .login-footer {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      color: var(--app-text-faint);
+      letter-spacing: var(--tracking-wide);
+    }
+  }
+
+  // ── Right: operations panel (dark) ──────────────────────────────────────
+  .login-parallax-panel {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, #0B1220 0%, #111827 100%);
+    color: #E2E8F0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: var(--space-7);
+
+    @media (max-width: 768px) { display: none; }
+
+    // SVG-style grid (animated drift)
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      animation: panel-grid-drift 20s linear infinite;
+      pointer-events: none;
+    }
+
+    // single faint horizontal "scan" line
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 30%;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(59, 130, 246, 0.0) 5%,
+        rgba(59, 130, 246, 0.45) 50%,
+        rgba(59, 130, 246, 0.0) 95%,
+        transparent 100%
+      );
+      animation: panel-scan 7s var(--motion-ease) infinite;
+      pointer-events: none;
+    }
+
+    .panel-tag {
+      position: relative;
+      z-index: 1;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      letter-spacing: var(--tracking-widest);
+      text-transform: uppercase;
+      color: rgba(226, 232, 240, 0.5);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+
+      &::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--app-success);
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
+      }
+    }
+
+    .panel-quote {
+      position: relative;
+      z-index: 1;
+      font-family: var(--font-sans);
+      font-weight: 300;
+      font-size: clamp(28px, 3.5vw, 44px);
+      line-height: 1.15;
+      letter-spacing: var(--tracking-tight);
+      color: #F8FAFC;
+      max-width: 18ch;
+
+      em {
+        font-style: normal;
+        background: linear-gradient(90deg, #60A5FA, #93C5FD);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+    }
+
+    .panel-meta {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: var(--space-6);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      letter-spacing: var(--tracking-wide);
+      color: rgba(226, 232, 240, 0.45);
+
+      .meta-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .meta-label {
+          text-transform: uppercase;
+          font-size: 10px;
+          opacity: 0.7;
+          letter-spacing: var(--tracking-widest);
+        }
+        .meta-value {
+          color: rgba(226, 232, 240, 0.8);
+        }
+      }
+    }
+  }
+}
+
+@keyframes panel-grid-drift {
+  0%   { transform: translate(0, 0); }
+  100% { transform: translate(48px, 48px); }
+}
+@keyframes panel-scan {
+  0%, 100% { top: 25%; opacity: 0; }
+  10%      { opacity: 1; }
+  50%      { top: 70%; opacity: 1; }
+  60%      { opacity: 0; }
+}
+
+// reduced-motion respect
+@media (prefers-reduced-motion: reduce) {
+  .login-parallax-panel::before,
+  .login-parallax-panel::after {
+    animation: none;
+  }
+}

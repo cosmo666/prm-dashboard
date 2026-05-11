@@ -1,0 +1,73 @@
+<div class="fulfillment-content" *ngIf="(loading$ | async) !== null">
+  <!-- Row 1: 4 KPI cards -->
+  <div class="row row-kpis">
+    <app-kpi-card
+      label="PRM Requested"
+      tooltip="Pre-booked PRM services. These are the bookings airlines or passengers made BEFORE arrival — the schedulable demand. The remaining demand arrives as walk-ups (see Walk-up Rate)."
+      [value]="(totalRequested$ | async) | compactNumber"
+      unit="bookings"
+      accent="blue"
+      [subtext]="'Pre-booked · ' + ((bookedSharePct$ | async) | number:'1.0-0') + '% of total demand'"
+      [loading]="loading$ | async"></app-kpi-card>
+    <app-kpi-card
+      label="Pre-booked Share"
+      tooltip="Share of delivered services that were pre-booked (requested ahead of arrival). The remainder arrived as walk-ups. This is mathematically 100% − Walk-up Rate; both views are shown so the staffing trade-off (scheduled demand vs reactive demand) is explicit."
+      [value]="(providedPct$ | async) | number:'1.1-1'"
+      unit="%"
+      accent="green"
+      [subtext]="((totalRequested$ | async) | compactNumber) + ' booked of ' + ((totalProvided$ | async) | compactNumber) + ' served'"
+      [loading]="loading$ | async"></app-kpi-card>
+    <app-kpi-card
+      label="Total Provided"
+      tooltip="Every PRM service actually delivered in the period — pre-booked AND walk-up combined. This is the operational workload your agents handled."
+      [value]="(totalProvided$ | async) | compactNumber"
+      unit="services"
+      accent="teal"
+      [subtext]="((totalRequested$ | async) | compactNumber) + ' booked + ' + ((walkupCount$ | async) | compactNumber) + ' walk-ups'"
+      [loading]="loading$ | async"></app-kpi-card>
+    <app-kpi-card
+      label="Walk-up Rate"
+      tooltip="Share of delivered services that were NOT pre-booked. High walk-up rates strain on-the-day staffing because the workload can't be scheduled in advance."
+      [value]="(walkupRate$ | async) | number:'1.1-1'"
+      unit="%"
+      accent="amber"
+      [subtext]="((walkupCount$ | async) | compactNumber) + ' unannounced of ' + ((totalProvided$ | async) | compactNumber) + ' served'"
+      [loading]="loading$ | async"></app-kpi-card>
+  </div>
+
+  <!-- Row 2: Daily Provided vs Requested (full-width, single y-axis).
+       Single shared axis is the honest view: walk-ups dwarf pre-booked
+       services, so the orange Requested line correctly sits near zero
+       against the tall blue Provided bars. A dual y-axis would rescale
+       each series independently and falsely make them look comparable. -->
+  <div class="row row-charts-full">
+    <app-line-chart
+      title="Daily Provided vs Requested"
+      subtitle="Services delivered (Provided) vs the pre-booked subset (Requested)"
+      [series]="dualAxisSeries$ | async"
+      [loading]="loading$ | async"
+      [dualAxis]="false"
+      [showAvgLine]="false"
+      yLabel="PRM services (count)"></app-line-chart>
+  </div>
+
+  <!-- Row 3: Peak Hours + Cumulative pace -->
+  <div class="row row-charts-1-1">
+    <app-bar-chart
+      title="Peak Hours"
+      subtitle="When PRM demand is highest (4-hour windows)"
+      [data]="timeOfDay$ | async"
+      [loading]="loading$ | async"
+      xLabel="Time window (24h)"
+      yLabel="PRM services (count)"
+      unit="services"></app-bar-chart>
+    <app-line-chart
+      title="Cumulative Progress"
+      subtitle="Running total of PRM services vs an even-pace target"
+      [series]="cumulativeSeries$ | async"
+      [loading]="loading$ | async"
+      [showAvgLine]="false"
+      xLabel="Date"
+      yLabel="Cumulative PRM services"></app-line-chart>
+  </div>
+</div>

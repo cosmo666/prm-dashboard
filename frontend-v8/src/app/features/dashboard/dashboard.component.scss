@@ -1,0 +1,286 @@
+// Dashboard shell — compact page-head + single-row tabs+filters + content.
+// Vertical density was tightened in the angular-17-parity pass to reduce
+// the need for scrolling on standard 1080p viewports.
+:host { display: block; }
+
+.dashboard {
+  display: block;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 20px 16px;
+}
+
+// ─── Compact page head ─────────────────────────────────────────────────────
+// Single row: title + inline eyebrow + LIVE on the left, Period / Preset
+// meta on the right. The full eyebrow row that used to live above the
+// title (and added 14px of vertical chrome) is now inline with the title.
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0 10px;
+  border-bottom: 1px solid var(--app-border, #e2e8f0);
+  flex-wrap: wrap;
+}
+
+.page-head__left {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.page-head__title {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 18px;
+  line-height: 1.15;
+  font-weight: 600;
+  color: var(--app-text, #0f172a);
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.eyebrow__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--app-primary, #2563EB);
+  flex-shrink: 0;
+}
+
+.eyebrow__text {
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--app-text-muted, #64748b);
+}
+
+.live-pill {
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--app-primary, #2563EB);
+  background: var(--app-primary-soft, rgba(37, 99, 235, 0.12));
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.page-head__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+}
+
+.meta__label {
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--app-text-faint, #94a3b8);
+  line-height: 1;
+}
+
+.meta__value {
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--app-text, #0f172a);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.meta__sep {
+  display: inline-block;
+  margin: 0 2px;
+  color: var(--app-text-faint, #94a3b8);
+}
+
+.meta__divider {
+  width: 1px;
+  height: 18px;
+  background: var(--app-border, #e2e8f0);
+}
+
+// ─── Combined tabs + filters row ──────────────────────────────────────────
+// Tabs sit on the left at their natural width. The filter-bar fills the
+// rest of the row (flex: 1) and uses an internal margin-left: auto on the
+// Clear button so the button hugs the right edge regardless of how many
+// dropdowns are populated. At <1100px the row wraps — tabs above,
+// filters below — handled by the .filter-inline media queries inside
+// filter-bar.component.scss.
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+// Tab pill container is sized to match the 32px filter dropdowns to
+// its right (3px padding around 26px tab pills = 32px total) so both
+// elements share the same baseline in the .control-row.
+.control-row__tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: var(--app-bg-muted, #f1f5f9);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 8px;
+  flex: 0 0 auto;
+  height: 32px;
+}
+
+.tab-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--app-text-muted, #64748b);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+
+  &:hover:not(.is-active) {
+    color: var(--app-text, #0f172a);
+  }
+
+  &.is-active {
+    background: var(--app-surface, #fff);
+    color: var(--app-text, #0f172a);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--app-primary, #2563EB);
+    outline-offset: 2px;
+  }
+}
+
+// The filter-bar element fills the remaining row width.
+.control-row__filters {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+// ─── Active-filter chip row ───────────────────────────────────────────────
+// Lifted out of the FilterBar component so chips sit at the dashboard's
+// LEFT edge (flush with the tabs above), not indented to where the
+// filter-bar starts. min-height reserves the slot so the layout below
+// stays anchored regardless of whether chips are present.
+.filter-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin-top: 8px;
+  min-height: 24px;
+}
+
+// Chip styling — same as the filter-bar's .chip-pill, hoisted to the
+// dashboard scope so the lifted chips share the visual.
+.chip-pill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  background: var(--app-primary-soft, rgba(37, 99, 235, 0.12));
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 11px;
+  color: var(--app-primary, #2563EB);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+
+  &:hover {
+    background: var(--app-primary, #2563EB);
+    color: var(--app-primary-on, #fff);
+    transform: translateY(-1px);
+  }
+
+  svg {
+    margin-left: 2px;
+    opacity: 0.7;
+  }
+
+  &:hover svg { opacity: 1; }
+}
+
+.chip-pill__key {
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+}
+
+.chip-pill__sep {
+  opacity: 0.5;
+}
+
+.chip-pill__val {
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-size: 11px;
+}
+
+// ─── Content ───────────────────────────────────────────────────────────────
+.dashboard-content {
+  display: block;
+  margin-top: 12px;
+}
+
+// ─── Responsive ────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .dashboard { padding: 0 14px 20px; }
+  .page-head {
+    padding: 12px 0 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .page-head__right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .control-row__tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+}

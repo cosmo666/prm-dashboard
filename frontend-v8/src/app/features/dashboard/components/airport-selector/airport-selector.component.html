@@ -1,0 +1,12 @@
+<div class="airport-chips" role="group" aria-label="Active airports">
+  <button
+    *ngFor="let a of airports; trackBy: trackByCode"
+    type="button"
+    class="airport-chip"
+    [class.is-active]="isActive(a.code)"
+    [attr.aria-pressed]="isActive(a.code)"
+    [title]="a.name + ' (' + a.code + ')'"
+    (click)="toggle(a.code)">
+    <span class="airport-chip__code">{{ a.code }}</span>
+  </button>
+</div>

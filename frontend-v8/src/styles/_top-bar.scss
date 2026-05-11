@@ -1,0 +1,112 @@
+// ─── App top-bar ──────────────────────────────────────────────────────────
+// Single 56px bar with 1px bottom border. Brand mark + "/" + tenant slug
+// in monospace (e.g.,  PRM Dashboard / aeroground ).
+// User cluster on the right: airport count chip, theme toggle, logout.
+
+.app-topbar {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-5);
+  background: var(--app-surface);
+  border-bottom: 1px solid var(--app-border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--app-primary);
+      display: grid;
+      place-items: center;
+      color: var(--app-primary-on);
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .brand-name {
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: var(--text-md);
+      letter-spacing: var(--tracking-tight);
+      color: var(--app-text);
+      white-space: nowrap;
+    }
+
+    .brand-divider {
+      color: var(--app-text-faint);
+      font-family: var(--font-mono);
+      padding: 0 var(--space-1);
+    }
+
+    .brand-tenant {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      color: var(--app-text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+
+    .topbar-user {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding-right: var(--space-3);
+      border-right: 1px solid var(--app-border);
+
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-pill);
+        background: var(--app-primary-soft);
+        color: var(--app-primary);
+        display: grid;
+        place-items: center;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: var(--text-sm);
+      }
+
+      .user-meta {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+
+        .user-name {
+          font-family: var(--font-sans);
+          font-size: var(--text-sm);
+          font-weight: 500;
+          color: var(--app-text);
+        }
+        .user-sub {
+          font-family: var(--font-mono);
+          font-size: 10px;
+          letter-spacing: var(--tracking-wide);
+          color: var(--app-text-faint);
+        }
+      }
+
+      @media (max-width: $breakpoint-sm) {
+        .user-meta { display: none; }
+      }
+    }
+  }
+}

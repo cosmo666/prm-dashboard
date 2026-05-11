@@ -1,0 +1,25 @@
+<div class="devpick" *ngIf="visible">
+  <button type="button" class="devpick__trigger" (click)="toggleMenu()"
+          pTooltip="Switch tenant (dev only)" tooltipPosition="bottom"
+          aria-label="Developer tenant picker">
+    <span class="devpick__tag">DEV</span>
+    <span class="devpick__sep">·</span>
+    <span class="devpick__slug font-mono">{{ activeSlug }}</span>
+    <i class="pi pi-chevron-down devpick__caret"></i>
+  </button>
+
+  <div class="devpick__menu" *ngIf="isMenuOpen" (mouseleave)="closeMenu()">
+    <div class="devpick__head">
+      <span class="devpick__menu-title">Dev tenant</span>
+      <span class="devpick__hint">Switching signs you out</span>
+    </div>
+    <button type="button" class="devpick__item"
+            *ngFor="let t of tenants"
+            [class.is-active]="t.slug === activeSlug"
+            (click)="switchTo(t.slug)">
+      <span class="devpick__item-slug font-mono">{{ t.slug }}</span>
+      <span class="devpick__item-name">{{ t.name }}</span>
+      <i class="pi pi-check devpick__check" *ngIf="t.slug === activeSlug"></i>
+    </button>
+  </div>
+</div>

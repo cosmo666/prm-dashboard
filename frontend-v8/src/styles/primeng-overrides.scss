@@ -1,0 +1,606 @@
+// ─── PrimeNG 8.0.3 overrides ──────────────────────────────────────────────
+// Targets the .ui-* class prefix (jQuery-UI legacy). Overrides nova-light
+// where it conflicts with our "Operations Console" design system.
+// Loaded AFTER ~primeng/resources/primeng.css and the nova-light theme link
+// so same-specificity rules win.
+
+// ── Buttons ───────────────────────────────────────────────────────────────
+.ui-button {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-wide);
+  border-radius: var(--radius-button);
+  padding: 8px 16px;
+  min-height: 36px;
+  border: 1px solid var(--app-primary);
+  background: var(--app-primary);
+  color: var(--app-primary-on);
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    background var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-out),
+    box-shadow var(--motion-base) var(--motion-ease);
+
+  &:enabled:hover {
+    background: var(--app-primary-hover);
+    border-color: var(--app-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--elev-1);
+  }
+
+  &:enabled:active {
+    background: var(--app-primary-active);
+    border-color: var(--app-primary-active);
+    transform: translateY(0);
+    box-shadow: none;
+  }
+
+  &:enabled:focus,
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--elev-focus-primary);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  // pButton injects an icon+label span pair; control the inner spacing.
+  .ui-button-icon-left,
+  .ui-button-icon-right {
+    font-size: 14px;
+  }
+
+  // Tall variant for primary CTAs (login Sign In etc.)
+  &.app-button-tall {
+    min-height: 44px;
+    padding: 10px 20px;
+    font-size: var(--text-base);
+    width: 100%;
+  }
+
+  // Flat / icon-only variant — transparent background, no border
+  &.app-button-icon-flat {
+    min-height: 36px;
+    width: 36px;
+    padding: 0;
+    background: transparent;
+    border-color: transparent;
+    color: var(--app-text-muted);
+    box-shadow: none;
+
+    &:enabled:hover {
+      background: var(--app-bg-muted);
+      border-color: transparent;
+      color: var(--app-text);
+      transform: none;
+      box-shadow: none;
+    }
+
+    &:enabled:active {
+      background: var(--app-border);
+      border-color: transparent;
+      transform: none;
+    }
+
+    .ui-button-text { display: none; } // pButton always emits a label span
+  }
+
+  // Secondary / outline variant
+  &.app-button-outline {
+    background: transparent;
+    color: var(--app-primary);
+
+    &:enabled:hover {
+      background: var(--app-primary-softer);
+      color: var(--app-primary-hover);
+    }
+  }
+}
+
+// ── Inputs ────────────────────────────────────────────────────────────────
+.ui-inputtext {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: 400;
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-button);
+  padding: 8px 12px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease);
+  box-shadow: none;
+
+  &:enabled:hover { border-color: var(--app-border-strong); }
+
+  &:enabled:focus,
+  &:focus-visible {
+    outline: none;
+    border-color: var(--app-primary);
+    box-shadow: var(--elev-focus-primary);
+  }
+
+  &::placeholder { color: var(--app-text-faint); }
+}
+
+// Inside .app-form-field, inputs are the "underlined floating-label" style —
+// we strip the box border so only the .field-underline rail shows.
+.app-form-field .field-content > .ui-inputtext {
+  border: none;
+  border-radius: 0;
+  padding: 6px 0 8px;
+  background: transparent;
+
+  &:enabled:hover { border: none; }
+  &:enabled:focus,
+  &:focus-visible { border: none; box-shadow: none; }
+}
+
+// ── Card ──────────────────────────────────────────────────────────────────
+.ui-card {
+  background: var(--app-surface);
+  color: var(--app-text-body);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-1);
+
+  .ui-card-title {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: var(--text-md);
+    letter-spacing: var(--tracking-tight);
+    color: var(--app-text);
+  }
+
+  .ui-card-body { padding: var(--space-4); }
+  .ui-card-content { padding: 0; color: var(--app-text-body); }
+}
+
+// ── Dropdown / MultiSelect ────────────────────────────────────────────────
+.ui-dropdown,
+.ui-multiselect {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-button);
+  background: var(--app-surface);
+  color: var(--app-text);
+  min-height: 36px;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease);
+
+  &:not(.ui-state-disabled):hover { border-color: var(--app-border-strong); }
+
+  &.ui-state-focus {
+    outline: none;
+    border-color: var(--app-primary);
+    box-shadow: var(--elev-focus-primary);
+  }
+
+  .ui-dropdown-label,
+  .ui-multiselect-label { padding: 6px 12px; color: var(--app-text); }
+
+  .ui-dropdown-trigger,
+  .ui-multiselect-trigger { color: var(--app-text-muted); }
+}
+
+// Multiselect / dropdown PANELS — the popup that opens on click. Match
+// the calendar overlay's chrome (10px radius + drop shadow + 1px border)
+// so every dropdown family in the dashboard reads as one design system.
+//
+// Width: pinned to 160px so the panel visually matches the filter-bar
+// trigger pill (max-width: 160px on .fb-cell--ms in filter-bar.scss).
+// PrimeNG 8.0.3 ports the panel to <body> with no awareness of the
+// trigger's actual rendered width, so a CSS pin is the cleanest match.
+// 160px is wide enough for 2-letter IATA airline codes, the checkbox
+// column, and the scrollbar — the option text never wraps; longer
+// labels like "Outsourced" truncate inside the 160px column rather
+// than expanding the panel past the trigger.
+.ui-dropdown-panel,
+.ui-multiselect-panel {
+  background: var(--app-surface, #fff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  font-family: 'Fira Sans', sans-serif;
+  overflow: hidden;
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+  // 6px breathing room from the trigger pill so the panel reads as a
+  // distinct surface — matches the gap between the date-range trigger
+  // and its overlay panel (both filter controls now drop down with the
+  // same air + corner radius).
+  margin-top: 6px;
+}
+
+// Header with select-all checkbox (left) + close icon (right).
+// The search input has been removed in favour of an explicit `Select all`
+// label appended via ::after on the toggle-all checkbox below.
+.ui-multiselect-panel .ui-multiselect-header {
+  background: var(--app-bg-muted, #f8fafc);
+  border-bottom: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 10px 10px 0 0;
+  padding: 8px 12px;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+}
+
+// Toggle-all "checkbox" in the header — restyled as a full-width BUTTON
+// instead of a checkbox + label. Why:
+//
+// The filter-bar's setX() handlers collapse a fully-populated selection
+// back to [] (see filter-bar.component.ts collapseAllSelected) so that
+// "select all" reads as "no filter applied" everywhere on the dashboard.
+// Side effect: PrimeNG's underlying toggle-all checkbox sees no selected
+// items after the click and renders unchecked — the user clicks the box,
+// nothing visibly happens INSIDE the dropdown, but the dashboard outside
+// shows all data. Confusing micro-interaction.
+//
+// Treating the row as a button instead of a checkbox sidesteps the
+// confusion: the user is clicking a verb ("Select all"), not toggling a
+// boolean state. PrimeNG's default click handler still fires, the
+// collapse logic still runs, the dashboard still resets to no-filter.
+// The hidden checkbox stays in the DOM (PrimeNG drives its own click
+// handling off the box element) but the visual is button-shaped.
+.ui-multiselect-panel .ui-multiselect-header > .ui-chkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  cursor: pointer;
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  white-space: nowrap;
+  height: 28px;
+  padding: 0 10px;
+  background: var(--app-surface, #fff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 6px;
+  transition: background 140ms ease, border-color 140ms ease;
+
+  &:hover {
+    background: var(--app-bg-muted, #f1f5f9);
+    border-color: var(--app-border-strong, #cbd5e1);
+  }
+
+  &:active {
+    background: var(--app-primary-soft, color-mix(in srgb, var(--app-primary, #2563EB) 10%, #fff));
+    border-color: var(--app-primary, #2563EB);
+  }
+
+  // Checkbox box — PrimeNG 8.0.3's `(click)="toggleAll($event)"` is
+  // bound to .ui-chkbox-box, NOT the wrapper. Removing the box from
+  // the DOM (display:none) breaks select-all entirely. Instead we
+  // overlay an invisible click target across the wrapper area:
+  // absolute-positioned + zero opacity + 100% width+height. Clicks
+  // anywhere on the visible button hit this hidden box, fire toggleAll,
+  // and run through the FilterBar's collapseAllSelected.
+  .ui-chkbox-box {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 1;
+  }
+
+  // The check icon inside the box would still be measurable; suppress it.
+  .ui-chkbox-icon {
+    display: none !important;
+  }
+
+  &::after {
+    content: 'Select all';
+    margin-left: 0;
+    font-family: 'Fira Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--app-text, #0f172a);
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+}
+
+.ui-multiselect-panel .ui-multiselect-filter-container {
+  flex: 1 1 auto;
+  position: relative;
+  min-width: 0;
+
+  input {
+    width: 100%;
+    height: 30px;
+    padding: 0 30px 0 10px;
+    background: var(--app-surface, #fff);
+    border: 1px solid var(--app-border, #e2e8f0);
+    border-radius: 6px;
+    font-family: 'Fira Sans', sans-serif;
+    font-size: 12px;
+    color: var(--app-text, #0f172a);
+
+    &:focus {
+      outline: none;
+      border-color: var(--app-primary, #2563EB);
+      box-shadow: 0 0 0 2px var(--app-primary-soft, rgba(37, 99, 235, 0.16));
+    }
+  }
+
+  // Search icon inside the input on the right edge
+  .ui-multiselect-filter-icon {
+    color: var(--app-text-muted, #64748b);
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    pointer-events: none;
+  }
+}
+
+// Close button — pushed to the far right edge of the header. With the
+// search input removed, the header is just `select-all checkbox` on the
+// left and `close X` on the right; `margin-left: auto` consumes the
+// flex slack so the X lands flush against the panel's right padding
+// instead of crammed beside the checkbox.
+// Close button is hidden — the user dismisses the panel by clicking the
+// trigger again or anywhere outside it. With no select-all-search-close
+// trio in the header, the X felt redundant against a small, focused
+// dropdown.
+.ui-multiselect-panel .ui-multiselect-close {
+  display: none !important;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  margin-left: auto;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--app-text-muted, #64748b);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+
+  &:hover {
+    background: var(--app-danger-soft, #fee2e2);
+    color: var(--app-danger, #ef4444);
+  }
+}
+
+.ui-dropdown-item,
+.ui-multiselect-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: 'Fira Sans', sans-serif;
+  color: var(--app-text, #0f172a);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+
+  &:hover {
+    background: var(--app-bg-muted, #f1f5f9);
+  }
+
+  &.ui-state-highlight {
+    background: var(--app-primary-soft, rgba(37, 99, 235, 0.12));
+    color: var(--app-primary, #2563EB);
+    font-weight: 500;
+  }
+
+  // Mono codes (IATA airline codes, SSR codes) for at-a-glance scan
+  .ui-chkbox + label, & {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.ui-multiselect-panel .ui-multiselect-items-wrapper { max-height: 280px; }
+
+// ── Calendar ──────────────────────────────────────────────────────────────
+.ui-calendar .ui-inputtext { padding: 8px 12px; }
+
+.ui-datepicker {
+  font-family: var(--font-sans);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-3);
+  background: var(--app-surface-elevated);
+
+  .ui-datepicker-header {
+    background: transparent;
+    border: none;
+    color: var(--app-text);
+    padding-bottom: var(--space-2);
+  }
+
+  td > a, td > span {
+    color: var(--app-text-body);
+    border-radius: var(--radius-button);
+
+    &.ui-state-active {
+      background: var(--app-primary);
+      color: var(--app-primary-on);
+    }
+    &:not(.ui-state-disabled):hover { background: var(--app-bg-muted); }
+  }
+}
+
+// ── Checkbox / InputSwitch ────────────────────────────────────────────────
+.ui-chkbox-box {
+  border: 1.5px solid var(--app-border-strong);
+  border-radius: 4px;
+  background: var(--app-surface);
+  transition: background var(--motion-base) var(--motion-ease),
+              border-color var(--motion-base) var(--motion-ease);
+
+  &.ui-state-active {
+    background: var(--app-primary);
+    border-color: var(--app-primary);
+  }
+}
+
+.ui-inputswitch {
+  .ui-inputswitch-slider {
+    background: var(--app-border-strong);
+    border-radius: var(--radius-pill);
+    transition: background var(--motion-base) var(--motion-ease);
+  }
+  &.ui-inputswitch-checked .ui-inputswitch-slider {
+    background: var(--app-primary);
+  }
+}
+
+// ── Tabview ───────────────────────────────────────────────────────────────
+.ui-tabview {
+  background: transparent;
+  border: none;
+
+  .ui-tabview-nav {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--app-border);
+    padding: 0;
+
+    li {
+      background: transparent !important;
+      border: none !important;
+      margin: 0 var(--space-2) 0 0;
+
+      a {
+        font-family: var(--font-sans);
+        font-weight: 500;
+        font-size: var(--text-sm);
+        letter-spacing: var(--tracking-wide);
+        color: var(--app-text-muted);
+        padding: 12px 16px;
+        border-bottom: 2px solid transparent;
+        transition: color var(--motion-base) var(--motion-ease),
+                    border-color var(--motion-base) var(--motion-ease);
+      }
+
+      &.ui-state-active a,
+      &.ui-tabview-selected a {
+        color: var(--app-primary);
+        border-bottom-color: var(--app-primary);
+      }
+
+      &:not(.ui-state-active):hover a { color: var(--app-text); }
+    }
+  }
+
+  .ui-tabview-panels { background: transparent; padding: var(--space-5) 0; }
+}
+
+// ── Dialog ────────────────────────────────────────────────────────────────
+.ui-dialog {
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-modal);
+  background: var(--app-surface-elevated);
+  box-shadow: var(--elev-3);
+
+  .ui-dialog-titlebar {
+    background: transparent;
+    border-bottom: 1px solid var(--app-border);
+    border-radius: var(--radius-modal) var(--radius-modal) 0 0;
+    padding: var(--space-4) var(--space-5);
+  }
+  .ui-dialog-title {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: var(--text-md);
+    letter-spacing: var(--tracking-tight);
+    color: var(--app-text);
+  }
+  .ui-dialog-content {
+    padding: var(--space-5);
+    color: var(--app-text-body);
+  }
+}
+.ui-widget-overlay { background: var(--app-overlay); }
+
+// ── Tooltip ───────────────────────────────────────────────────────────────
+.ui-tooltip {
+  .ui-tooltip-text {
+    background: #0F172A;
+    color: #F8FAFC;
+    border-radius: var(--radius-button);
+    padding: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    box-shadow: var(--elev-2);
+  }
+  .ui-tooltip-arrow { display: none; }
+}
+
+// ── Progressbar ───────────────────────────────────────────────────────────
+.ui-progressbar {
+  height: 4px;
+  background: var(--app-bg-muted);
+  border-radius: var(--radius-pill);
+  border: none;
+
+  .ui-progressbar-value {
+    background: var(--app-primary);
+    border-radius: var(--radius-pill);
+  }
+}
+
+// ============================================================================
+// Date-range overlay (.drp-panel) — appended to body so we override here at
+// global scope (component ::ng-deep doesn't reach body-level elements).
+// Keep the panel compact and visually aligned with the design system.
+// ============================================================================
+.ui-overlaypanel.drp-panel {
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  padding: 0;
+  // Cap so it never spans the viewport — content inside has its own max
+  max-width: 620px;
+
+  // PrimeNG paints a default arrow we don't need
+  &::before, &::after { display: none !important; }
+
+  .ui-overlaypanel-content { padding: 0; }
+
+  // Compact PrimeNG calendar inside
+  .ui-datepicker {
+    border: 0;
+    padding: 8px;
+    min-width: 280px;
+
+    .ui-datepicker-header {
+      padding: 4px 6px 8px;
+      border-bottom: 1px solid var(--app-border, #e2e8f0);
+    }
+    .ui-datepicker-title { font-size: 13px; font-weight: 500; }
+    table {
+      font-size: 12px;
+      td > a, td > span { padding: 6px 0; }
+      td > a.ui-state-active { background: var(--app-primary, #2563EB); color: #fff; border-radius: 4px; }
+    }
+  }
+}
+

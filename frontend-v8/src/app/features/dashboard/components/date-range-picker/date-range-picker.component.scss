@@ -1,0 +1,143 @@
+:host { display: inline-block; }
+
+// Single-line pill matching the multiselect siblings: 36px tall, icon +
+// resolved range + chevron. The preset name (e.g. "Month to Date") shows
+// in the title attribute on hover and is also visible in the page-head
+// meta strip ("PRESET mtd") on the right, so we don't duplicate it inside
+// the pill.
+.range-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 14px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--app-text);
+  font-family: 'Fira Sans', sans-serif;
+  white-space: nowrap;
+
+  &:hover { background: var(--app-bg-muted, #f8fafc); border-color: var(--app-border-strong, #cbd5e1); }
+  &:focus-visible {
+    outline: none;
+    border-color: var(--app-primary, #2563EB);
+    box-shadow: 0 0 0 3px var(--app-primary-soft, rgba(37, 99, 235, 0.16));
+  }
+
+  &__icon  { color: var(--app-text-muted, #64748b); flex-shrink: 0; font-size: 13px; }
+  &__caret { color: var(--app-text-muted, #64748b); flex-shrink: 0; font-size: 11px; }
+
+  &__range {
+    font-family: 'Fira Code', ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--app-text, #0f172a);
+    letter-spacing: 0.01em;
+  }
+}
+
+.font-mono { font-family: 'Fira Code', ui-monospace, monospace; }
+
+// Calendar overlay — content-driven width. Earlier `width: 580px` left
+// ~50px of empty space on the right because the inner content (200px
+// presets + 12px gap + ~280px calendar = ~492px) was narrower than the
+// container. Switching to `width: auto` collapses the wrap to its
+// content's intrinsic size, eliminating the right-side gap. `max-width`
+// keeps the popup from exploding on wide displays if presets/calendar
+// ever grow.
+.drp-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  width: auto;
+  max-width: 580px;
+  max-height: 80vh;
+  overflow: hidden;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
+}
+
+.drp-presets {
+  flex: 0 0 auto;
+  // Bumped 200px → 240px so each preset row fits on a single line at
+  // the new tighter font sizes — "Month to Date" + "Mar 1 — Mar 31"
+  // and "Last 3 Months" + "Jan 1 — Mar 31" both clear the column
+  // without wrapping.
+  width: 240px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.drp-cal {
+  flex: 0 0 auto;
+}
+
+.drp-presets {
+  &__head {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--app-text-muted);
+    margin-bottom: 8px;
+  }
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+// Single-line preset row: label flush left, monospace date range flush
+// right, both sized so the longest preset ("Month to Date" + "Mar 1 —
+// Mar 31") clears the 240px column without wrapping. align-items:
+// baseline keeps the label and the smaller range pinned to the same
+// type baseline so they don't drift vertically.
+.drp-preset {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--app-text);
+
+  &:hover { background: var(--app-surface-elevated); }
+
+  &.is-active {
+    background: var(--app-primary-soft);
+    color: var(--app-primary);
+    font-weight: 600;
+  }
+
+  &__label {
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  &__range {
+    color: var(--app-text-muted);
+    font-size: 11px;
+    white-space: nowrap;
+    flex: 0 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+// (min-width handled inline at .drp-cal definition above)

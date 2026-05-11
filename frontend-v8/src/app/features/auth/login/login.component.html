@@ -1,0 +1,99 @@
+<div class="login-layout">
+
+  <!-- ── Form panel ────────────────────────────────────────────── -->
+  <section class="login-form-panel">
+    <header class="login-brand">
+      <span class="brand-mark">P</span>
+      <span class="brand-name">PRM Dashboard</span>
+      <ng-container *ngIf="(tenantStore.tenant$ | async) as tenant">
+        <span class="brand-divider">/</span>
+        <span class="brand-tenant">{{ tenant.slug }}</span>
+      </ng-container>
+    </header>
+
+    <div class="login-body">
+     <div class="login-stack">
+      <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
+        <h1 class="login-title">Sign in</h1>
+        <p class="login-subtitle">
+          Operations clarity, on every flight.
+        </p>
+
+        <app-form-field label="Username"
+                        [error]="usernameHasError() ? 'Required' : undefined">
+          <input pInputText type="text" formControlName="username" autocomplete="username">
+        </app-form-field>
+
+        <app-form-field label="Password"
+                        [error]="passwordHasError() ? 'Required' : undefined">
+          <input pInputText type="password" formControlName="password" autocomplete="current-password">
+        </app-form-field>
+
+        <div class="error-banner" *ngIf="errorMessage" role="alert">
+          {{ errorMessage }}
+        </div>
+
+        <button pButton type="submit" class="app-button-tall submit-btn"
+                [disabled]="form.invalid || loading"
+                [label]="loading ? 'Signing in…' : 'Sign in'"></button>
+      </form>
+
+      <!-- ── Demo credentials helper ──────────────────────────────
+           Mirrors data/master/employees.csv + employee_airports.csv
+           verbatim so reviewers can click any row to prefill the
+           form. The password is `admin123` for every seeded user
+           (POC convention). Hidden when the subdomain doesn't map
+           to a seeded tenant. -->
+      <div class="login-demo" *ngIf="demoTenant">
+        <div class="login-demo__head">
+          <span class="login-demo__eyebrow">Demo accounts</span>
+          <span class="login-demo__pw">password · <code>{{ demoPassword }}</code></span>
+        </div>
+        <ul class="login-demo__list">
+          <li *ngFor="let u of demoTenant.users">
+            <button type="button" class="login-demo__row"
+                    (click)="prefill(u.username)"
+                    [title]="'Use ' + u.username">
+              <span class="login-demo__user">{{ u.username }}</span>
+              <span class="login-demo__airports">
+                <span class="login-demo__chip" *ngFor="let a of u.airports">{{ a }}</span>
+              </span>
+            </button>
+          </li>
+        </ul>
+      </div>
+     </div>
+    </div>
+
+    <footer class="login-footer">
+      <span class="login-footer-tag">v0.0.1 · phase 0</span>
+      <span class="login-footer-time">{{ now }}</span>
+    </footer>
+  </section>
+
+  <!-- ── Operations panel (dark) ───────────────────────────────── -->
+  <aside class="login-parallax-panel" #parallaxPanel>
+    <div class="panel-tag">Live · Operations</div>
+
+    <h2 class="panel-quote">
+      Reduce friction.<br>
+      <em>Move passengers.</em>
+    </h2>
+
+    <div class="panel-meta">
+      <div class="meta-cell">
+        <span class="meta-label">Tenant</span>
+        <span class="meta-value">{{ (tenantStore.tenant$ | async)?.slug || '—' }}</span>
+      </div>
+      <div class="meta-cell">
+        <span class="meta-label">Airports</span>
+        <span class="meta-value">{{ demoTenant ? demoTenant.airports.join(' · ') : '—' }}</span>
+      </div>
+      <div class="meta-cell">
+        <span class="meta-label">Build</span>
+        <span class="meta-value">8.2.14</span>
+      </div>
+    </div>
+  </aside>
+
+</div>

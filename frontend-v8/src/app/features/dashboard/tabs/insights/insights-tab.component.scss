@@ -1,0 +1,45 @@
+// Insights tab — three thematic sections separated by uppercase mono labels
+// with a top border. Mirrors main's insights.component.scss verbatim with the
+// branch's --app-* tokens.
+
+:host { display: block; }
+
+.insights-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 0;
+}
+
+.row { display: grid; gap: 14px; }
+
+.row-kpis {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+// 6/4 split — agent workload (wider) + heatmap (narrower); same ratio
+// repeats across all three sections so the eye trains on the rhythm.
+.row-charts-6-4 {
+  grid-template-columns: 3fr 2fr;
+  min-height: 260px;
+}
+
+// Section labels separate the three thematic groupings. Horizontal rule
+// + 16px top padding visually detach the label from the row above; the
+// flex-column gap handles the space below.
+.section-label {
+  font-family: "Fira Code", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--app-text-muted, #64748b);
+  padding-top: 16px;
+  border-top: 1px solid var(--app-border, #e2e8f0);
+}
+
+@media (max-width: 1200px) {
+  .row-kpis { grid-template-columns: repeat(2, 1fr); }
+  .row-charts-6-4 { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,34 @@
+// Fulfillment tab — 4 KPIs / full-width dual-axis trend / peak-hours + cumulative.
+// Layout mirrors main's fulfillment.component.scss; gap + breakpoints tuned to
+// match the rest of the dashboard's editorial cadence.
+
+:host { display: block; }
+
+.fulfillment-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 0;
+}
+
+.row { display: grid; gap: 14px; }
+
+.row-kpis {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.row-charts-full {
+  grid-template-columns: 1fr;
+  min-height: 320px;
+}
+
+.row-charts-1-1 {
+  grid-template-columns: 1fr 1fr;
+  min-height: 260px;
+}
+
+@media (max-width: 1024px) {
+  .row-kpis { grid-template-columns: repeat(2, 1fr); }
+  .row-charts-1-1 { grid-template-columns: 1fr; }
+}

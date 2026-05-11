@@ -1,0 +1,96 @@
+<!-- TODO(phase-d-2): wire <app-top-bar> here once the component is ported -->
+<main class="dashboard">
+  <!-- Compact page head: title + eyebrow + LIVE inline on the left,
+       Period / Preset meta on the right. One row at desktop widths. -->
+  <header class="page-head">
+    <div class="page-head__left">
+      <div class="title-row">
+        <h1 class="page-head__title">Passenger Services</h1>
+        <span class="eyebrow">
+          <span class="eyebrow__dot"></span>
+          <span class="eyebrow__text">PRM Analytics</span>
+        </span>
+        <span class="live-pill">LIVE</span>
+      </div>
+    </div>
+
+    <div class="page-head__right">
+      <div class="meta">
+        <div class="meta__label">Period</div>
+        <div class="meta__value font-mono">
+          {{ (filters.dateFrom$ | async) || '—' }}
+          <span class="meta__sep">—</span>
+          {{ (filters.dateTo$ | async) || '—' }}
+        </div>
+      </div>
+      <div class="meta__divider"></div>
+      <div class="meta">
+        <div class="meta__label">Preset</div>
+        <div class="meta__value font-mono">{{ (filters.datePreset$ | async) || '—' }}</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Combined tabs + filter controls in a single row. Tabs sit on the
+       left at their natural width; the filter bar fills the remaining
+       space. Inside the filter bar, paired margin-left:auto on airport
+       and date split available slack into two equal gaps — airport
+       lands centered between the tabs and the right-aligned cluster
+       (date + airline + service + handled by + clear). -->
+  <div class="control-row" role="tablist" aria-label="Dashboard tabs">
+    <nav class="control-row__tabs" aria-label="Dashboard sections">
+      <a *ngFor="let t of tabs"
+         class="tab-pill"
+         [routerLink]="t.route"
+         routerLinkActive="is-active"
+         queryParamsHandling="preserve"
+         role="tab">{{ t.label }}</a>
+    </nav>
+    <app-filter-bar [inline]="true" class="control-row__filters"></app-filter-bar>
+  </div>
+
+  <!-- Active-filter chip row. Lifted out of the filter-bar component so
+       the chips align to the dashboard's LEFT edge instead of indented
+       to where the filter-bar starts (right of the tabs). The container
+       is always rendered so its min-height reserves vertical space —
+       picking the first filter no longer pulls the controls upward. -->
+  <div class="filter-chips-row" role="status" aria-live="polite" aria-label="Active filters">
+    <button type="button" class="chip-pill"
+            *ngFor="let v of filters.airline$ | async"
+            (click)="removeAirline(v)"
+            [attr.aria-label]="'Remove airline filter: ' + v">
+      <span class="chip-pill__key">Airline</span>
+      <span class="chip-pill__sep">·</span>
+      <span class="chip-pill__val">{{ v }}</span>
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button type="button" class="chip-pill"
+            *ngFor="let v of filters.service$ | async"
+            (click)="removeService(v)"
+            [attr.aria-label]="'Remove service filter: ' + v">
+      <span class="chip-pill__key">Service</span>
+      <span class="chip-pill__sep">·</span>
+      <span class="chip-pill__val">{{ v }}</span>
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button type="button" class="chip-pill"
+            *ngFor="let v of filters.handledBy$ | async"
+            (click)="removeHandledBy(v)"
+            [attr.aria-label]="'Remove handled-by filter: ' + handledByLabel(v)">
+      <span class="chip-pill__key">Handled</span>
+      <span class="chip-pill__sep">·</span>
+      <span class="chip-pill__val">{{ handledByLabel(v) }}</span>
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <main class="dashboard-content">
+    <router-outlet></router-outlet>
+  </main>
+</main>
