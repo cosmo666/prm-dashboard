@@ -65,11 +65,6 @@ For each: Overview, Top 10, Service Breakup, Fulfillment, Insights.
 - [ ] **Chart hover** — Tooltip appears with formatted numbers, IATA codes, region colours where applicable.
 - [ ] **Sankey gradient (v17 only)** — The Service Breakup Sankey renders gradient links. On v8 (echarts 4), gradients are flatter — this is expected.
 
-## Saved views / command palette (Angular 17 only)
-
-- [ ] **Save view** — Apply a filter set → "Save view" → name it → reload → "Saved views" menu lists it → click → filters restored.
-- [ ] **Cmd/Ctrl + K palette** — Opens command palette → navigate tabs, switch saved views, apply date presets by typing.
-
 ## Theme + responsive
 
 - [ ] **Light/dark toggle** — Toggle in top bar → every chart, tooltip, card, form input flips theme. No dark-on-dark or light-on-light bleed.

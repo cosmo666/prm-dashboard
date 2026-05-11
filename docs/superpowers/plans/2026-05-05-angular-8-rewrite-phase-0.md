@@ -97,7 +97,7 @@ frontend/                                                        # Replaced on b
                 └── form-field/form-field.component.{ts,html,scss,spec.ts}
 ```
 
-**Out of Phase 0 scope (later phases):** dashboard tabs, filter/navigation/saved-views stores, all charts beyond bar, command palette, toast container, dev-tenant-picker, progress bar, airport-selector, top-bar, full not-found page styling, RBAC enforcement UI, prm-data.service.ts.
+**Out of Phase 0 scope (later phases):** dashboard tabs, filter / navigation stores, all charts beyond bar, toast container, dev-tenant-picker, progress bar, airport-selector, top-bar, full not-found page styling, RBAC enforcement UI, prm-data.service.ts. (`SavedViewsStore` + `CommandPalette` were originally listed for Phase 6 but the scope was cut on 2026-05-11 — neither feature shipped.)
 
 ---
 
@@ -2778,7 +2778,7 @@ The following are deliberately excluded from Phase 0 — they belong in their ow
 | **Phase 3** (Service Breakup) | `SankeyChartComponent` + `ServiceBreakupTabComponent` |
 | **Phase 4** (Fulfillment) | `HeatmapChartComponent` + `FulfillmentTabComponent` |
 | **Phase 5** (Insights) | `InsightsTabComponent` |
-| **Phase 6** (Polish) | `SavedViewsStore` + `CommandPalette` + `ToastContainer` + `ProgressBar` + full `NotFoundComponent` design + `DevTenantPicker` + tooltip migration |
+| **Phase 6** (Polish) | `ToastContainer` + `ProgressBar` + full `NotFoundComponent` design + `DevTenantPicker` + tooltip migration. (`SavedViewsStore` + `CommandPalette` were originally listed but the scope was cut on 2026-05-11 — neither shipped.) |
 | **Phase 7** (Cutover) | Side-by-side comparison, delta documentation, merge decision |
 
 After Phase 0 is verified end-to-end, request the Phase 1 plan with: *"Write the Phase 1 implementation plan."*

@@ -9,9 +9,9 @@ describe('AppComponent', () => {
       imports: [RouterTestingModule],
       declarations: [AppComponent],
       // The AppComponent template mounts shell singletons (toast,
-      // progress bar, eventually command palette) by selector. We
-      // don't want to wire those up here — this spec only checks
-      // that AppComponent itself constructs and renders router-outlet.
+      // progress bar) by selector. We don't want to wire those up
+      // here — this spec only checks that AppComponent itself
+      // constructs and renders router-outlet.
       // CUSTOM_ELEMENTS_SCHEMA lets the test ignore unknown shell
       // tags without flagging them as template errors.
       schemas: [CUSTOM_ELEMENTS_SCHEMA],

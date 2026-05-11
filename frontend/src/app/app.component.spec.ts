@@ -10,7 +10,7 @@ describe('AppComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [
-        // AppComponent's child components (CommandPalette, etc.) need HttpClient and Router.
+        // AppComponent's child components need HttpClient and Router.
         // We provide testing doubles so the component tree can be instantiated.
         provideHttpClient(),
         provideHttpClientTesting(),

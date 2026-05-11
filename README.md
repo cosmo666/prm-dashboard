@@ -720,9 +720,9 @@ prm-dashboard/
 │   └── {tenant-slug}/                  # prm_services.{csv,parquet} — one folder per tenant
 ├── frontend/                           # Angular 17 SPA
 │   └── src/app/
-│       ├── core/                       # Auth, API client, progress, toast, theme, stores (tenant/auth/filter/navigation/saved-views)
+│       ├── core/                       # Auth, API client, progress, toast, theme, stores (tenant/auth/filter/navigation)
 │       ├── features/                   # auth/login, home, dashboard/{5 tabs, components}, not-found
-│       └── shared/                     # 6 chart wrappers, top-bar, airport-selector, command-palette, pipes, directives
+│       └── shared/                     # 6 chart wrappers, top-bar, airport-selector, toast-container, pipes, directives
 ├── docs/
 │   ├── e2e-checklist.md
 │   └── superpowers/                    # Archived design specs + implementation plans (historical project record)

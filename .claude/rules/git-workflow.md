@@ -20,7 +20,7 @@ Common scopes: `auth`, `tenant`, `prm`, `gateway`, `shared`, `frontend` (Angular
 
 ## Branch naming
 ```
-feat/saved-views-store
+feat/airport-multi-select
 fix/heatmap-hhmm-truncation
 refactor/parquet-path-validation
 chore/eslint-baseline

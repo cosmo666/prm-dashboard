@@ -25,7 +25,7 @@ Project-wide guidance lives in [`../CLAUDE.md`](../CLAUDE.md); conventions speci
 ## Architectural conventions
 
 - **Standalone components only.** Declare `imports: [...]` directly in `@Component`; no NgModules anywhere in this build. (Contrast with [`frontend-v8/`](../frontend-v8/), which is NgModule-based by necessity of Angular 8.)
-- **NgRx Signal Store for shared state.** Auth, tenant, filters, navigation, saved-views all live in `core/store/*.store.ts`. Component-local state uses bare `signal()` + `computed()`.
+- **NgRx Signal Store for shared state.** Auth, tenant, filters, navigation all live in `core/store/*.store.ts`. Component-local state uses bare `signal()` + `computed()`.
 - **Lazy routes via `loadComponent`:** every feature is its own chunk — `loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)`.
 - **URL-synced filters.** `FilterStore` reads from / writes to `route.queryParams` so reloads restore state and URLs are shareable.
 - **HTTP via `ApiClient`.** Prepends `/api`, sets `withCredentials: true`. Never inject `HttpClient` in a feature component.
@@ -41,7 +41,7 @@ src/app/
 │   ├── api/api.client.ts                # HttpClient wrapper (/api + withCredentials)
 │   ├── auth/                            # auth.service / auth.guard / auth.interceptor / tenant.resolver
 │   ├── progress/progress.service.ts     # Global top progress bar
-│   ├── store/                           # Signal Stores (auth, tenant, filter, navigation, saved-views)
+│   ├── store/                           # Signal Stores (auth, tenant, filter, navigation)
 │   ├── toast/toast.service.ts
 │   └── theme/theme.service.ts
 ├── features/                            # Lazy-loaded route components
@@ -54,7 +54,7 @@ src/app/
 │       └── services/prm-data.service.ts # Wraps all 25 /api/prm endpoints
 └── shared/
     ├── charts/                          # ECharts wrappers
-    ├── components/                      # TopBar, AirportSelector, ProgressBar, CommandPalette, …
+    ├── components/                      # TopBar, AirportSelector, ProgressBar, ToastContainer, …
     ├── directives/tooltip.directive.ts  # [appTooltip]
     └── pipes/compact-number.pipe.ts     # 15234 → "15.2k"
 ```

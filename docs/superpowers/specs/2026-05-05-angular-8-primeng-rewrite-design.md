@@ -197,8 +197,7 @@ frontend/                                   # Replaced on the branch (preserved 
         │   │   ├── auth.store.ts           # BehaviorSubject-based
         │   │   ├── tenant.store.ts
         │   │   ├── filter.store.ts
-        │   │   ├── navigation.store.ts
-        │   │   └── saved-views.store.ts
+        │   │   └── navigation.store.ts
         │   ├── toast/
         │   │   └── toast.service.ts        # Wraps PrimeNG MessageService
         │   └── theme/
@@ -252,8 +251,6 @@ frontend/                                   # Replaced on the branch (preserved 
             │   ├── top-bar/
             │   ├── airport-selector/
             │   ├── progress-bar/
-            │   ├── saved-views-menu/
-            │   ├── command-palette/
             │   ├── toast-container/
             │   ├── dev-tenant-picker/
             │   └── form-field/             # Custom Material-style float-label wrapper
@@ -277,7 +274,7 @@ frontend/                                   # Replaced on the branch (preserved 
 
 ### Pattern: BehaviorSubject services
 
-All five stores (`auth`, `tenant`, `filter`, `navigation`, `saved-views`) follow this shape:
+All four stores (`auth`, `tenant`, `filter`, `navigation`) follow this shape:
 
 ```ts
 @Injectable({ providedIn: 'root' })
@@ -421,7 +418,7 @@ Registered in `AppModule.providers`:
 | `mat-radio-group` / `mat-radio-button` | `p-radioButton` | One per option, no group |
 | `mat-slide-toggle` | `p-inputSwitch` | Theme toggle |
 | `mat-tab-group` / `mat-tab` | `p-tabView` / `p-tabPanel` | Dashboard 5-tab layout |
-| `mat-menu` | `p-menu` (popup) | TopBar dropdowns + saved-views menu |
+| `mat-menu` | `p-menu` (popup) | TopBar dropdowns + date-range picker |
 | `mat-dialog` (`MatDialog.open`) | `p-dialog` (`[(visible)]="show"`) | **Inverted control — see callout 2 below** |
 | `mat-snack-bar` | `p-toast` + `MessageService` | Wrapped in our `ToastService` |
 | `mat-progress-bar` | `p-progressBar` | Global top progress bar |
@@ -774,8 +771,8 @@ End state: first fully working dashboard tab. Forces shared infrastructure to be
 
 ### Phase 6 — Polish & extras (≈ 8–12 hrs)
 
-- `SavedViewsStore` (localStorage) + `SavedViewsMenu`
-- `CommandPalette` (Ctrl/Cmd-K)
+> **2026-05-11 update — scope cut:** `SavedViewsStore` + `SavedViewsMenu` + `CommandPalette` were removed from both frontends. They were Phase-6 polish features that overlapped with the existing URL-synced filter state (back/forward, copy-link sharing) and added UI complexity without clear demand. The shipped Phase 6 scope is the bullets below.
+
 - `ToastContainer` (PrimeNG `MessageService` + `p-toast`)
 - `[appTooltip]` directive deletion + `pTooltip` migration audit
 - `NotFoundComponent` ("Flight diverted")
@@ -783,6 +780,11 @@ End state: first fully working dashboard tab. Forces shared infrastructure to be
 - `ProgressService` + global progress bar
 - TSLint pass, fix warnings
 - Production build + Docker image + smoke test against .NET backend
+
+**Removed (originally listed, since deleted):**
+
+- ~~`SavedViewsStore` (localStorage) + `SavedViewsMenu`~~ — removed 2026-05-11
+- ~~`CommandPalette` (Ctrl/Cmd-K)~~ — removed 2026-05-11
 
 ### Phase 7 — Cutover decision (≈ 2 hrs)
 

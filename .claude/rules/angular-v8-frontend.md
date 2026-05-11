@@ -103,7 +103,7 @@ frontend/src/app/
 ## State management — BehaviorSubject services
 
 - **No NgRx.** No `@ngrx/store`, no `@ngrx/signals`. Angular 8 has no signals — `signal()`, `computed()`, `effect()` do not exist.
-- **One `*.store.ts` per concern** (`auth`, `tenant`, `filter`, `navigation`, `saved-views`). Each store:
+- **One `*.store.ts` per concern** (`auth`, `tenant`, `filter`, `navigation`). Each store:
   - Holds private `BehaviorSubject<T>` fields
   - Exposes `xxx$: Observable<T>` for templates (use `| async` pipe)
   - Exposes `get xxxSnapshot(): T` for synchronous reads inside services / guards / interceptors

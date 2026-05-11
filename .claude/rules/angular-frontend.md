@@ -33,8 +33,7 @@ frontend/src/app/
 │   │   ├── auth.store.ts                  # Employee, access token, airports
 │   │   ├── tenant.store.ts                # Tenant slug, name, logo, primary color
 │   │   ├── filter.store.ts                # Dashboard filters, URL-synced
-│   │   ├── navigation.store.ts            # Active dashboard tab name for breadcrumb
-│   │   └── saved-views.store.ts           # Persisted filter snapshots (localStorage-hydrated plain signal)
+│   │   └── navigation.store.ts            # Active dashboard tab name for breadcrumb
 │   ├── toast/
 │   │   └── toast.service.ts               # Transient notification signals consumed by <app-toast-container>
 │   └── theme/
@@ -75,8 +74,6 @@ frontend/src/app/
     │   ├── top-bar/                       # Logo, tenant name, breadcrumb, airport selector, theme toggle
     │   ├── airport-selector/              # RBAC-filtered dropdown bound to FilterStore
     │   ├── progress-bar/                  # 2px global top progress bar bound to ProgressService
-    │   ├── saved-views-menu/              # Saved-view picker in the top bar (reads SavedViewsStore)
-    │   ├── command-palette/               # Ctrl/Cmd-K palette: tab nav, saved views, date presets
     │   ├── toast-container/               # Renders the ToastService queue
     │   └── dev-tenant-picker/             # Dev-only tenant-switch UI (hidden in production)
     ├── directives/

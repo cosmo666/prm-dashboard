@@ -30,7 +30,7 @@ Project-wide guidance lives in [`../CLAUDE.md`](../CLAUDE.md); conventions speci
 ## Architectural conventions
 
 - **NgModules everywhere.** One module per feature (`AuthModule`, `HomeModule`, `DashboardModule`, …), each owns its components and its routing module. Shared widgets sit in `SharedModule`. Standalone components do not exist on this Angular version.
-- **Plain RxJS service-based state.** No NgRx. Each shared concern (`AuthStore`, `TenantStore`, `FilterStore`, `NavigationStore`, `SavedViewsStore`) is a service that wraps private `BehaviorSubject<T>` fields, exposes `xxx$: Observable<T>` for templates (consumed via `| async`) and `xxxSnapshot: T` for synchronous reads in guards / interceptors.
+- **Plain RxJS service-based state.** No NgRx. Each shared concern (`AuthStore`, `TenantStore`, `FilterStore`, `NavigationStore`) is a service that wraps private `BehaviorSubject<T>` fields, exposes `xxx$: Observable<T>` for templates (consumed via `| async`) and `xxxSnapshot: T` for synchronous reads in guards / interceptors.
 - **Standard Angular CLI build.** No custom webpack, no Vite, no Nx — `ng build`, `ng serve`, `ng test`, `ng lint` only.
 - **Routing: lazy-loaded modules via function-form `loadChildren`** — `loadChildren: () => import('./features/dashboard/dashboard.module').then(m => m.DashboardModule)`. The deprecated string form (`'./path#Module'`) is not used.
 - **Subscriptions:** prefer the `| async` pipe in templates. Manual subscriptions cleaned up via `takeUntil(this.destroy$)` in `ngOnDestroy` — `takeUntilDestroyed()` is Angular 16+ and unavailable here.
