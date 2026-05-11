@@ -147,4 +147,42 @@ public class DuckDbContextTests : IAsyncLifetime
         var options = Options.Create(new DataPathOptions { PoolSize = 65 });
         Assert.Throws<ArgumentOutOfRangeException>(() => new DuckDbContext(options));
     }
+
+    [Fact]
+    public async Task AcquireAsync_WithMemoryLimit_AppliesPragmaToConnection()
+    {
+        // DuckDB normalises memory_limit to MiB on read (128MB → "122.0 MiB"). Using a
+        // MiB input round-trips cleanly so the assertion isn't load-bearing on the
+        // decimal-to-binary conversion math.
+        var options = Options.Create(new DataPathOptions
+        {
+            Root = "unused-for-ctx-tests",
+            PoolSize = 2,
+            MemoryLimit = "128MiB",
+        });
+        var ctx = new DuckDbContext(options);
+
+        await using var session = await ctx.AcquireAsync();
+        await using var cmd = session.Connection.CreateCommand();
+        cmd.CommandText = "SELECT current_setting('memory_limit')";
+        var setting = (string)(await cmd.ExecuteScalarAsync())!;
+
+        Assert.Contains("128", setting);
+        Assert.Contains("MiB", setting, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AcquireAsync_WithoutMemoryLimit_LeavesDuckDbDefault()
+    {
+        // No MemoryLimit set → SET memory_limit must NOT run, so the value stays at
+        // DuckDB's ~80%-of-RAM default. A tiny 128 MiB cap cannot appear here.
+        var ctx = Build();
+        await using var session = await ctx.AcquireAsync();
+        await using var cmd = session.Connection.CreateCommand();
+        cmd.CommandText = "SELECT current_setting('memory_limit')";
+        var setting = ((string)(await cmd.ExecuteScalarAsync())!).ToLowerInvariant();
+
+        Assert.False(string.IsNullOrWhiteSpace(setting));
+        Assert.DoesNotContain("128", setting);
+    }
 }

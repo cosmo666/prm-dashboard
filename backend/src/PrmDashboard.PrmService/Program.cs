@@ -59,6 +59,12 @@ builder.Services.Configure<PrmDashboard.Shared.Data.DataPathOptions>(o =>
         throw new InvalidOperationException(
             $"DataPath:PoolSize out of range [{PrmDashboard.Shared.Data.DataPathOptions.MinPoolSize}, "
             + $"{PrmDashboard.Shared.Data.DataPathOptions.MaxPoolSize}]: {o.PoolSize}");
+
+    o.MemoryLimit = builder.Configuration["DataPath:MemoryLimit"];
+    if (!string.IsNullOrWhiteSpace(o.MemoryLimit)
+        && !PrmDashboard.Shared.Data.DataPathOptions.MemoryLimitFormat.IsMatch(o.MemoryLimit))
+        throw new InvalidOperationException(
+            $"DataPath:MemoryLimit must be a DuckDB-compatible size (e.g. '2GB', '512MiB', '60%'). Got: '{o.MemoryLimit}'.");
 });
 
 builder.Services.AddHostedService<PrmDashboard.Shared.Data.DataPathValidator>();

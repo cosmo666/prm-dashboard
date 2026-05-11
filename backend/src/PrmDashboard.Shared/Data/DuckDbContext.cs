@@ -23,6 +23,7 @@ public interface IDuckDbContext
 public sealed class DuckDbContext : IDuckDbContext
 {
     private readonly ObjectPool<DuckDBConnection> _pool;
+    private readonly string? _memoryLimit;
 
     public DuckDbContext(IOptions<DataPathOptions> options)
     {
@@ -34,6 +35,8 @@ public sealed class DuckDbContext : IDuckDbContext
                 $"DataPath:PoolSize must be between {DataPathOptions.MinPoolSize} and {DataPathOptions.MaxPoolSize}, got {poolSize}.");
         }
 
+        _memoryLimit = string.IsNullOrWhiteSpace(options.Value.MemoryLimit) ? null : options.Value.MemoryLimit.Trim();
+
         var provider = new DefaultObjectPoolProvider { MaximumRetained = poolSize };
         _pool = provider.Create(new DuckDbConnectionPolicy());
     }
@@ -42,7 +45,19 @@ public sealed class DuckDbContext : IDuckDbContext
     {
         var conn = _pool.Get();
         if (conn.State != ConnectionState.Open)
+        {
             await conn.OpenAsync(ct);
+            if (_memoryLimit is not null)
+            {
+                // memory_limit is per-engine in DuckDB; the SET statement persists for
+                // the lifetime of the connection but is lost across re-opens. Applying
+                // it inside the (state != Open) branch covers both first open and any
+                // self-healing re-open without re-running on every acquire.
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText = $"SET memory_limit='{_memoryLimit.Replace("'", "''")}'";
+                await cmd.ExecuteNonQueryAsync(ct);
+            }
+        }
         return new PooledDuckDbSession(conn, _pool);
     }
 

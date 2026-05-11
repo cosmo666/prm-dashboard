@@ -38,6 +38,11 @@ builder.Services.Configure<DataPathOptions>(o =>
     if (o.PoolSize < DataPathOptions.MinPoolSize || o.PoolSize > DataPathOptions.MaxPoolSize)
         throw new InvalidOperationException(
             $"DataPath:PoolSize out of range [{DataPathOptions.MinPoolSize}, {DataPathOptions.MaxPoolSize}]: {o.PoolSize}");
+
+    o.MemoryLimit = builder.Configuration["DataPath:MemoryLimit"];
+    if (!string.IsNullOrWhiteSpace(o.MemoryLimit) && !DataPathOptions.MemoryLimitFormat.IsMatch(o.MemoryLimit))
+        throw new InvalidOperationException(
+            $"DataPath:MemoryLimit must be a DuckDB-compatible size (e.g. '2GB', '512MiB', '60%'). Got: '{o.MemoryLimit}'.");
 });
 
 // DataPathValidator MUST register before TenantsLoader — it runs first and
