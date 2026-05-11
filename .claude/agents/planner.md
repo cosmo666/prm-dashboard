@@ -1,6 +1,6 @@
 ---
 name: planner
-description: Plans feature implementation with step-by-step blueprints for the PRM Dashboard (Angular 17 frontend + .NET 8 backend over DuckDB/Parquet). Use when starting new features or breaking down complex tasks.
+description: Plans feature implementation with step-by-step blueprints for the PRM Dashboard (two parallel Angular frontends — v17 in `frontend/` + v8 in `frontend-v8/` — over a shared .NET 8 backend on DuckDB/Parquet). Use when starting new features or breaking down complex tasks.
 tools: ["Read", "Grep", "Glob"]
 model: sonnet
 ---
@@ -9,7 +9,8 @@ You are a senior full-stack developer planning feature implementations for **PRM
 
 ## Project Context
 
-- **Frontend** (`frontend/`): Angular 17 standalone components, Angular Material 3, Apache ECharts via `ngx-echarts`, NgRx Signal Store, port 4200
+- **Frontend (primary)** (`frontend/`): Angular 17 standalone components, Angular Material 3, ECharts via `ngx-echarts`, NgRx Signal Store — host port 4200. See `.claude/rules/angular-frontend.md`.
+- **Frontend (host-app parity)** (`frontend-v8/`): Angular 8.2.14 + PrimeNG 8.0.3, NgModules, ECharts via `ngx-echarts` 5.2, plain RxJS BehaviorSubject stores — host port 4300. See `.claude/rules/angular-v8-frontend.md`. **Confirm which frontend a feature targets before planning** — sometimes both (matched parity), sometimes one.
 - **Backend** (`backend/src/`): four ASP.NET Core 8 microservices — `AuthService`, `TenantService`, `PrmService`, `Gateway` (Ocelot)
 - **Runtime data layer**: DuckDB.NET reads per-tenant Parquet files at `data/{slug}/prm_services.parquet`. No ORM, no DbContext, no migrations
 - **Seed data**: CSVs committed under `data/`; `backend/tools/PrmDashboard.ParquetBuilder` regenerates the sibling `*.parquet`

@@ -1,6 +1,6 @@
 # `.claude/` — Claude Code infrastructure for PRM Dashboard
 
-This directory configures how Claude Code works with the **PRM Dashboard** project (multi-tenant airport ground-handling analytics — Angular 17 + .NET 8 + DuckDB-over-Parquet).
+This directory configures how Claude Code works with the **PRM Dashboard** project (multi-tenant airport ground-handling analytics — .NET 8 + DuckDB-over-Parquet with **two parallel frontends**: Angular 17 in `frontend/` at port 4200 and Angular 8 + PrimeNG in `frontend-v8/` at port 4300, both talking to the same backend).
 
 The authoritative project instructions are in [`CLAUDE.md`](../CLAUDE.md) at the repo root. This directory provides:
 
@@ -21,7 +21,8 @@ The authoritative project instructions are in [`CLAUDE.md`](../CLAUDE.md) at the
 ├── rules/                     # Always loaded into context with CLAUDE.md
 │   ├── architecture.md        # System architecture, request flow, multi-tenant invariants
 │   ├── dotnet-backend.md      # .NET 8, DuckDB + Parquet, multi-tenant, JWT, anti-patterns
-│   ├── angular-frontend.md    # Angular 17 standalone, NgRx Signal Store, ECharts wrappers, RBAC
+│   ├── angular-frontend.md    # Angular 17 (`frontend/`, :4200) — standalone, Signal Store, Material 3
+│   ├── angular-v8-frontend.md # Angular 8 + PrimeNG (`frontend-v8/`, :4300) — NgModules, BehaviorSubject
 │   ├── coding-style.md        # File org, naming, error handling, comments, immutability
 │   ├── development-workflow.md  # Research-first, implementation order, pre-commit checklist
 │   ├── security.md            # Secrets, auth, tenant isolation, RBAC, container hardening
@@ -68,10 +69,18 @@ All three live in `.claude/agents/*.md` and use the `Read`, `Grep`, `Glob` tools
 
 The rule files are organised by what they govern, not by file size. Read in this order when picking up the project:
 
-1. **architecture.md** — the system at a glance, request flow, invariants
-2. **dotnet-backend.md** — backend conventions (DuckDB + Parquet, JWT, services)
-3. **angular-frontend.md** — frontend conventions (standalone components, Signal Store, charts)
-4. The rest as needed (coding-style for naming, testing for fixture patterns, etc.)
+1. **architecture.md** — the system at a glance, request flow, invariants, both frontends in the topology
+2. **dotnet-backend.md** — backend conventions (DuckDB + Parquet, JWT, services) — applies to both frontends' API
+3. **angular-frontend.md** — Angular 17 (`frontend/`, port 4200) — standalone components, Signal Store, charts
+4. **angular-v8-frontend.md** — Angular 8 + PrimeNG (`frontend-v8/`, port 4300) — NgModules, BehaviorSubject, `.ui-*` selectors, TS 3.4.5 limitations
+5. The rest as needed (coding-style for naming, testing for fixture patterns, etc.)
+
+**Which Angular rule applies?** Read the file path:
+
+- `frontend/**` → `angular-frontend.md`
+- `frontend-v8/**` → `angular-v8-frontend.md`
+
+Never apply Angular 17 conventions to v8 files (or vice versa). Signals don't exist in v8; standalone components don't exist in v8; v17 doesn't use PrimeNG `.ui-*` selectors.
 
 Memory files (`memory-*.md`) are project-level state — decisions, sessions, profile, preferences, private. They're committed (except `memory-private.md`) so onboarding to the project preserves continuity.
 

@@ -1,4 +1,8 @@
-# Angular Frontend Conventions
+# Angular 17 Frontend Conventions (`frontend/`)
+
+> **Scope:** these rules apply to `frontend/` only — the **Angular 17+** build that lives at host port **4200** and is the primary UI for the PRM Dashboard. The parallel **Angular 8 + PrimeNG** build under `frontend-v8/` (host port 4300, host-app parity) is covered by [`angular-v8-frontend.md`](angular-v8-frontend.md); switch rule files when you switch directories.
+>
+> Both frontends share one backend, but the stacks are nothing alike. Anything idiomatic here (signals, NgRx Signal Store, standalone components, Material 3, ESLint, Vite) is **wrong in `frontend-v8/`**, and vice-versa for NgModules / BehaviorSubject / PrimeNG. Always check the file path you're editing before applying conventions.
 
 ## Stack
 

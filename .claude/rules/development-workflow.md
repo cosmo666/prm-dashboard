@@ -5,7 +5,8 @@ Before coding any non-trivial feature:
 
 1. **Read the relevant rule file** for the layer you're touching:
    - Backend → `.claude/rules/dotnet-backend.md`
-   - Frontend → `.claude/rules/angular-frontend.md`
+   - `frontend/**` (Angular 17, port 4200) → `.claude/rules/angular-frontend.md`
+   - `frontend-v8/**` (Angular 8 + PrimeNG, port 4300) → `.claude/rules/angular-v8-frontend.md`
    - Anything touching `prm_services` data → invoke the `prm-domain` skill
 2. **Skim CLAUDE.md → Architecture decisions table** to avoid contradicting prior choices.
 3. **Look for existing helpers** — `BaseQueryService.BuildWhereClause` / `ResolveTenantParquet` / `GroupCountAsync`, `HhmmSql`, the chart wrappers, `FilterStore` mutators.

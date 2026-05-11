@@ -16,7 +16,7 @@ chore(deps): bump DuckDB.NET 1.4.0 → 1.5.0
 build(docker): pin base images to sha256 digests
 ```
 
-Common scopes: `auth`, `tenant`, `prm`, `gateway`, `shared`, `frontend`, `data`, `docker`, `claude`, `deps`.
+Common scopes: `auth`, `tenant`, `prm`, `gateway`, `shared`, `frontend` (Angular 17), `frontend-v8` (Angular 8 + PrimeNG), `data`, `docker`, `compose`, `claude`, `deps`.
 
 ## Branch naming
 ```

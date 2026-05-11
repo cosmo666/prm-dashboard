@@ -220,9 +220,10 @@ See [`.claude/README.md`](.claude/README.md) for the full layout. The summary:
 
 **Rules** (`.claude/rules/` — always loaded with this file):
 
-- `architecture.md` — system architecture, request flow, multi-tenant invariants
+- `architecture.md` — system architecture, request flow, multi-tenant invariants, dual-frontend topology
 - `dotnet-backend.md` — .NET 8 conventions, DuckDB + Parquet, JWT, anti-patterns
-- `angular-frontend.md` — Angular 17 standalone, NgRx Signal Store, ECharts wrappers, RBAC
+- `angular-frontend.md` — Angular 17 (`frontend/`, :4200) — standalone components, NgRx Signal Store, Material 3, ECharts wrappers, RBAC
+- `angular-v8-frontend.md` — Angular 8 + PrimeNG (`frontend-v8/`, :4300) — NgModules, BehaviorSubject stores, `.ui-*` selectors, TS 3.4.5 limitations
 - `coding-style.md` — file org, naming, error handling, comments, immutability
 - `development-workflow.md` — research-first, implementation order, pre-commit checklist
 - `security.md` — secrets, auth, tenant isolation, RBAC, container hardening
@@ -246,7 +247,7 @@ See [`.claude/README.md`](.claude/README.md) for the full layout. The summary:
 
 **Before any new feature work:**
 
-1. Read the relevant rule file (`dotnet-backend.md` or `angular-frontend.md`) for the layer you're touching
+1. Read the relevant rule file for the layer you're touching — `dotnet-backend.md` for backend, `angular-frontend.md` for `frontend/` (Angular 17), `angular-v8-frontend.md` for `frontend-v8/` (Angular 8 + PrimeNG)
 2. Invoke the `prm-domain` skill if the work touches PRM data, queries, charts, or dashboards
 3. Skim the **Architecture decisions** table above to avoid contradicting prior choices
 4. Consider dispatching the `planner` agent for multi-step work or the `architect` agent for decisions with tradeoffs
@@ -280,20 +281,21 @@ When adding a new tenant, the flow is:
 
 ## Current status
 
-POC feature-complete. Runtime data layer is DuckDB over per-tenant Parquet; seed CSVs + generated Parquet are committed under `data/`. **172/172 backend + 1/1 frontend tests passing.** Build clean.
+POC feature-complete with **two parallel frontends on `main`** talking to a single backend. Runtime data layer is DuckDB over per-tenant Parquet; seed CSVs + generated Parquet are committed under `data/`. **172/172 backend tests passing.** Both frontends build clean and serve healthy in `docker compose up`.
 
 ### Capability snapshot
 
 | Area | Status | Notes |
 |---|---|---|
-| **Infrastructure** | ✅ | `.NET` solution + Shared library, Docker Compose, per-service Dockerfiles + healthchecks, non-root `USER app`, base images pinned by sha256 digest |
+| **Infrastructure** | ✅ | `.NET` solution + Shared library, Docker Compose with 6 default services + `dev` profile, per-service Dockerfiles + healthchecks, non-root `USER app`, base images pinned by sha256 digest |
 | **Auth Service** | ✅ | BCrypt password hash, 15-min JWT, 7-day httpOnly refresh cookie (`InMemoryRefreshTokenStore`), atomic refresh rotation, `ClockSkew = TimeSpan.Zero`, `JwtStartupValidator` |
 | **Tenant Service** | ✅ | `/config` + `/airports`; `TenantsLoader` startup dict from `master/tenants.parquet` |
 | **PRM Service** | ✅ | 25 analytics endpoints over DuckDB; `BaseQueryService.BuildWhereClause`; `HhmmSql` time helpers; airport RBAC middleware |
-| **Gateway** | ✅ | Ocelot routing, subdomain → `X-Tenant-Slug` header, `depends_on: service_healthy` for auth/tenant/prm |
+| **Gateway** | ✅ | Ocelot routing, subdomain → `X-Tenant-Slug` header, `depends_on: service_healthy` for auth/tenant/prm. CORS allowlist covers `:4200` + `:4300` for `{localhost, aeroground, skyserve, globalprm}.localhost` |
 | **Seed data** | ✅ | 3 tenants, 12 employees, ~20k PRM records across Dec 2025 – Mar 2026. Committed as CSVs under `data/`; Parquet refreshed via `PrmDashboard.ParquetBuilder` |
-| **Frontend** | ✅ | Angular 17 standalone, NgRx Signal Store, 5-tab dashboard, 6 ECharts wrappers, `@angular-eslint` lint gate, production build clean |
-| **Test coverage** | ✅ | 172 backend (unit + fixture-backed DuckDB + `WebApplicationFactory` middleware integration) + 1 frontend sanity test |
+| **Frontend — Angular 17 (`frontend/`, :4200)** | ✅ | Standalone components, NgRx Signal Store, 5-tab dashboard, 6 ECharts wrappers, `@angular-eslint` lint gate, production build clean |
+| **Frontend — Angular 8 (`frontend-v8/`, :4300)** | ✅ | NgModules, BehaviorSubject stores, PrimeNG 8.0.3 (`.ui-*`), 5-tab dashboard at feature parity, TSLint clean, production build clean, dev container (Node 12 + chromium) for installs/tests/builds |
+| **Test coverage** | ✅ | 172 backend (unit + fixture-backed DuckDB + `WebApplicationFactory` middleware integration) + frontend sanity tests on both Angular builds |
 
 ### Hardening (2026-04-22 → 2026-04-23)
 
@@ -306,4 +308,4 @@ Three-agent code review surfaced ~40 findings across backend / frontend / ops. H
 - **Frontend tooling:** `@angular-eslint@17` + `@typescript-eslint@7` + `eslint@8` wired up; scaffold spec replaced with a real sanity test; `forkJoin` results now type-inferred; `tailwindcss` + `postcss` dead deps removed; `pocToday: ''` in production falls back to real `new Date()`.
 - **Dead code:** `Employee.tenantId` removed, three copies of `EscapeSingleQuotes` consolidated to `TenantParquetPaths.EscapeSqlLiteral`.
 
-Last updated: 2026-04-23.
+Last updated: 2026-05-11.

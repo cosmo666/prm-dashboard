@@ -2,7 +2,7 @@
 
 ## Overview
 
-PRM Dashboard is a multi-tenant analytics POC for airport ground-handling Passenger-with-Reduced-Mobility (PRM) services. Five containers behind a Docker Compose: an Angular SPA, an Ocelot gateway, and three .NET microservices that read DuckDB-over-Parquet data per tenant.
+PRM Dashboard is a multi-tenant analytics POC for airport ground-handling Passenger-with-Reduced-Mobility (PRM) services. **Six** containers behind a Docker Compose: an Ocelot gateway, three .NET microservices that read DuckDB-over-Parquet data per tenant, and **two parallel Angular frontends** (v17 + v8) that share the same backend.
 
 ```
 prm-dashboard/
@@ -19,11 +19,11 @@ prm-dashboard/
 ├── data/                                # Committed: CSV (seed) + Parquet (query format)
 │   ├── master/                          # tenants, employees, employee_airports
 │   └── {slug}/                          # prm_services per tenant
-├── frontend/src/app/
-│   ├── core/                            # Singletons (auth, api, theme, progress, stores)
-│   ├── features/                        # Lazy-loaded routes (auth, home, dashboard, not-found)
-│   └── shared/                          # Chart wrappers, top-bar, pipes, directives
-├── docker-compose.yml                   # gateway/auth/tenant/prm/frontend
+├── frontend/                            # Angular 17 SPA — host port 4200 (primary)
+│   └── src/app/{core,features,shared}/  # Standalone components, NgRx Signal Store, Material 3
+├── frontend-v8/                         # Angular 8 + PrimeNG SPA — host port 4300 (host-app parity)
+│   └── src/app/{core,features,shared}/  # NgModules, RxJS BehaviorSubject stores, PrimeNG 8.0.3
+├── docker-compose.yml                   # gateway/auth/tenant/prm/frontend/frontend-v8 (+ dev profile)
 └── CLAUDE.md
 ```
 
@@ -38,20 +38,25 @@ prm-dashboard/
 | Auth — password hash | BCrypt.Net-Next | 4.0.3 |
 | Auth — JWT | System.IdentityModel.Tokens.Jwt | 7.6.2 |
 | API Gateway | Ocelot | 23.2.0 |
-| Frontend framework | Angular (standalone components) | 17+ |
-| UI library | Angular Material 3 | 17.3 |
-| Charts | Apache ECharts via `ngx-echarts` | - |
-| Frontend state | NgRx Signal Store (`@ngrx/signals`) | - |
+| Frontend (primary, `frontend/`, :4200) | Angular standalone components + Material 3 + NgRx Signal Store | 17+ |
+| Frontend (host-app parity, `frontend-v8/`, :4300) | Angular NgModules + PrimeNG + RxJS BehaviorSubject | 8.2.14 |
+| Charts | Apache ECharts via `ngx-echarts` (both frontends) | - |
 | Container | Docker Compose (images pinned by sha256) | - |
 
 ## Service topology
 
 ```
-Browser (subdomain.localhost:4200)
+Browser (subdomain.localhost:4200 or :4300)
   │
-  ├─► Frontend (nginx, :4200)  [public]
+  ├─► Frontend v17 (nginx, :4200)  [public — Angular 17 + Material 3]
+  │        │
+  │        └─► /api/* → http://gateway:8080 (over internal Docker network)
   │
-  └─► Gateway (Ocelot, :5000)  [public — sole API entry point]
+  ├─► Frontend v8  (nginx, :4300)  [public — Angular 8 + PrimeNG]
+  │        │
+  │        └─► /api/* → http://gateway:8080 (over internal Docker network)
+  │
+  └─► Gateway (Ocelot, :5000)  [public — also a direct API entry point]
         │
         ├── /api/auth/**    → AuthService    [internal]
         ├── /api/tenants/** → TenantService  [internal]
@@ -60,7 +65,7 @@ Browser (subdomain.localhost:4200)
               └── reads data/{slug}/prm_services.parquet via DuckDB
 ```
 
-The three backend services listen on the internal Docker network only; the gateway is the sole entry point. `depends_on: service_healthy` keeps the gateway from accepting traffic until auth/tenant/prm pass their healthchecks.
+Both frontends are nginx images that proxy `/api/*` to the same gateway over the internal Docker network. The three backend services listen on the internal network only; the gateway is the sole API entry point. `depends_on: service_healthy` keeps the gateway from accepting traffic until auth/tenant/prm pass their healthchecks, and both frontends `depends_on: gateway.service_healthy`.
 
 ## Request flow (authenticated dashboard call)
 
@@ -122,16 +127,29 @@ The full decision history lives in `CLAUDE.md` → "Architecture decisions" tabl
 
 ## Frontend architecture
 
-| Concern | Solution |
+Two implementations, one set of contracts. Common to both:
+
+| Concern | Both frontends |
 |---|---|
-| Routing | Standalone components, `loadComponent` lazy loading, `withComponentInputBinding()` |
-| Shared state | NgRx Signal Store (`@ngrx/signals`) — `AuthStore`, `TenantStore`, `FilterStore`, `NavigationStore`, `SavedViewsStore` |
-| Local state | Component signals + `computed()` |
-| HTTP | All calls via `ApiClient` → wraps `HttpClient` with base URL + `withCredentials` |
-| Auth | Access token in memory (`AuthStore.accessToken()`), refresh token in httpOnly cookie. `AuthInterceptor` auto-refreshes on 401 |
-| Filter sync | `FilterStore` ↔ URL query params. Reload-safe and shareable |
-| Charts | All wrap `BaseChartComponent` (loading / empty / hover layout). Six wrappers: bar, donut, line, horizontal-bar, sankey, heatmap |
-| Tooltip | Custom `[appTooltip]` directive (light/dark consistent), never `matTooltip` |
+| HTTP | All calls via `ApiClient` → wraps `HttpClient` with `/api` prefix + `withCredentials` |
+| Auth | Access token in memory (never `localStorage`), refresh token in httpOnly cookie. Interceptor auto-refreshes on 401 |
+| Filter sync | Store ↔ URL query params, reload-safe and shareable |
+| Charts | Wrap a `BaseChartComponent` (loading / empty / hover layout). Six wrappers: bar, donut, line, horizontal-bar, sankey, heatmap |
+| DTOs | Mirror backend C# records exactly (camelCase on the wire). Authoritative source: `backend/src/PrmDashboard.Shared/DTOs/*.cs` |
+
+Where they differ:
+
+| Concern | Angular 17 (`frontend/`, :4200) | Angular 8 (`frontend-v8/`, :4300) |
+|---|---|---|
+| Components | Standalone, `loadComponent` lazy loading | NgModules, `loadChildren: () => import(...)` |
+| Shared state | NgRx Signal Store (`@ngrx/signals`) | Plain RxJS `BehaviorSubject` services |
+| Local state | Component signals + `computed()` | `Observable` + `async` pipe, manual `takeUntil(this.destroy$)` |
+| UI library | Angular Material 3 (custom theme) | PrimeNG 8.0.3 (`.ui-*` selectors), PrimeFlex |
+| Tooltip | Custom `[appTooltip]` directive | `pTooltip` from PrimeNG |
+| Lint | ESLint + `@angular-eslint` | TSLint + codelyzer |
+| Build | Angular CLI 17 (Vite) on Node 20 | Angular CLI 8.3 (webpack 4) on Node 12 — dev container only |
+
+See [`angular-frontend.md`](angular-frontend.md) (v17) and [`angular-v8-frontend.md`](angular-v8-frontend.md) (v8) for the full conventions.
 
 ## Anti-patterns to reject
 
@@ -140,6 +158,6 @@ The full decision history lives in `CLAUDE.md` → "Architecture decisions" tabl
 - Caching layers between DuckDB and the controller
 - Filter logic outside `BuildWhereClause`
 - Hardcoded tenant slugs / airport codes / non-IATA service codes
-- NgModules in the frontend
-- Direct `HttpClient` in feature components
-- `localStorage` / `sessionStorage` for the access token
+- NgModules in `frontend/` (Angular 17 is standalone-only) — but they're **required** in `frontend-v8/`
+- Direct `HttpClient` in feature components (both frontends use `ApiClient`)
+- `localStorage` / `sessionStorage` for the access token (both frontends keep it in memory)
