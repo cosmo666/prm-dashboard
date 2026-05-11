@@ -23,7 +23,7 @@ The following are recorded in the canonical "Architecture decisions" table — s
 The user's per-project auto-memory (at `C:\Users\prera\.claude\projects\c--Users-prera-dev-ai-angular-powerbi\memory\MEMORY.md`) records additional context worth surfacing here:
 
 - **Runtime is Docker-served**: rebuild the affected container after a code change; never suggest `ng serve` / `dotnet run` as the default workflow.
-- **Angular 8 rewrite shipped and now lives alongside Angular 17 on `main`** as of 2026-05-11. Two frontends, same backend (Angular 17 in `frontend/` on port 4200, Angular 8 + PrimeNG in `frontend-v8/` on port 4300). Original rewrite history is preserved on the `angular-8-rewrite` branch.
+- **Angular 8 rewrite shipped and now lives alongside Angular 17 on `main`** as of 2026-05-11. Two frontends, same backend (Angular 17 in `frontend/` on port 4200, Angular 8 + PrimeNG in `frontend-v8/` on port 4300). The original `angular-8-rewrite` branch and `.worktrees/` directory have been removed after consolidation — `main` is the only branch going forward. The v8 *files* live on at `frontend-v8/`; only the per-commit history of the rewrite is gone.
 - **Design direction: "Operations Console"** — Fira Sans + Fira Code, indigo `#2563EB` primary, slate ramp, monospace for IDs/numerics. No purple-on-white, no rainbow KPIs.
 - **PrimeNG 8.0.3 quirks** (only relevant once the rewrite starts): uses `.ui-*` not `.p-*` (rebrand was 9.0); CSS variables in themes only from 11+; `primeng.min.css` ships empty, use `primeng.css`. Theme pair: `nova-light` + `nova-dark`.
 

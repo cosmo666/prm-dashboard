@@ -1,12 +1,8 @@
 {
   "folders": [
     {
-      "name": "main (Angular 17 + TS 5.4)",
+      "name": "main (Angular 17 + Angular 8 + .NET 8)",
       "path": "."
-    },
-    {
-      "name": "angular-8-rewrite (Angular 8 + TS 3.4)",
-      "path": ".worktrees/angular-8-rewrite"
     }
   ],
   "settings": {
