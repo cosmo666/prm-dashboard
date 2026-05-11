@@ -2,7 +2,6 @@ export const environment = {
   production: true,
   apiBaseUrl: '/api',
   loggingEnabled: false,
-  smoke: false,
   // POC compromise: seed data is committed at fixed dates (Dec 2025 – Mar 2026).
   // Anchoring `applyDefault()` and the date-preset resolver to the last day of
   // the seed range so the dashboard's default MTD/Last-N-Days landings show

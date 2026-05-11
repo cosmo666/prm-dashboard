@@ -74,7 +74,7 @@ frontend-v8/                                # Angular 8.2 + PrimeNG 8.0.3 — ho
   nginx.conf                               # /api/* proxied to gateway:8080 with X-Tenant-Slug from subdomain
   src/app/                                 # Mirrors Angular 17 feature layout — 5-tab dashboard, same DTOs
     core/                                  # api/auth/store(/theme/toast/progress) — Plain RxJS, no NgRx
-    features/{auth,home,dashboard,not-found,primeng-smoke}/  # Each = its own lazy NgModule
+    features/{auth,home,dashboard,not-found}/  # Each = its own lazy NgModule
     shared/{charts,components,pipes}/      # ECharts wrappers, form-field, toast, palette, etc.
 docs/
   e2e-checklist.md                         # Manual verification scenarios

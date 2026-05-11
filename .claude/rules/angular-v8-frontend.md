@@ -16,7 +16,7 @@
 | PrimeNG | 8.0.3 | `.ui-*` CSS classes (NOT `.p-*`) — see `primeng_8_class_prefix.md` |
 | PrimeIcons | 2.0.0 | `<i class="pi pi-foo">` |
 | PrimeFlex | 1.3.1 | `p-grid`/`p-col-*` utility classes |
-| ngx-bootstrap | 5.1.0 | Available; not heavily used yet |
+| ngx-bootstrap | 5.1.0 | Pinned to match host-app stack; available for any feature that needs it |
 | echarts | 4.9.0 | v4 API — `LinearGradient` lives at `echarts.graphic.LinearGradient` |
 | ngx-echarts | 5.2.2 | `[echarts]` directive; chart factory provided once at root |
 | resize-observer-polyfill | 1.5.1 | Required by ngx-echarts on older browsers |
@@ -70,7 +70,6 @@ frontend/src/app/
 │   ├── auth/                               # AuthModule + AuthRoutingModule + LoginComponent
 │   ├── home/                               # HomeModule — workspace tile picker
 │   ├── dashboard/                          # Phase 1+: DashboardModule + child routes per tab
-│   ├── primeng-smoke/                      # Dev-only visual sanity page (env.smoke gate)
 │   └── not-found/                          # Editorial 404
 │
 └── shared/
